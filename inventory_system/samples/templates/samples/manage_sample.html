@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sample</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            background-color: #f4f4f4;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select, button, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .submit-btn {
+            margin-top: 20px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Sample</h1>
+
+    <form method="POST" action="{% url 'update_sample_location' %}">
+        {% csrf_token %}
+
+        <!-- Hidden field to pass the sample_id -->
+        <input type="hidden" name="sample_id" value="{{ sample.unique_id }}">
+
+        <div class="form-group">
+            <label for="date_received">Date Received:</label>
+            <input type="text" id="date_received" name="date_received" value="{{ sample.date_received }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="rsm">RSM:</label>
+            <input type="text" id="rsm" name="rsm" value="{{ sample.rsm }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="opportunity_number">Opp Number:</label>
+            <input type="text" id="opportunity_number" name="opportunity_number" value="{{ sample.opportunity_number }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" name="description" value="{{ sample.description }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <select id="location" name="location">
+                <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
+                <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
+                <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
+                <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
+                <option value="remove" {% if not sample.storage_location %}selected{% endif %}>Remove from location</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="audit-toggle">Audit:</label>
+            <button type="button" id="audit-toggle" class="toggle-button">Audit</button>
+            <input type="hidden" id="audit" name="audit" value="false">
+        </div>
+
+        <button type="submit" class="submit-btn">Submit</button>
+    </form>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const auditToggle = document.getElementById('audit-toggle');
+            const auditInput = document.getElementById('audit');
+
+            auditToggle.addEventListener('click', function() {
+                auditToggle.classList.toggle('toggled');
+                auditInput.value = auditToggle.classList.contains('toggled') ? 'true' : 'false';
+            });
+
+            // Set the audit button state based on the initial value
+            const auditInitialValue = "{{ sample.audit|yesno:'true,false' }}";
+            if (auditInitialValue === 'true') {
+                auditToggle.classList.add('toggled');
+                auditInput.value = 'true';
+            }
+        });
+    </script>
+</body>
+</html>

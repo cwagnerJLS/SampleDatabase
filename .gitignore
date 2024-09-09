@@ -1,0 +1,21 @@
+# Ignore virtual environments
+.venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Django specific files
+db.sqlite3
+*.log
+
+# Ignore virtual environments from different tools
+.env/
+
+# Ignore PyCharm settings
+.idea/
+
+*.log
+
