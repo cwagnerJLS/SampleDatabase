@@ -90,7 +90,7 @@ def create_sample(request):
 
     try:
         # Load the Excel file
-        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
+        excel_file = os.path.join(settings.BASE_DIR.parent, 'Apps_Database.xlsx')
         df = pd.read_excel(excel_file)
 
         # Get unique customers and sort them
