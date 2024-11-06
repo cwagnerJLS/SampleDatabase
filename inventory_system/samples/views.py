@@ -9,6 +9,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 import qrcode
 import base64
 from io import BytesIO
+import os
+from django.conf import settings
 
 
 # Configure logging
@@ -88,7 +90,7 @@ def create_sample(request):
 
     try:
         # Load the Excel file
-        excel_file = "C:/Users/cwagner/PycharmProjects/Sample_Database/Apps_Database.xlsx"
+        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
         df = pd.read_excel(excel_file)
 
         # Get unique customers and sort them
