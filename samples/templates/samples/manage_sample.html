@@ -1,8 +1,10 @@
+<!-- samples/templates/samples/manage_sample.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Manage Sample</title>
+    <title>Manage Sample {{ sample.unique_id }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,17 +62,19 @@
     </style>
 </head>
 <body>
-    <h1>Manage Sample</h1>
+    <h1>Manage Sample {{ sample.unique_id }}</h1>
 
     <form method="POST" action="">
         {% csrf_token %}
 
-        <!-- Hidden field to pass the sample_id -->
-        <input type="hidden" name="sample_id" value="{{ sample.unique_id }}">
-
         <div class="form-group">
             <label for="date_received">Date Received:</label>
             <input type="text" id="date_received" name="date_received" value="{{ sample.date_received }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="customer">Customer:</label>
+            <input type="text" id="customer" name="customer" value="{{ sample.customer }}" readonly>
         </div>
 
         <div class="form-group">
@@ -79,23 +83,24 @@
         </div>
 
         <div class="form-group">
-            <label for="opportunity_number">Opp Number:</label>
+            <label for="opportunity_number">Opportunity Number:</label>
             <input type="text" id="opportunity_number" name="opportunity_number" value="{{ sample.opportunity_number }}" readonly>
         </div>
 
         <div class="form-group">
             <label for="description">Description:</label>
-            <input type="text" id="description" name="description" value="{{ sample.description }}" readonly>
+            <textarea id="description" name="description" readonly>{{ sample.description }}</textarea>
         </div>
 
         <div class="form-group">
             <label for="location">Location:</label>
             <select id="location" name="location">
+                <option value="" {% if not sample.storage_location %}selected{% endif %}>-- Select Location --</option>
                 <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
                 <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
                 <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
                 <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
-                <option value="remove" {% if not sample.storage_location %}selected{% endif %}>Remove from location</option>
+                <option value="remove">Remove from Location</option>
             </select>
         </div>
 
@@ -119,7 +124,7 @@
             });
 
             // Set the audit button state based on the initial value
-            const auditInitialValue = "{{ sample.audit|yesno:\"true,false\" }}";
+            const auditInitialValue = "{{ sample.audit|yesno:'true,false' }}";
             if (auditInitialValue === 'true') {
                 auditToggle.classList.add('toggled');
                 auditInput.value = 'true';

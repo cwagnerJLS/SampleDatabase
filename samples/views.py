@@ -207,30 +207,31 @@ def handle_print_request(request):
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
 def manage_sample(request, sample_id):
-    try:
-        sample = Sample.objects.get(unique_id=sample_id)
-        logger.debug(f"Accessing manage_sample with sample_id: {sample_id}")
+    # Retrieve the sample or return a 404 error if not found
+    sample = get_object_or_404(Sample, unique_id=sample_id)
+    logger.debug(f"Accessing manage_sample for sample_id: {sample_id}")
 
-        if request.method == 'POST':
-            location = request.POST.get('location')
-            audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
+    if request.method == 'POST':
+        # Process form data
+        location = request.POST.get('location')
+        audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
 
-            if location:
-                if location == "remove":
-                    sample.storage_location = None  # Remove from location
-                else:
-                    sample.storage_location = location
+        # Update sample fields
+        if location:
+            if location == "remove":
+                sample.storage_location = None
+            else:
+                sample.storage_location = location
 
-            sample.audit = audit  # Save the audit status
-            sample.save()
+        sample.audit = audit
+        sample.save()
+        logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
 
-            return redirect('manage_sample', sample_id=sample.unique_id)  # Redirect back to the same page
+        # Redirect back to the same page after POST to prevent resubmission
+        return redirect('manage_sample', sample_id=sample.unique_id)
 
-        return render(request, 'samples/manage_sample.html', {'sample': sample})
-
-    except Sample.DoesNotExist:
-        logger.error(f"Sample with ID {sample_id} not found")
-        return render(request, 'samples/sample_not_found.html', status=404)
+    # For GET requests, render the template with the sample data
+    return render(request, 'samples/manage_sample.html', {'sample': sample})
 
 def generate_unique_id():
     while True:
