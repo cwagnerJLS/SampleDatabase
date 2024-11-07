@@ -274,6 +274,8 @@
                         <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
                         <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
                         <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
+                        <option value="Dry Food Storage" {% if sample.storage_location == "Dry Food Storage" %}selected{% endif %}>Dry Food Storage</option>
+                        <option value="Empty Case Storage" {% if sample.storage_location == "Empty Case Storage" %}selected{% endif %}>Empty Case Storage</option>
                     </select>
                 </td>
             </tr>
@@ -574,6 +576,8 @@
                                             <option value="Test Lab Freezer">Test Lab Freezer</option>
                                             <option value="Walk-in Fridge">Walk-in Fridge</option>
                                             <option value="Walk-in Freezer">Walk-in Freezer</option>
+                                            <option value="Dry Food Storage">Dry Food Storage</option>
+                                            <option value="Empty Case Storage">Empty Case Storage</option>
                                         </select>
                                     </td>
                                 `;
@@ -820,6 +824,9 @@
                             <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
                             <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
                             <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
+                            <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
+                            <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
+
                         </select>
                     </td>
                 `;
