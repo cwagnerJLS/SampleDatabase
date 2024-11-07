@@ -190,8 +190,9 @@ def handle_print_request(request):
 
         for sample_id in ids_to_print:
             sample = Sample.objects.get(unique_id=sample_id)
-            # Use the current request host for more flexibility
-            qr_url = f"http://{request.get_host()}/manage_sample/{sample.unique_id}/"
+            # Build the absolute URL using the request object
+            qr_relative_url = reverse('manage_sample', args=[sample.unique_id])
+            qr_url = request.build_absolute_uri(qr_relative_url)
             qr_code = generate_qr_code(qr_url)
 
             label_contents.append({
@@ -199,7 +200,7 @@ def handle_print_request(request):
                 'date_received': sample.date_received.strftime('%Y-%m-%d'),
                 'description': sample.description,
                 'rsm': sample.rsm,
-                'qr_code': qr_code  # Add the QR code here
+                'qr_code': qr_code  # Base64 encoded QR code image
             })
 
         return JsonResponse({'status': 'success', 'labels': label_contents})
