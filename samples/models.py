@@ -23,24 +23,24 @@ class Sample(models.Model):
     description = models.TextField(default="No description")
     audit = models.BooleanField(default=False)
 
-    def save(self, *args, **kwargs):
-        if not self.unique_id:
-            for _ in range(100):
-                self.unique_id = self.generate_unique_id()
-                try:
-                    with transaction.atomic():
-                        super().save(*args, **kwargs)
-                    break
-                except IntegrityError:
-                    continue
-            else:
-                raise IntegrityError("Could not generate a unique ID after 100 attempts.")
+def save(self, *args, **kwargs):
+    if not self.unique_id:
+        for _ in range(100):
+            self.unique_id = self.generate_unique_id()
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                break
+            except IntegrityError:
+                continue
         else:
-            super().save(*args, **kwargs)
+            raise IntegrityError("Could not generate a unique ID after 100 attempts.")
+    else:
+        super().save(*args, **kwargs)
 
-    @staticmethod
-    def generate_unique_id():
-        return random.randint(1000, 9999)
+@staticmethod
+def generate_unique_id():
+    return random.randint(1000, 9999)
 
-    def __str__(self):
-        return f"Sample {self.unique_id} - {self.customer}"
+def __str__(self):
+    return f"Sample {self.unique_id} - {self.customer}"
