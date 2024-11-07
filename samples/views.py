@@ -214,20 +214,26 @@ def handle_print_request(request):
 def manage_sample(request, sample_id):
     try:
         sample = Sample.objects.get(unique_id=sample_id)
+
         if request.method == 'POST':
             location = request.POST.get('location')
-            audit = request.POST.get('audit') == 'true'
+            audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
+
             if location:
-                sample.storage_location = None if location == "remove" else location
-            sample.audit = audit
+                if location == "remove":
+                    sample.storage_location = None  # Remove from location
+                else:
+                    sample.storage_location = location
+
+            sample.audit = audit  # Save the audit status
             sample.save()
-            return redirect('some_success_page')  # Ensure this is not interfering with direct access
+
+            return redirect('home')  # Redirect to the home page or another appropriate page
 
         return render(request, 'samples/manage_sample.html', {'sample': sample})
 
     except Sample.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Sample not found'}, status=404)
-
+        return render(request, 'samples/sample_not_found.html', status=404)
 
 def generate_unique_id():
     while True:
