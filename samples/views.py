@@ -193,7 +193,8 @@ def handle_print_request(request):
 
         for sample_id in ids_to_print:
             sample = Sample.objects.get(unique_id=sample_id)
-            qr_url = f"http://127.0.0.1:8000/manage_sample/{sample.unique_id}/"
+            # Update this line with the new IP address and port
+            qr_url = f"http://192.168.9.61:8000/manage_sample/{sample.unique_id}/"
             qr_code = generate_qr_code(qr_url)
 
             label_contents.append({
@@ -207,6 +208,7 @@ def handle_print_request(request):
         return JsonResponse({'status': 'success', 'labels': label_contents})
     else:
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+
 
 
 def manage_sample(request, sample_id):
