@@ -185,25 +185,45 @@ def generate_qr_code(data):
 
 def handle_print_request(request):
     if request.method == 'POST':
-        ids_to_print = request.POST.getlist('ids[]')
-        label_contents = []
+        try:
+            data = json.loads(request.body)
+            ids_to_print = data.get('ids', [])
+            label_contents = []
 
-        for sample_id in ids_to_print:
-            sample = Sample.objects.get(unique_id=sample_id)
-            # Build the absolute URL using the request object
-            qr_relative_url = reverse('manage_sample', args=[sample.unique_id])
-            qr_url = request.build_absolute_uri(qr_relative_url)
-            qr_code = generate_qr_code(qr_url)
+            if not ids_to_print:
+                return JsonResponse({'status': 'error', 'error': 'No sample IDs provided'}, status=400)
 
-            label_contents.append({
-                'id': sample.unique_id,
-                'date_received': sample.date_received.strftime('%Y-%m-%d'),
-                'description': sample.description,
-                'rsm': sample.rsm,
-                'qr_code': qr_code  # Base64 encoded QR code image
-            })
+            for sample_id in ids_to_print:
+                try:
+                    sample = Sample.objects.get(unique_id=sample_id)
+                except Sample.DoesNotExist:
+                    logger.error(f"Sample with ID {sample_id} does not exist")
+                    return JsonResponse({'status': 'error', 'error': f'Sample with ID {sample_id} does not exist'}, status=404)
+                except Exception as e:
+                    logger.error(f"Error retrieving sample: {e}")
+                    return JsonResponse({'status': 'error', 'error': 'Error retrieving sample'}, status=500)
 
-        return JsonResponse({'status': 'success', 'labels': label_contents})
+                try:
+                    qr_url = request.build_absolute_uri(reverse('manage_sample', args=[sample.unique_id]))
+                    qr_code = generate_qr_code(qr_url)
+                except Exception as e:
+                    logger.error(f"Error generating QR code: {e}")
+                    return JsonResponse({'status': 'error', 'error': 'Failed to generate QR code'}, status=500)
+
+                label_contents.append({
+                    'id': sample.unique_id,
+                    'date_received': sample.date_received.strftime('%Y-%m-%d'),
+                    'description': sample.description,
+                    'rsm': sample.rsm,
+                    'qr_code': qr_code  # Base64 encoded QR code image
+                })
+
+            return JsonResponse({'status': 'success', 'labels': label_contents})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            logger.error(f"Error in handle_print_request: {e}")
+            return JsonResponse({'status': 'error', 'error': 'An unexpected error occurred'}, status=500)
     else:
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 

@@ -192,6 +192,9 @@
     </style>
 </head>
 <body>
+    <script type="text/javascript">
+        const csrftoken = '{{ csrf_token }}';
+    </script>
     <form method="POST" id="sampleForm">
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="form-container">
@@ -326,32 +329,45 @@
             if (confirmPrint) {
                 console.log('Gathering data for selected entries...');
 
-                const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                idsToPrint.forEach(id => formData.append('ids[]', id));
-
                 fetch("{% url 'handle_print_request' %}", {
                     method: 'POST',
-                    body: formData
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.status === 'success') {
-                          console.log('Labels to print:', data.labels);
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({'ids': idsToPrint}),
+                    credentials: 'same-origin'  // Include cookies in the request
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Labels to print:', data.labels);
 
-                          data.labels.forEach(label => {
-                              console.log(`Label ID: ${label.id}`);
-                              console.log(`QR Code: data:image/png;base64,${label.qr_code}`);
-                          });
+                        data.labels.forEach(label => {
+                            console.log(`Label ID: ${label.id}`);
+                            console.log(`QR Code: data:image/png;base64,${label.qr_code}`);
+                        });
 
-                          // Here you would send this data to your printer
-                      } else {
-                          console.error('Error generating labels:', data.error);
-                      }
-                  });
+                        // Here you would send this data to your printer
+                    } else {
+                        console.error('Error generating labels:', data.error);
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    alert('An unexpected error occurred. Please try again.');
+                });
             } else {
                 console.log('Print operation was canceled.');
             }
         };
+
 
 
         const selectAllSelectCheckbox = document.getElementById('select-all-select');
