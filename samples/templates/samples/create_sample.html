@@ -740,8 +740,7 @@
                     <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
                     <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
                     <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                    <option value="remove" ${!sample.storage_location ? "selected" : ""}>Remove from location</option>
-                </select>
+                            </select>
             </td>
         `;
         document.querySelector('#samplesTable tbody').appendChild(newRow);
