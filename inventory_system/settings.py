@@ -67,7 +67,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'inventory_system.wsgi.application'
+WSGI_APPLICATION = 'inventory_system.inventory_system.wsgi.application'
 
 
 # Database
