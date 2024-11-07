@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Sample</title>
     <style>
         body {
@@ -47,12 +46,23 @@
             margin-top: 20px;
             width: 100%;
         }
+
+        .toggle-button {
+            background-color: white;
+            color: black;
+            border: 1px solid #ccc;
+        }
+
+        .toggle-button.toggled {
+            background-color: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <h1>Manage Sample</h1>
 
-    <form method="POST" action="{% url 'update_sample_location' %}">
+    <form method="POST" action="">
         {% csrf_token %}
 
         <!-- Hidden field to pass the sample_id -->
@@ -109,7 +119,7 @@
             });
 
             // Set the audit button state based on the initial value
-            const auditInitialValue = "{{ sample.audit|yesno:'true,false' }}";
+            const auditInitialValue = "{{ sample.audit|yesno:\"true,false\" }}";
             if (auditInitialValue === 'true') {
                 auditToggle.classList.add('toggled');
                 auditInput.value = 'true';

@@ -4,7 +4,7 @@ from samples import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.create_sample, name='home'),  # Added this line to make the root URL direct to the create_sample view
+    path('', views.create_sample, name='home'),
     path('create_sample/', views.create_sample, name='create_sample'),
     path('update_sample_location/', views.update_sample_location, name='update_sample_location'),
     path('delete_samples/', views.delete_samples, name='delete_samples'),

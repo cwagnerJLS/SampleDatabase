@@ -1,7 +1,7 @@
 import logging
 import json
 from datetime import datetime
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import Sample
 import pandas as pd
@@ -12,11 +12,9 @@ from io import BytesIO
 import os
 from django.conf import settings
 
-
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Assuming unique_id is a UUIDField in the Sample model
 def create_sample(request):
     logger.debug("Entered create_sample view")
 
@@ -50,7 +48,7 @@ def create_sample(request):
 
             location = "Choose a location"
             logger.debug(f"Received data: customer={customer}, rsm={rsm}, opportunity_number={opportunity_number}, "
-                        f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
+                         f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
 
             # Create sample entries
             created_samples = []
@@ -149,7 +147,6 @@ def update_sample_location(request):
 
     return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
-
 def delete_samples(request):
     if request.method == 'POST':
         try:
@@ -193,8 +190,8 @@ def handle_print_request(request):
 
         for sample_id in ids_to_print:
             sample = Sample.objects.get(unique_id=sample_id)
-            # Update this line with the new IP address and port
-            qr_url = f"http://192.168.9.61:8000/manage_sample/{sample.unique_id}/"
+            # Use the current request host for more flexibility
+            qr_url = f"http://{request.get_host()}/manage_sample/{sample.unique_id}/"
             qr_code = generate_qr_code(qr_url)
 
             label_contents.append({
@@ -209,11 +206,10 @@ def handle_print_request(request):
     else:
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
-
-
 def manage_sample(request, sample_id):
     try:
         sample = Sample.objects.get(unique_id=sample_id)
+        logger.debug(f"Accessing manage_sample with sample_id: {sample_id}")
 
         if request.method == 'POST':
             location = request.POST.get('location')
@@ -228,15 +224,16 @@ def manage_sample(request, sample_id):
             sample.audit = audit  # Save the audit status
             sample.save()
 
-            return redirect('home')  # Redirect to the home page or another appropriate page
+            return redirect('manage_sample', sample_id=sample.unique_id)  # Redirect back to the same page
 
         return render(request, 'samples/manage_sample.html', {'sample': sample})
 
     except Sample.DoesNotExist:
+        logger.error(f"Sample with ID {sample_id} not found")
         return render(request, 'samples/sample_not_found.html', status=404)
 
 def generate_unique_id():
     while True:
-        new_id = some_id_generation_logic()
+        new_id = random.randint(1000, 9999)
         if not Sample.objects.filter(unique_id=new_id).exists():
             return new_id

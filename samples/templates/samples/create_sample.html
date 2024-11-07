@@ -734,13 +734,13 @@
             <td class="col-opportunity">${sample.opportunity_number}</td>
             <td class="col-description">${sample.description}</td>
             <td class="col-location">
-                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
-                    <option value="Choose a location" ${!sample.storage_location || sample.storage_location === "Choose a location" ? "selected" : ""}>Choose a location</option>
-                    <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                    <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                    <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                    <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                            </select>
+                <select data-sample-id="{{ sample.unique_id }}" onchange="updateSampleLocation({{ sample.unique_id }}, this.value)">
+                    <option value="Choose a location" {% if sample.storage_location == "Choose a location" %}selected{% endif %}>Choose a location</option>
+                    <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
+                    <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
+                    <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
+                    <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
+                </select>
             </td>
         `;
         document.querySelector('#samplesTable tbody').appendChild(newRow);
