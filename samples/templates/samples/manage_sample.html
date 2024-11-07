@@ -1,11 +1,10 @@
-<!-- samples/templates/samples/manage_sample.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Manage Sample {{ sample.unique_id }}</title>
     <style>
+        /* Your existing CSS styles */
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -13,25 +12,22 @@
             margin: auto;
             background-color: #f4f4f4;
         }
-
         .form-group {
             margin-bottom: 15px;
         }
-
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
-
-        select, button, input[type="text"] {
+        select, button, input[type="text"], textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
+            box-sizing: border-box;
         }
-
         button {
             background-color: #007bff;
             color: white;
@@ -39,22 +35,18 @@
             border: none;
             cursor: pointer;
         }
-
         button:hover {
             background-color: #0056b3;
         }
-
         .submit-btn {
             margin-top: 20px;
             width: 100%;
         }
-
         .toggle-button {
             background-color: white;
             color: black;
             border: 1px solid #ccc;
         }
-
         .toggle-button.toggled {
             background-color: #007bff;
             color: white;
@@ -106,7 +98,7 @@
 
         <div class="form-group">
             <label for="audit-toggle">Audit:</label>
-            <button type="button" id="audit-toggle" class="toggle-button">Audit</button>
+            <button type="button" id="audit-toggle" class="toggle-button" aria-pressed="false">Audit</button>
             <input type="hidden" id="audit" name="audit" value="false">
         </div>
 
@@ -120,15 +112,19 @@
 
             auditToggle.addEventListener('click', function() {
                 auditToggle.classList.toggle('toggled');
-                auditInput.value = auditToggle.classList.contains('toggled') ? 'true' : 'false';
+                const isToggled = auditToggle.classList.contains('toggled');
+                auditInput.value = isToggled ? 'true' : 'false';
+                auditToggle.setAttribute('aria-pressed', isToggled);
             });
 
             // Set the audit button state based on the initial value
-            const auditInitialValue = "{{ sample.audit|yesno:'true,false' }}";
-            if (auditInitialValue === 'true') {
+            const auditInitialValue = "{{ sample.audit|yesno:'true,false'|escapejs }}";
+            const isInitiallyToggled = (auditInitialValue === 'true');
+            if (isInitiallyToggled) {
                 auditToggle.classList.add('toggled');
-                auditInput.value = 'true';
             }
+            auditInput.value = isInitiallyToggled ? 'true' : 'false';
+            auditToggle.setAttribute('aria-pressed', isInitiallyToggled);
         });
     </script>
 </body>

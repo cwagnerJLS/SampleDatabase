@@ -1,5 +1,6 @@
 import logging
 import json
+import random
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -11,6 +12,7 @@ import base64
 from io import BytesIO
 import os
 from django.conf import settings
+from django.urls import reverse
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -89,11 +91,15 @@ def create_sample(request):
     try:
         # Load the Excel file
         excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
+        if not os.path.exists(excel_file):
+            logger.error(f"Excel file not found at {excel_file}")
+            return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
+
         df = pd.read_excel(excel_file)
 
-        # Get unique customers and sort them
-        unique_customers = sorted(df['Customer'].unique())
-        unique_rsms = sorted(df['RSM'].unique())
+        # Get unique customers and RSMs
+        unique_customers = sorted(df['Customer'].dropna().unique())
+        unique_rsms = sorted(df['RSM'].dropna().unique())
 
         # Convert DataFrame to JSON serializable format
         excel_data = df.to_dict(orient='records')
@@ -111,8 +117,8 @@ def create_sample(request):
         return render(request, 'samples/create_sample.html', {
             'unique_customers': unique_customers,
             'unique_rsms': unique_rsms,
-            'excel_data': json.dumps(excel_data, cls=DjangoJSONEncoder),  # Ensure correct JSON format
-            'samples': json.dumps(samples, cls=DjangoJSONEncoder)  # Pass the list of dictionaries directly
+            'excel_data': json.dumps(excel_data, cls=DjangoJSONEncoder),
+            'samples': json.dumps(samples, cls=DjangoJSONEncoder)
         })
 
     except Exception as e:
@@ -122,45 +128,67 @@ def create_sample(request):
 def update_sample_location(request):
     if request.method == 'POST':
         try:
-            sample_id = int(request.POST.get('sample_id'))
             location = request.POST.get('location')
-            audit = request.POST.get('audit') == 'true'
+            audit = request.POST.get('audit', 'false') == 'true'
 
-            sample = Sample.objects.get(unique_id=sample_id)
+            if 'ids' in request.POST:
+                # Updating multiple samples
+                ids = json.loads(request.POST.get('ids', '[]'))
+                samples = Sample.objects.filter(unique_id__in=ids)
 
-            if location == "remove":
-                sample.storage_location = None
+                for sample in samples:
+                    if location == "remove":
+                        sample.storage_location = None
+                    else:
+                        sample.storage_location = location
+                    sample.audit = audit
+                    sample.save()
+
+                return JsonResponse({'status': 'success', 'message': 'Locations updated successfully for selected samples'})
             else:
-                sample.storage_location = location
+                # Updating a single sample
+                sample_id = int(request.POST.get('sample_id'))
+                sample = Sample.objects.get(unique_id=sample_id)
 
-            sample.audit = audit
-            sample.save()
+                if location == "remove":
+                    sample.storage_location = None
+                else:
+                    sample.storage_location = location
 
-            return JsonResponse({'status': 'success', 'message': 'Location updated successfully'})
+                sample.audit = audit
+                sample.save()
+
+                return JsonResponse({'status': 'success', 'message': 'Location updated successfully for sample'})
 
         except Sample.DoesNotExist:
-            logger.error(f"Sample with ID {sample_id} not found")
+            logger.error("Sample not found")
             return JsonResponse({'status': 'error', 'error': 'Sample not found'}, status=404)
+        except ValueError as e:
+            logger.error(f"Invalid data provided: {e}")
+            return JsonResponse({'status': 'error', 'error': 'Invalid data provided'}, status=400)
         except Exception as e:
             logger.error(f"Error in update_sample_location: {e}")
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
+    logger.error("Invalid request method for update_sample_location")
     return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
 def delete_samples(request):
     if request.method == 'POST':
         try:
             ids = json.loads(request.POST.get('ids', '[]'))
-
             Sample.objects.filter(unique_id__in=ids).delete()
             logger.debug(f"Deleted samples with IDs: {ids}")
             return JsonResponse({'status': 'success'})
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON data: {e}")
+            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
         except Exception as e:
             logger.error(f"Error deleting samples: {e}")
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
     logger.error("Invalid request method for delete_samples")
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method'})
+    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
 def generate_qr_code(data):
     # Create a QR code instance
@@ -233,23 +261,27 @@ def manage_sample(request, sample_id):
     logger.debug(f"Accessing manage_sample for sample_id: {sample_id}")
 
     if request.method == 'POST':
-        # Process form data
-        location = request.POST.get('location')
-        audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
+        try:
+            # Process form data
+            location = request.POST.get('location')
+            audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
 
-        # Update sample fields
-        if location:
-            if location == "remove":
-                sample.storage_location = None
-            else:
-                sample.storage_location = location
+            # Update sample fields
+            if location:
+                if location == "remove":
+                    sample.storage_location = None
+                else:
+                    sample.storage_location = location
 
-        sample.audit = audit
-        sample.save()
-        logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
+            sample.audit = audit
+            sample.save()
+            logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
 
-        # Redirect back to the same page after POST to prevent resubmission
-        return redirect('manage_sample', sample_id=sample.unique_id)
+            # Redirect back to the same page after POST to prevent resubmission
+            return redirect('manage_sample', sample_id=sample.unique_id)
+        except Exception as e:
+            logger.error(f"Error updating sample {sample_id}: {e}")
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
     # For GET requests, render the template with the sample data
     return render(request, 'samples/manage_sample.html', {'sample': sample})
