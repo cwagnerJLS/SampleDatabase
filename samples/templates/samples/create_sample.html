@@ -266,9 +266,6 @@
                     <input type="checkbox" name="select_checkbox" value="{{ sample.unique_id }}">
                 </td>
                 <td class="col-id">{{ sample.unique_id }}</td>
-                <td class="col-pictures">
-                    <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
-                </td>
                 <td class="col-date">{{ sample.date_received }}</td>
                 <td class="col-customer">{{ sample.customer }}</td>
                 <td class="col-rsm">{{ sample.rsm }}</td>
@@ -284,6 +281,9 @@
                         <option value="Dry Food Storage" {% if sample.storage_location == 'Dry Food Storage' %}selected{% endif %}>Dry Food Storage</option>
                         <option value="Empty Case Storage" {% if sample.storage_location == 'Empty Case Storage' %}selected{% endif %}>Empty Case Storage</option>
                     </select>
+                </td>
+                <td class="col-pictures">
+                    <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
                 </td>
             </tr>
             {% endif %}
