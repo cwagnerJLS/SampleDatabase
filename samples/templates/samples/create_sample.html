@@ -264,9 +264,6 @@
                     <td class="col-pictures">
                         <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
                     </td>
-                <td class="col-pictures">
-                    <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
-                </td>
                 <td class="col-id">{{ sample.unique_id }}</td>
                 <td class="col-date">{{ sample.date_received }}</td>
                 <td class="col-customer">{{ sample.customer }}</td>
@@ -588,6 +585,9 @@
                                             <option value="Dry Food Storage">Dry Food Storage</option>
                                             <option value="Empty Case Storage">Empty Case Storage</option>
                                         </select>
+                                    </td>
+                                    <td class="col-pictures">
+                                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
