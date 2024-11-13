@@ -590,7 +590,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
