@@ -284,9 +284,6 @@
                         <option value="Empty Case Storage" {% if sample.storage_location == 'Empty Case Storage' %}selected{% endif %}>Empty Case Storage</option>
                     </select>
                 </td>
-                <td class="col-pictures">
-                    <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
-                </td> <!-- New Pictures column -->
             </tr>
             {% endif %}
             {% endfor %}
