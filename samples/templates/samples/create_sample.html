@@ -275,13 +275,13 @@
                 <td class="col-description">{{ sample.description }}</td>
                 <td class="col-location">
                     <select data-sample-id="{{ sample.unique_id }}" onchange="updateSampleLocation({{ sample.unique_id }}, this.value)">
-                        <option value="Choose a location" {% if sample.storage_location == "Choose a location" %}selected{% endif %}>Choose a location</option>
-                        <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
-                        <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
-                        <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
-                        <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
-                        <option value="Dry Food Storage" {% if sample.storage_location == "Dry Food Storage" %}selected{% endif %}>Dry Food Storage</option>
-                        <option value="Empty Case Storage" {% if sample.storage_location == "Empty Case Storage" %}selected{% endif %}>Empty Case Storage</option>
+                        <option value="Choose a location" {% if sample.storage_location == 'Choose a location' %}selected{% endif %}>Choose a location</option>
+                        <option value="Test Lab Fridge" {% if sample.storage_location == 'Test Lab Fridge' %}selected{% endif %}>Test Lab Fridge</option>
+                        <option value="Test Lab Freezer" {% if sample.storage_location == 'Test Lab Freezer' %}selected{% endif %}>Test Lab Freezer</option>
+                        <option value="Walk-in Fridge" {% if sample.storage_location == 'Walk-in Fridge' %}selected{% endif %}>Walk-in Fridge</option>
+                        <option value="Walk-in Freezer" {% if sample.storage_location == 'Walk-in Freezer' %}selected{% endif %}>Walk-in Freezer</option>
+                        <option value="Dry Food Storage" {% if sample.storage_location == 'Dry Food Storage' %}selected{% endif %}>Dry Food Storage</option>
+                        <option value="Empty Case Storage" {% if sample.storage_location == 'Empty Case Storage' %}selected{% endif %}>Empty Case Storage</option>
                     </select>
                 </td>
                 <td class="col-pictures">
