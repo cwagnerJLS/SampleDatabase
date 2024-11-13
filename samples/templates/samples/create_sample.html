@@ -261,7 +261,9 @@
             <tr>
                 <td class="col-select">
                     <input type="checkbox" name="select_checkbox" value="{{ sample.unique_id }}">
-                </td>
+                    <td class="col-pictures">
+                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                    </td>
                 <td class="col-pictures">
                     <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
                 </td>
