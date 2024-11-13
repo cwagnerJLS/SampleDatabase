@@ -240,6 +240,10 @@
                 <th class="col-opportunity">Opp Number</th>
                 <th class="col-description">Description</th>
                 <th class="col-location">Location</th>
+                <th class="col-pictures">Pictures</th> <!-- New Pictures column -->
+                <td class="col-pictures">
+                    <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
+                </td> <!-- New Pictures column -->
             </tr>
             <tr>
                 <th class="col-select">
@@ -833,6 +837,11 @@
                 document.querySelector('#samplesTable tbody').appendChild(newRow);
             });
         });
+
+        function handlePictureUploadView(sampleId) {
+            // Implement the logic to handle picture upload/view for the given sampleId
+            alert('Feature to upload/view pictures for sample ID: ' + sampleId + ' is not yet implemented.');
+        }
     </script>
 </body>
 </html>
