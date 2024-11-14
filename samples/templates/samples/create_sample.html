@@ -746,6 +746,7 @@
 
             // Filter Table function
             window.filterTable = function() {
+                const groupsToShow = new Set();
                 const idFilter = document.getElementById('idFilter').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
                 const customerFilter = document.getElementById('customerFilter').value.toLowerCase();
