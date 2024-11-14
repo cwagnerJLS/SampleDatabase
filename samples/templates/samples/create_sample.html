@@ -246,11 +246,11 @@
         <thead>
             <tr>
                 <th class="col-select">Select</th>
+                <th class="col-opportunity">Opp Number</th>
                 <th class="col-id">ID</th>
                 <th class="col-date">Date Received</th>
                 <th class="col-customer">Customer</th>
                 <th class="col-rsm">RSM</th>
-                <th class="col-opportunity">Opp Number</th>
                 <th class="col-description">Description</th>
                 <th class="col-location">Location</th>
                 <th class="col-pictures">Pictures</th>
@@ -259,11 +259,11 @@
                 <th class="col-select">
                     <input type="checkbox" id="select-all-select">
                 </th>
+                <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
             </tr>
@@ -566,11 +566,11 @@
                                     <td class="col-select">
                                         <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
                                     </td>
+                                    <td class="col-opportunity">${sample.opportunity_number}</td>
                                     <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-date">${sample.date_received}</td>
                                     <td class="col-customer">${sample.customer}</td>
                                     <td class="col-rsm">${sample.rsm}</td>
-                                    <td class="col-opportunity">${sample.opportunity_number}</td>
                                     <td class="col-description">${sample.description}</td>
                                     <td class="col-location">
                                         <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
@@ -791,11 +791,11 @@
                     <td class="col-select">
                         <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
                     </td>
+                    <td class="col-opportunity">${sample.opportunity_number}</td>
                     <td class="col-id">${sample.unique_id}</td>
                     <td class="col-date">${sample.date_received}</td>
                     <td class="col-customer">${sample.customer}</td>
                     <td class="col-rsm">${sample.rsm}</td>
-                    <td class="col-opportunity">${sample.opportunity_number}</td>
                     <td class="col-description">${sample.description}</td>
                     <td class="col-location">
                         <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
