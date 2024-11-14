@@ -15,6 +15,9 @@ import base64
 from io import BytesIO
 import os
 from django.conf import settings
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image
 from django.urls import reverse
 
 
@@ -145,13 +148,33 @@ def upload_files(request):
         image_urls = []
 
         for file in files:
-            # Validate file type (ensure it's an image)
+            # Validate file type
             if not file.content_type.startswith('image/'):
                 return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
 
-            # Save the image to the media directory
+            # Open the uploaded image
+            image = Image.open(file)
+            image = image.convert('RGB')  # Ensure image is in RGB mode
+
+            # Create a thumbnail
+            max_size = (200, 200)  # Set the desired thumbnail size
+            image.thumbnail(max_size, Image.ANTIALIAS)
+
+            # Save the thumbnail to an in-memory file
+            thumb_io = BytesIO()
+            image.save(thumb_io, format='JPEG', quality=85)
+            thumb_file = InMemoryUploadedFile(
+                thumb_io,
+                None,
+                f"thumb_{file.name}",
+                'image/jpeg',
+                thumb_io.getbuffer().nbytes,
+                None
+            )
+
+            # Save the thumbnail image to the model
             sample_image = SampleImage(sample=sample)
-            sample_image.image.save(file.name, file)
+            sample_image.image.save(f"thumb_{file.name}", thumb_file)
             sample_image.save()
 
             # Collect the URL to return to the client

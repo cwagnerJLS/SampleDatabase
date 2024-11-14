@@ -42,7 +42,7 @@ class Sample(models.Model):
 
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='sample_images/')
+    image = models.ImageField(upload_to='sample_thumbnails/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
