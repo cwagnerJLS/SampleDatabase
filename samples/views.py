@@ -18,6 +18,7 @@ from django.conf import settings
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
+from django.core.files.base import ContentFile
 from django.urls import reverse
 
 
@@ -158,27 +159,27 @@ def upload_files(request):
 
             # Create a thumbnail
             max_size = (200, 200)  # Set the desired thumbnail size
-            image.thumbnail(max_size, Image.ANTIALIAS)
+            image.thumbnail(max_size, resample=Image.LANCZOS)
 
             # Save the thumbnail to an in-memory file
             thumb_io = BytesIO()
             image.save(thumb_io, format='JPEG', quality=85)
-            thumb_file = InMemoryUploadedFile(
-                thumb_io,
-                None,
-                f"thumb_{file.name}",
-                'image/jpeg',
-                thumb_io.getbuffer().nbytes,
-                None
-            )
+            thumb_io.seek(0)  # Reset file pointer to the beginning
 
-            # Save the thumbnail image to the model
+            # Create a ContentFile from the in-memory file
+            image_content = ContentFile(thumb_io.read())
+
+            # Save the thumbnail image to the model with a unique filename
             sample_image = SampleImage(sample=sample)
-            sample_image.image.save(f"thumb_{file.name}", thumb_file)
+            filename = f"thumb_{file.name}"
+            sample_image.image.save(filename, image_content)
             sample_image.save()
 
             # Collect the URL to return to the client
             image_urls.append(sample_image.image.url)
+        except Exception as e:
+            logger.error(f"Error processing file {file.name}: {e}")
+            return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
 
         return JsonResponse({'status': 'success', 'message': 'Files uploaded successfully.', 'image_urls': image_urls})
 

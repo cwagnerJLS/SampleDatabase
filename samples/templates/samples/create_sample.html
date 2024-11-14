@@ -898,7 +898,11 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An unexpected error occurred.');
+                if (error.error) {
+                    alert('Error: ' + error.error);
+                } else {
+                    alert('An unexpected error occurred.');
+                }
             });
         }
 
