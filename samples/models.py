@@ -39,3 +39,11 @@ class Sample(models.Model):
 
     def __str__(self):
         return f"Sample {self.unique_id} - {self.customer}"
+
+class SampleImage(models.Model):
+    sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='sample_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for Sample {self.sample.unique_id}"
