@@ -187,7 +187,28 @@
             background-color: grey;
             border-color: grey;
         }
-        /* Thumbnails styling */
+        /* Style for group rows */
+        .group-row {
+            background-color: #e6e6e6;
+            font-weight: bold;
+        }
+
+        .group-row button.expand-button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Indent the grouped rows for better visual hierarchy */
+        .grouped-row td {
+            padding-left: 20px;
+        }
+
+        /* Adjust the colspan to align the table cells correctly */
+        .group-row td[colspan="7"] {
+            text-align: left;
+        }
         #thumbnailsContainer img {
             width: 100px;
             height: 100px;
@@ -737,13 +758,20 @@
                 const tr = table.getElementsByTagName('tr');
 
                 for (let i = 2; i < tr.length; i++) { // Start from 2 to skip header rows
-                    const tdId = tr[i].getElementsByTagName('td')[1];
-                    const tdDate = tr[i].getElementsByTagName('td')[2];
-                    const tdCustomer = tr[i].getElementsByTagName('td')[3];
-                    const tdRsm = tr[i].getElementsByTagName('td')[4];
-                    const tdOpportunity = tr[i].getElementsByTagName('td')[5];
-                    const tdDescription = tr[i].getElementsByTagName('td')[6];
-                    const tdLocation = tr[i].getElementsByTagName('td')[7];
+                    const row = tr[i];
+
+                    // Skip group rows (they will be handled later)
+                    if (row.classList.contains('group-row')) {
+                        continue;
+                    }
+
+                    const tdId = row.getElementsByTagName('td')[1];
+                    const tdDate = row.getElementsByTagName('td')[2];
+                    const tdCustomer = row.getElementsByTagName('td')[3];
+                    const tdRsm = row.getElementsByTagName('td')[4];
+                    const tdOpportunity = row.getElementsByTagName('td')[5];
+                    const tdDescription = row.getElementsByTagName('td')[6];
+                    const tdLocation = row.getElementsByTagName('td')[7];
 
                     if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
                         const idValue = tdId.textContent || tdId.innerText;
@@ -763,10 +791,27 @@
                             descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
                             locationValue.toLowerCase().indexOf(locationFilter) > -1
                         ) {
-                            tr[i].style.display = '';
+                            row.style.display = '';
+                            // Mark the group as needing to be shown
+                            const oppNum = row.querySelector('.col-opportunity').textContent;
+                            groupsToShow.add(oppNum);
                         } else {
-                            tr[i].style.display = 'none';
+                            row.style.display = 'none';
                         }
+                    }
+                }
+
+                // Show or hide group rows based on whether they have visible samples
+                const groupRows = document.querySelectorAll('.group-row');
+                groupRows.forEach(groupRow => {
+                    const oppNum = groupRow.querySelector('.col-opportunity').textContent;
+                    if (groupsToShow.has(oppNum)) {
+                        groupRow.style.display = '';
+                        // Optionally collapse groups without matching samples
+                        const expandButton = groupRow.querySelector('.expand-button');
+                        expandButton.textContent = '-'; // Ensure the group is expanded
+                    } else {
+                        groupRow.style.display = 'none';
                     }
                 }
             };
@@ -785,35 +830,137 @@
             updateSelectOptions(document.getElementById('opportunity_number'), 'Opportunity #', excelData);
 
             // Load existing samples into the table
+            // Group samples by 'opportunity_number'
+            const groupedSamples = {};
             samples.forEach(sample => {
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td class="col-select">
-                        <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
-                    </td>
-                    <td class="col-opportunity">${sample.opportunity_number}</td>
-                    <td class="col-id">${sample.unique_id}</td>
-                    <td class="col-date">${sample.date_received}</td>
-                    <td class="col-customer">${sample.customer}</td>
-                    <td class="col-rsm">${sample.rsm}</td>
-                    <td class="col-description">${sample.description}</td>
-                    <td class="col-location">
-                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
-                            <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
-                            <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                            <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                            <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                            <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                            <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
-                            <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
-                        </select>
-                    </td>
-                    <td class="col-pictures">
-                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
-                    </td>
-                `;
-                document.querySelector('#samplesTable tbody').appendChild(newRow);
+                const oppNum = sample.opportunity_number;
+                if (!groupedSamples[oppNum]) {
+                    groupedSamples[oppNum] = [];
+                }
+                groupedSamples[oppNum].push(sample);
             });
+
+            // Clear the existing table body
+            const tableBody = document.querySelector('#samplesTable tbody');
+            tableBody.innerHTML = '';
+
+            // Iterate over each group
+            Object.keys(groupedSamples).forEach(oppNum => {
+                const group = groupedSamples[oppNum];
+
+                if (group.length === 1) {
+                    // If only one entry, display it as usual
+                    const sample = group[0];
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td class="col-select">
+                            <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
+                        </td>
+                        <td class="col-opportunity">${sample.opportunity_number}</td>
+                        <td class="col-id">${sample.unique_id}</td>
+                        <td class="col-date">${sample.date_received}</td>
+                        <td class="col-customer">${sample.customer}</td>
+                        <td class="col-rsm">${sample.rsm}</td>
+                        <td class="col-description">${sample.description}</td>
+                        <td class="col-location">
+                            <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
+                                <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
+                                <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
+                                <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
+                                <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
+                                <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
+                                <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
+                                <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
+                            </select>
+                        </td>
+                        <td class="col-pictures">
+                            <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
+                } else {
+                    // Create a group row without a select box and with a '+' button
+                    const groupRow = document.createElement('tr');
+                    groupRow.classList.add('group-row');
+                    groupRow.innerHTML = `
+                        <td class="col-select">
+                            <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
+                        </td>
+                        <td class="col-opportunity">${oppNum}</td>
+                        <td colspan="7"> <!-- Adjust colspan to span remaining columns -->
+                            (${group.length} entries)
+                        </td>
+                    `;
+                    tableBody.appendChild(groupRow);
+
+                    // Add rows for each sample in the group, initially hidden
+                    group.forEach(sample => {
+                        const sampleRow = document.createElement('tr');
+                        sampleRow.classList.add('grouped-row', `group-${oppNum}`);
+                        sampleRow.style.display = 'none'; // Initially hidden
+                        sampleRow.innerHTML = `
+                            <td class="col-select">
+                                <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
+                            </td>
+                            <td class="col-opportunity">${sample.opportunity_number}</td>
+                            <td class="col-id">${sample.unique_id}</td>
+                            <td class="col-date">${sample.date_received}</td>
+                            <td class="col-customer">${sample.customer}</td>
+                            <td class="col-rsm">${sample.rsm}</td>
+                            <td class="col-description">${sample.description}</td>
+                            <td class="col-location">
+                                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
+                                    <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
+                                    <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
+                                    <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
+                                    <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
+                                    <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
+                                    <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
+                                    <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
+                                </select>
+                            </td>
+                            <td class="col-pictures">
+                                <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(sampleRow);
+                    });
+                }
+            });
+        });
+
+        // Event delegation to handle clicks on expand/collapse buttons
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('expand-button')) {
+                const button = event.target;
+                const oppNum = button.getAttribute('data-opp-num');
+                const isExpanded = button.textContent === '-';
+
+                // Toggle the button text
+                button.textContent = isExpanded ? '+' : '-';
+
+                // Show or hide the grouped rows
+                const groupedRows = document.querySelectorAll(`.group-${oppNum}`);
+                groupedRows.forEach(row => {
+                    row.style.display = isExpanded ? 'none' : '';
+                });
+            }
+        });
+
+        // Adjust the 'Select All' functionality to exclude group rows
+        selectAllSelectCheckbox.addEventListener('change', function() {
+            const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
+            visibleSampleRows.forEach(function(row) {
+                const checkbox = row.querySelector('input[name="select_checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = this.checked;
+                    if (this.checked) {
+                        row.classList.add('selected-row');
+                    } else {
+                        row.classList.remove('selected-row');
+                    }
+                }
+            }, this);
         });
 
         // Image Upload and Thumbnails Display Functions
