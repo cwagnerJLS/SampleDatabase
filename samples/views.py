@@ -20,6 +20,10 @@ from django.urls import reverse
 # Configure logging
 logger = logging.getLogger(__name__)
 
+def create_sample(request):
+    # Placeholder function for create_sample
+    return JsonResponse({'status': 'success', 'message': 'create_sample function is a placeholder.'})
+
 @csrf_exempt
 def upload_files(request):
     if request.method == 'POST' and request.FILES:
