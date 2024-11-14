@@ -58,7 +58,7 @@
         .modal {
             display: none;
             position: fixed;
-            z-index: 1;
+            z-index: 2;
             left: 0;
             top: 0;
             width: 100%;
@@ -72,8 +72,8 @@
             margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 50%;
-            max-width: 300px;
+            width: 80%;
+            max-width: 600px;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             display: flex;
@@ -107,7 +107,7 @@
             border-radius: 5px;
         }
         .modal-content button {
-            width: 130px; /* Set to the width you want for modal buttons */
+            width: 130px;
             padding: 10px;
             border: none;
             background-color: #007bff;
@@ -156,7 +156,7 @@
         .col-date { width: 80px; }
         .col-customer { width: 300px; }
         .col-rsm { width: 120px; }
-        .col-opportunity { width: 80px; } /* Adjusted width */
+        .col-opportunity { width: 80px; }
         .col-description { width: auto; }
         .col-location { width: 150px; }
         .col-location select {
@@ -164,17 +164,17 @@
             width: 140px;
         }
         .col-pictures {
-            width: 130px; /* Adjusted width to match button */
+            width: 130px;
         }
         .button-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Two equal columns */
-            gap: 10px; /* Space between buttons */
-            justify-content: center; /* Center the grid within the container */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            justify-content: center;
             margin-bottom: 20px;
         }
         .button-grid .toggle-button {
-            width: 130px; /* Ensure consistent width */
+            width: 130px;
             padding: 10px;
             height: 34px;
             background-color: white;
@@ -187,43 +187,14 @@
             background-color: grey;
             border-color: grey;
         }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            padding-top: 60px;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 50%;
-            max-width: 300px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            align-self: flex-end;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
+        /* Thumbnails styling */
+        #thumbnailsContainer img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -233,16 +204,6 @@
         const csrftoken = '{{ csrf_token }}';
     </script>
 
-    <!-- Add this modal structure at the end of your body tag -->
-    <div id="uploadModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeUploadModal()">&times;</span>
-            <div class="button-container">
-                <button type="button" onclick="uploadPicture()">Upload</button>
-                <button type="button" onclick="closeUploadModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
     <form method="POST" id="sampleForm">
         <!-- Include CSRF token in the form -->
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -292,11 +253,11 @@
                 <th class="col-opportunity">Opp Number</th>
                 <th class="col-description">Description</th>
                 <th class="col-location">Location</th>
-                <th class="col-pictures">Pictures</th> <!-- New Pictures column -->
+                <th class="col-pictures">Pictures</th>
             </tr>
             <tr>
                 <th class="col-select">
-                    <input type="checkbox" id="select-all-select"> <!-- "Select All" Checkbox for the "Select" column -->
+                    <input type="checkbox" id="select-all-select">
                 </th>
                 <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
@@ -308,35 +269,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for sample in samples %}
-            {% if sample.date_received and sample.customer and sample.rsm and sample.opportunity_number and sample.description %}
-            <tr>
-                <td class="col-select">
-                    <input type="checkbox" name="select_checkbox" value="{{ sample.unique_id }}">
-                </td>
-                <td class="col-id">{{ sample.unique_id }}</td>
-                <td class="col-date">{{ sample.date_received }}</td>
-                <td class="col-customer">{{ sample.customer }}</td>
-                <td class="col-rsm">{{ sample.rsm }}</td>
-                <td class="col-opportunity">{{ sample.opportunity_number }}</td>
-                <td class="col-description">{{ sample.description }}</td>
-                <td class="col-location">
-                    <select data-sample-id="{{ sample.unique_id }}" onchange="updateSampleLocation({{ sample.unique_id }}, this.value)">
-                        <option value="" {% if not sample.storage_location %}selected{% endif %}>Choose a location</option>
-                        <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
-                        <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
-                        <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
-                        <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
-                        <option value="Dry Food Storage" {% if sample.storage_location == "Dry Food Storage" %}selected{% endif %}>Dry Food Storage</option>
-                        <option value="Empty Case Storage" {% if sample.storage_location == "Empty Case Storage" %}selected{% endif %}>Empty Case Storage</option>
-                    </select>
-                </td>
-                <td class="col-pictures">
-                    <button type="button" onclick="openFileDialog({{ sample.unique_id }})">Upload/View</button>
-                </td>
-            </tr>
-            {% endif %}
-            {% endfor %}
+            <!-- Existing samples will be loaded via JavaScript -->
         </tbody>
     </table>
 
@@ -355,16 +288,30 @@
         </div>
     </div>
 
+    <!-- The Upload/View Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadModal()">&times;</span>
+            <div class="button-container">
+                <button type="button" onclick="selectFiles()">Upload</button>
+                <button type="button" onclick="closeUploadModal()">Cancel</button>
+            </div>
+            <!-- Thumbnails Container -->
+            <div id="thumbnailsContainer" style="display: flex; flex-wrap: wrap; margin-top: 20px;"></div>
+        </div>
+    </div>
+
     <!-- JavaScript code -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // Initialize variables
             const csrftoken = '{{ csrf_token }}';
             const selectAllSelectCheckbox = document.getElementById('select-all-select');
-            const excelData = JSON.parse('{{ excel_data|escapejs }}');
-            const samples = JSON.parse('{{ samples|escapejs }}');
+            const excelData = {{ excel_data|safe }};
+            const samples = {{ samples|safe }};
             const todayDate = new Date().toISOString().split('T')[0];
             let isPopulating = false; // Flag to prevent recursive triggering
+            let currentSampleId = null; // For image uploads
 
             // Initialize datepicker
             $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).val(todayDate);
@@ -392,7 +339,7 @@
 
             // Event listener for the print button
             document.getElementById('print-all-button').addEventListener('click', function() {
-                submitPrint();  // Directly call submitPrint
+                submitPrint();
             });
 
             // Submit Print function
@@ -637,7 +584,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView({{ sample.unique_id }})">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
@@ -696,27 +643,6 @@
                 } else {
                     document.getElementById('myModal').style.display = "block";
                 }
-            };
-
-            // Clear Database function (if needed)
-            window.clearDatabase = function() {
-                const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', csrftoken);
-                formData.append('clear_db', 'true');
-
-                fetch("{% url 'create_sample' %}", {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        document.querySelector('#samplesTable tbody').innerHTML = '';
-                        console.log('Database cleared successfully.');
-                    } else {
-                        console.error('Error clearing database:', data.error);
-                    }
-                });
             };
 
             // Close Modal function
@@ -853,11 +779,6 @@
                 document.getElementById('description').value = ''; // Clear the description field
             };
 
-            // Close Print Modal function (if needed)
-            window.closePrintModal = function() {
-                document.getElementById('printModal').style.display = "none";
-            };
-
             // Initialize dropdowns with all options
             updateSelectOptions(document.getElementById('customer'), 'Customer', excelData);
             updateSelectOptions(document.getElementById('rsm'), 'RSM', excelData);
@@ -878,14 +799,13 @@
                     <td class="col-description">${sample.description}</td>
                     <td class="col-location">
                         <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
-                            <option value="Choose a location" ${sample.storage_location === "Choose a location" ? "selected" : ""}>Choose a location</option>
+                            <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
                             <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
                             <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
                             <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
                             <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
                             <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
                             <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
-
                         </select>
                     </td>
                     <td class="col-pictures">
@@ -896,11 +816,37 @@
             });
         });
 
-        function openFileDialog(sampleId) {
+        // Image Upload and Thumbnails Display Functions
+
+        function handlePictureUploadView(sampleId) {
+            currentSampleId = sampleId;
+            // Open the modal
+            document.getElementById('uploadModal').style.display = 'block';
+
+            // Clear previous thumbnails
+            document.getElementById('thumbnailsContainer').innerHTML = '';
+
+            // Fetch existing images for this sample and display thumbnails
+            fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayThumbnails(data.image_urls);
+                } else {
+                    console.error('Error fetching images:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function selectFiles() {
             // Create a hidden file input element
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.multiple = true;
+            fileInput.accept = 'image/*';
             fileInput.style.display = 'none';
 
             // Append the file input to the body
@@ -913,7 +859,7 @@
             fileInput.addEventListener('change', function() {
                 const files = fileInput.files;
                 if (files.length > 0) {
-                    uploadFiles(files, sampleId);
+                    uploadFiles(files, currentSampleId);
                 }
                 // Remove the file input after use
                 document.body.removeChild(fileInput);
@@ -932,12 +878,20 @@
                 body: formData,
                 headers: {
                     'X-CSRFToken': csrftoken
-                }
+                },
+                credentials: 'same-origin'  // Include cookies in the request
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
                     alert('Files uploaded successfully.');
+                    // Refresh the thumbnails
+                    handlePictureUploadView(sampleId);
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -945,54 +899,23 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('An unexpected error occurred.');
+            });
+        }
+
+        function displayThumbnails(imageUrls) {
+            const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+            // Clear existing thumbnails
+            thumbnailsContainer.innerHTML = '';
+            imageUrls.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                thumbnailsContainer.appendChild(img);
             });
         }
 
         function closeUploadModal() {
-            // Close the modal
             document.getElementById('uploadModal').style.display = 'none';
-        }
-
-        function uploadPicture() {
-            // Implement the logic to handle picture upload
-            const fileInput = document.getElementById('fileInput');
-            const files = fileInput.files;
-
-            if (files.length === 0) {
-                alert('Please select a file to upload.');
-                return;
-            }
-
-            const formData = new FormData();
-            for (let i = 0; i < files.length; i++) {
-                formData.append('files', files[i]);
-            }
-
-            fetch("{% url 'upload_files' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrftoken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('Files uploaded successfully.');
-                    closeUploadModal();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An unexpected error occurred.');
-            });
-        }
-
-        function handlePictureUploadView(sampleId) {
-            // Open the modal
-            document.getElementById('uploadModal').style.display = 'block';
+            currentSampleId = null;
         }
     </script>
 </body>
