@@ -148,35 +148,36 @@ def upload_files(request):
 
         image_urls = []
 
-        for file in files:
-            # Validate file type
-            if not file.content_type.startswith('image/'):
-                return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
+        try:
+            for file in files:
+                # Validate file type
+                if not file.content_type.startswith('image/'):
+                    return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
 
-            # Open the uploaded image
-            image = Image.open(file)
-            image = image.convert('RGB')  # Ensure image is in RGB mode
+                # Open the uploaded image
+                image = Image.open(file)
+                image = image.convert('RGB')  # Ensure image is in RGB mode
 
-            # Create a thumbnail
-            max_size = (200, 200)  # Set the desired thumbnail size
-            image.thumbnail(max_size, resample=Image.LANCZOS)
+                # Create a thumbnail
+                max_size = (200, 200)  # Set the desired thumbnail size
+                image.thumbnail(max_size, resample=Image.LANCZOS)
 
-            # Save the thumbnail to an in-memory file
-            thumb_io = BytesIO()
-            image.save(thumb_io, format='JPEG', quality=85)
-            thumb_io.seek(0)  # Reset file pointer to the beginning
+                # Save the thumbnail to an in-memory file
+                thumb_io = BytesIO()
+                image.save(thumb_io, format='JPEG', quality=85)
+                thumb_io.seek(0)  # Reset file pointer to the beginning
 
-            # Create a ContentFile from the in-memory file
-            image_content = ContentFile(thumb_io.read())
+                # Create a ContentFile from the in-memory file
+                image_content = ContentFile(thumb_io.read())
 
-            # Save the thumbnail image to the model with a unique filename
-            sample_image = SampleImage(sample=sample)
-            filename = f"thumb_{file.name}"
-            sample_image.image.save(filename, image_content)
-            sample_image.save()
+                # Save the thumbnail image to the model with a unique filename
+                sample_image = SampleImage(sample=sample)
+                filename = f"thumb_{file.name}"
+                sample_image.image.save(filename, image_content)
+                sample_image.save()
 
-            # Collect the URL to return to the client
-            image_urls.append(sample_image.image.url)
+                # Collect the URL to return to the client
+                image_urls.append(sample_image.image.url)
         except Exception as e:
             logger.error(f"Error processing file {file.name}: {e}")
             return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
