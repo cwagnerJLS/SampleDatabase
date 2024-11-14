@@ -21,8 +21,112 @@ from django.urls import reverse
 logger = logging.getLogger(__name__)
 
 def create_sample(request):
-    # Placeholder function for create_sample
-    return JsonResponse({'status': 'success', 'message': 'create_sample function is a placeholder.'})
+    logger.debug("Entered create_sample view")
+
+    if request.method == 'POST':
+        logger.debug("Processing POST request")
+        try:
+            if 'clear_db' in request.POST:
+                logger.debug("Clearing database")
+                Sample.objects.all().delete()
+                return JsonResponse({'status': 'success', 'message': 'Database cleared'})
+
+            # Retrieve data from POST request
+            customer = request.POST.get('customer')
+            rsm = request.POST.get('rsm')
+            opportunity_number = request.POST.get('opportunity_number')
+            description = request.POST.get('description')
+            date_received = request.POST.get('date_received')
+            quantity = request.POST.get('quantity')
+
+            # Check for missing data
+            if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
+                logger.error("Missing data in POST request")
+                return JsonResponse({'status': 'error', 'error': 'Missing data'})
+
+            try:
+                quantity = int(quantity)
+                date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
+            except ValueError as e:
+                logger.error(f"Invalid data format: {e}")
+                return JsonResponse({'status': 'error', 'error': 'Invalid data format'})
+
+            location = "Choose a location"
+            logger.debug(f"Received data: customer={customer}, rsm={rsm}, opportunity_number={opportunity_number}, "
+                         f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
+
+            # Create sample entries
+            created_samples = []
+            for i in range(quantity):
+                sample = Sample.objects.create(
+                    date_received=date_received,
+                    customer=customer,
+                    rsm=rsm,
+                    opportunity_number=opportunity_number,
+                    description=description,
+                    storage_location=location,
+                    quantity=1  # Each entry represents a single unit
+                )
+                created_samples.append(sample)
+
+            logger.debug(f"Created samples: {created_samples}")
+            return JsonResponse({
+                'status': 'success',
+                'created_samples': [
+                    {
+                        'unique_id': sample.unique_id,
+                        'date_received': sample.date_received.strftime('%Y-%m-%d'),
+                        'customer': sample.customer,
+                        'rsm': sample.rsm,
+                        'opportunity_number': sample.opportunity_number,
+                        'description': sample.description,
+                        'location': sample.storage_location
+                    } for sample in created_samples
+                ]
+            })
+
+        except Exception as e:
+            logger.error(f"Error in create_sample view: {e}")
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+    logger.debug("Rendering create_sample page")
+
+    try:
+        # Load the Excel file
+        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
+        if not os.path.exists(excel_file):
+            logger.error(f"Excel file not found at {excel_file}")
+            return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
+
+        df = pd.read_excel(excel_file)
+
+        # Get unique customers and RSMs
+        unique_customers = sorted(df['Customer'].dropna().unique())
+        unique_rsms = sorted(df['RSM'].dropna().unique())
+
+        # Convert DataFrame to JSON serializable format
+        excel_data = df.to_dict(orient='records')
+
+        # Load saved samples
+        samples = list(Sample.objects.all().values())
+
+        # Convert date_received to string format for JSON serialization
+        for sample in samples:
+            if isinstance(sample['date_received'], datetime):
+                sample['date_received'] = sample['date_received'].strftime('%Y-%m-%d')
+
+        logger.debug(f"Samples List: {samples}")
+
+        return render(request, 'samples/create_sample.html', {
+            'unique_customers': unique_customers,
+            'unique_rsms': unique_rsms,
+            'excel_data': json.dumps(excel_data, cls=DjangoJSONEncoder),
+            'samples': json.dumps(samples, cls=DjangoJSONEncoder)
+        })
+
+    except Exception as e:
+        logger.error(f"Error rendering create_sample page: {e}")
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
 @csrf_exempt
 def upload_files(request):
