@@ -238,6 +238,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeUploadModal()">&times;</span>
             <div class="button-container">
+                <input type="file" id="fileInput" multiple>
                 <button type="button" onclick="uploadPicture()">Upload</button>
                 <button type="button" onclick="closeUploadModal()">Cancel</button>
             </div>
@@ -908,7 +909,39 @@
 
         function uploadPicture() {
             // Implement the logic to handle picture upload
-            alert('Upload feature is not yet implemented.');
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            fetch("{% url 'upload_files' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Files uploaded successfully.');
+                    closeUploadModal();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            });
         }
 
         function handlePictureUploadView(sampleId) {

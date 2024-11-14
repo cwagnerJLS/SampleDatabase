@@ -12,4 +12,5 @@ urlpatterns = [
     path('delete_samples/', views.delete_samples, name='delete_samples'),
     path('handle_print_request/', views.handle_print_request, name='handle_print_request'),
     path('manage_sample/<int:sample_id>/', views.manage_sample, name='manage_sample'),
+    path('upload_files/', views.upload_files, name='upload_files'),
 ]

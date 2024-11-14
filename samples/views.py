@@ -1,9 +1,12 @@
+import os
+import subprocess
 import logging
 import json
 import random
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
 from .models import Sample
 import pandas as pd
 from django.core.serializers.json import DjangoJSONEncoder
@@ -17,7 +20,31 @@ from django.urls import reverse
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def create_sample(request):
+@csrf_exempt
+def upload_files(request):
+    if request.method == 'POST' and request.FILES:
+        files = request.FILES.getlist('files')
+        remote_folder = 'Sample Documentation'  # Define your remote folder
+
+        for file in files:
+            # Save the file temporarily
+            file_path = os.path.join(settings.BASE_DIR, 'temp', file.name)
+            with open(file_path, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+
+            # Upload the file using rclone
+            try:
+                subprocess.run(['rclone', 'copy', file_path, f'TestLabSamples:{remote_folder}'], check=True)
+                os.remove(file_path)  # Remove the file after upload
+            except subprocess.CalledProcessError as e:
+                return JsonResponse({'status': 'error', 'error': f'Error uploading file: {e}'})
+            except FileNotFoundError:
+                return JsonResponse({'status': 'error', 'error': 'Make sure rclone is installed and accessible from your PATH.'})
+
+        return JsonResponse({'status': 'success', 'message': 'Files uploaded successfully.'})
+
+    return JsonResponse({'status': 'error', 'error': 'Invalid request method.'})
     logger.debug("Entered create_sample view")
 
     if request.method == 'POST':
