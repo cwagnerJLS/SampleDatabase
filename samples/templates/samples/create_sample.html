@@ -594,7 +594,7 @@
                                     <td class="col-rsm">${sample.rsm}</td>
                                     <td class="col-description">${sample.description}</td>
                                     <td class="col-location">
-                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
+                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
                                             <option value="Choose a location" ${sample.location === "Choose a location" ? "selected" : ""}>Choose a location</option>
                                             <option value="Test Lab Fridge">Test Lab Fridge</option>
                                             <option value="Test Lab Freezer">Test Lab Freezer</option>
@@ -605,7 +605,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
