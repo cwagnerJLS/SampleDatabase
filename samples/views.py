@@ -175,7 +175,7 @@ def upload_files(request):
                 # Create a ContentFile from the in-memory file
                 image_content = ContentFile(thumb_io.read())
 
-                # Generate the filename with ID and index number
+                # Generate the filename with ID and index number in parentheses
                 filename = f"{sample.unique_id}({image_count}).jpg"
 
                 # Save the thumbnail image to the model
