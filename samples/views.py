@@ -366,7 +366,7 @@ def get_sample_images(request):
     try:
         sample = Sample.objects.get(unique_id=sample_id)
         images = sample.images.all()
-        image_urls = [image.image.url for image in images]
+        image_urls = [request.build_absolute_uri(image.image.url) for image in images]
         return JsonResponse({'status': 'success', 'image_urls': image_urls})
     except Sample.DoesNotExist:
         return JsonResponse({'status': 'error', 'error': 'Sample not found'})
