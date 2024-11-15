@@ -220,9 +220,11 @@
     </style>
 </head>
 <body>
-    <!-- Include CSRF token for JavaScript -->
+    <!-- Include CSRF token and excelData for JavaScript -->
     <script type="text/javascript">
         const csrftoken = '{{ csrf_token }}';
+        const excelData = {{ excel_data|safe }};
+        const samples = {{ samples|safe }};
     </script>
 
     <form method="POST" id="sampleForm">
