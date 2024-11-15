@@ -795,47 +795,102 @@
                 for (let i = 2; i < tr.length; i++) { // Start from 2 to skip header rows
                     const row = tr[i];
 
-                    // Skip group rows (they will be handled later)
+                    // Check if the row is a group row
                     if (row.classList.contains('group-row')) {
-                        continue;
-                    }
+                        const oppNum = row.querySelector('.col-opportunity').textContent;
+                        const sanitizedOppNum = sanitizeOppNum(oppNum);
+                        const expandButton = row.querySelector('.expand-button');
+                        const isExpanded = expandButton.textContent === '-';
 
-                    const tdOpportunity = row.getElementsByTagName('td')[1];
-                    const tdCustomer = row.getElementsByTagName('td')[2];
-                    const tdRsm = row.getElementsByTagName('td')[3];
-                    const tdDate = row.getElementsByTagName('td')[4];
-                    const tdDescription = row.getElementsByTagName('td')[5];
-                    const tdId = row.getElementsByTagName('td')[6];
-                    const tdLocation = row.getElementsByTagName('td')[7];
+                        // Decide whether to display the group row based on if any of its children match the filter
+                        const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                        let groupHasMatch = false;
 
-                    if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
-                        const idValue = tdId.textContent || tdId.innerText;
-                        const dateValue = tdDate.textContent || tdDate.innerText;
-                        const customerValue = tdCustomer.textContent || tdCustomer.innerText;
-                        const rsmValue = tdRsm.textContent || tdRsm.innerText;
-                        const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
-                        const descriptionValue = tdDescription.textContent || tdDescription.innerText;
-                        const locationValue = tdLocation.textContent || tdLocation.innerText;
+                        groupedRows.forEach(childRow => {
+                            const tdOpportunity = childRow.getElementsByTagName('td')[1];
+                            const tdCustomer = childRow.getElementsByTagName('td')[2];
+                            const tdRsm = childRow.getElementsByTagName('td')[3];
+                            const tdDate = childRow.getElementsByTagName('td')[4];
+                            const tdDescription = childRow.getElementsByTagName('td')[5];
+                            const tdId = childRow.getElementsByTagName('td')[6];
+                            const tdLocation = childRow.getElementsByTagName('td')[7];
 
-                        if (
-                            idValue.toLowerCase().indexOf(idFilter) > -1 &&
-                            dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
-                            customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
-                            rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
-                            opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
-                            descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
-                            locationValue.toLowerCase().indexOf(locationFilter) > -1
-                        ) {
+                            if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
+                                const idValue = tdId.textContent || tdId.innerText;
+                                const dateValue = tdDate.textContent || tdDate.innerText;
+                                const customerValue = tdCustomer.textContent || tdCustomer.innerText;
+                                const rsmValue = tdRsm.textContent || tdRsm.innerText;
+                                const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
+                                const descriptionValue = tdDescription.textContent || tdDescription.innerText;
+                                const locationValue = tdLocation.textContent || tdLocation.innerText;
+
+                                if (
+                                    idValue.toLowerCase().indexOf(idFilter) > -1 &&
+                                    dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
+                                    customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
+                                    rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
+                                    opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
+                                    descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
+                                    locationValue.toLowerCase().indexOf(locationFilter) > -1
+                                ) {
+                                    groupHasMatch = true;
+
+                                    // Show or hide child rows based on group expansion state
+                                    if (isExpanded) {
+                                        childRow.style.display = '';
+                                    } else {
+                                        childRow.style.display = 'none';
+                                    }
+                                } else {
+                                    childRow.style.display = 'none';
+                                }
+                            }
+                        });
+
+                        if (groupHasMatch) {
                             row.style.display = '';
-                            // Mark the group as needing to be shown
-                            const oppNum = row.querySelector('.col-opportunity').textContent;
-                            groupsToShow.add(oppNum);
                         } else {
                             row.style.display = 'none';
                         }
+
+                        continue; // Move to the next row
+                    }
+
+                    // Process rows that are not part of a group (if any)
+                    if (!row.classList.contains('grouped-row')) {
+                        const tdOpportunity = row.getElementsByTagName('td')[1];
+                        const tdCustomer = row.getElementsByTagName('td')[2];
+                        const tdRsm = row.getElementsByTagName('td')[3];
+                        const tdDate = row.getElementsByTagName('td')[4];
+                        const tdDescription = row.getElementsByTagName('td')[5];
+                        const tdId = row.getElementsByTagName('td')[6];
+                        const tdLocation = row.getElementsByTagName('td')[7];
+
+                        if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
+                            const idValue = tdId.textContent || tdId.innerText;
+                            const dateValue = tdDate.textContent || tdDate.innerText;
+                            const customerValue = tdCustomer.textContent || tdCustomer.innerText;
+                            const rsmValue = tdRsm.textContent || tdRsm.innerText;
+                            const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
+                            const descriptionValue = tdDescription.textContent || tdDescription.innerText;
+                            const locationValue = tdLocation.textContent || tdLocation.innerText;
+
+                            if (
+                                idValue.toLowerCase().indexOf(idFilter) > -1 &&
+                                dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
+                                customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
+                                rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
+                                opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
+                                descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
+                                locationValue.toLowerCase().indexOf(locationFilter) > -1
+                            ) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        }
                     }
                 }
-
             };
 
             // Reset Form function
