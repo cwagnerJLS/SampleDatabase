@@ -1,5 +1,16 @@
+import os
+from django.core.files.storage import FileSystemStorage
+from django.utils.deconstruct import deconstructible
+import re
 import random
 from django.db import models
+
+@deconstructible
+class CustomFileSystemStorage(FileSystemStorage):
+    def get_valid_name(self, name):
+        # Allow letters, digits, hyphens, underscores, dots, and parentheses
+        s = str(name).strip().replace(' ', '_')
+        return re.sub(r'(?u)[^-\w.()]+', '', s)
 
 def generate_unique_id():
     return random.randint(1000, 9999)
@@ -48,7 +59,7 @@ def get_image_upload_path(instance, filename):
 
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=get_image_upload_path)
+    image = models.ImageField(upload_to=get_image_upload_path, storage=CustomFileSystemStorage())
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
