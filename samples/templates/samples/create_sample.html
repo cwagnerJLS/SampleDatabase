@@ -844,7 +844,13 @@
                         groupRow.style.display = '';
                         // Optionally collapse groups without matching samples
                         const expandButton = groupRow.querySelector('.expand-button');
-                        expandButton.textContent = '-'; // Ensure the group is expanded
+                        expandButton.textContent = '+'; // Ensure the group is collapsed
+
+                        // Hide the grouped rows
+                        const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                        groupedRows.forEach(row => {
+                            row.style.display = 'none';
+                        });
                     } else {
                         groupRow.style.display = 'none';
                     }
