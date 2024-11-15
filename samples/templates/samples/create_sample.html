@@ -417,6 +417,17 @@
                 }
             };
 
+            // Minimize all groups
+            const expandButtons = document.querySelectorAll('.expand-button');
+            expandButtons.forEach(button => {
+                button.textContent = '+';
+                const oppNum = button.getAttribute('data-opp-num');
+                const groupedRows = document.querySelectorAll(`.group-${oppNum}`);
+                groupedRows.forEach(row => {
+                    row.style.display = 'none';
+                });
+            });
+
             // Delete selected entries
             document.getElementById('delete-all-button').addEventListener('click', function() {
                 const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
