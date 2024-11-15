@@ -952,25 +952,24 @@
                     row.style.display = isExpanded ? 'none' : '';
                 });
             }
-        });
-
-        // Adjust the 'Select All' functionality to exclude group rows
-        selectAllSelectCheckbox.addEventListener('change', function() {
-            const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
-            visibleSampleRows.forEach(function(row) {
-                const checkbox = row.querySelector('input[name="select_checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = this.checked;
-                    if (this.checked) {
-                        row.classList.add('selected-row');
-                    } else {
-                        row.classList.remove('selected-row');
+            // Adjust the 'Select All' functionality to exclude group rows
+            selectAllSelectCheckbox.addEventListener('change', function() {
+                const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
+                visibleSampleRows.forEach(function(row) {
+                    const checkbox = row.querySelector('input[name="select_checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = this.checked;
+                        if (this.checked) {
+                            row.classList.add('selected-row');
+                        } else {
+                            row.classList.remove('selected-row');
+                        }
                     }
-                }
-            }, this);
-        });
+                }, this);
+            });
 
-        // Image Upload and Thumbnails Display Functions
+            // Image Upload and Thumbnails Display Functions
+        });
 
         function handlePictureUploadView(sampleId) {
             currentSampleId = sampleId;
