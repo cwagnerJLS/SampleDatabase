@@ -324,11 +324,12 @@
 
     <!-- JavaScript code -->
     <script>
+        // Declare selectAllSelectCheckbox at the global scope
+        const selectAllSelectCheckbox = document.getElementById('select-all-select');
+
         document.addEventListener("DOMContentLoaded", function() {
             // Initialize variables
             const csrftoken = '{{ csrf_token }}';
-            const selectAllSelectCheckbox = document.getElementById('select-all-select');
-            const excelData = {{ excel_data|safe }};
             const samples = {{ samples|safe }};
             const todayDate = new Date().toISOString().split('T')[0];
             let isPopulating = false; // Flag to prevent recursive triggering
