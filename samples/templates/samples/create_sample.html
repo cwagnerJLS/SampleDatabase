@@ -407,7 +407,18 @@
                             });
 
                             // Here you would send this data to your printer
-                        } else {
+                            // For each affected group, check if any entries remain
+                            affectedGroups.forEach(oppNum => {
+                                const remainingRows = document.querySelectorAll(`.group-${oppNum}`);
+                                if (remainingRows.length === 0) {
+                                    // No more entries in the group, remove the group row
+                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${oppNum}"]`);
+                                    if (groupRow) {
+                                        groupRow.parentNode.removeChild(groupRow);
+                                    }
+                                }
+                            });
+                        } else { 
                             console.error('Error generating labels:', data.error);
                             alert(`Error: ${data.error}`);
                         }
@@ -458,6 +469,8 @@
                                 const row = checkbox.closest('tr');
                                 row.parentNode.removeChild(row); // Remove the row from the table
                             });
+                            const oppNum = row.querySelector('.col-opportunity').textContent.trim();
+                            affectedGroups.add(oppNum);
                             selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
                             console.log('Entries deleted successfully.');
                         } else {
@@ -902,6 +915,7 @@
                     // Create a group row without a select box and with a '+' button
                     const groupRow = document.createElement('tr');
                     groupRow.classList.add('group-row');
+                    groupRow.setAttribute('data-opp-num', oppNum);
                     groupRow.innerHTML = `
                         <td class="col-select">
                             <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
