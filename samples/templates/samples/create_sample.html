@@ -864,9 +864,9 @@
                         <td class="col-opportunity">${sample.opportunity_number}</td>
                         <td class="col-customer">${sample.customer}</td>
                         <td class="col-rsm">${sample.rsm}</td>
-                        <td class="col-id">${sample.unique_id}</td>
                         <td class="col-date">${sample.date_received}</td>
                         <td class="col-description">${sample.description}</td>
+                        <td class="col-id">${sample.unique_id}</td>
                         <td class="col-location">
                             <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
                                 <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
