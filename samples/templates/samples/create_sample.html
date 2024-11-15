@@ -327,6 +327,11 @@
 
     <!-- JavaScript code -->
     <script>
+        // Function to sanitize opportunity numbers for use in class names and data attributes
+        function sanitizeOppNum(oppNum) {
+            return oppNum.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
         // Declare selectAllSelectCheckbox at the global scope
         const selectAllSelectCheckbox = document.getElementById('select-all-select');
 
@@ -412,7 +417,7 @@
                                 const remainingRows = document.querySelectorAll(`.group-${oppNum}`);
                                 if (remainingRows.length === 0) {
                                     // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${oppNum}"]`);
+                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
                                     if (groupRow) {
                                         groupRow.parentNode.removeChild(groupRow);
                                     }
@@ -436,8 +441,8 @@
             const expandButtons = document.querySelectorAll('.expand-button');
             expandButtons.forEach(button => {
                 button.textContent = '+';
-                const oppNum = button.getAttribute('data-opp-num');
-                const groupedRows = document.querySelectorAll(`.group-${oppNum}`);
+                const sanitizedOppNum = button.getAttribute('data-opp-num'); // Already sanitized
+                const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
                 groupedRows.forEach(row => {
                     row.style.display = 'none';
                 });
@@ -470,7 +475,8 @@
                                 row.parentNode.removeChild(row); // Remove the row from the table
                             });
                             const oppNum = row.querySelector('.col-opportunity').textContent.trim();
-                            affectedGroups.add(oppNum);
+                            const sanitizedOppNum = sanitizeOppNum(oppNum); // Sanitize oppNum
+                            affectedGroups.add(sanitizedOppNum);
                             selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
                             console.log('Entries deleted successfully.');
                         } else {
@@ -913,9 +919,10 @@
                     tableBody.appendChild(newRow);
                 } else {
                     // Create a group row without a select box and with a '+' button
+                    const sanitizedOppNum = sanitizeOppNum(oppNum); // Sanitize oppNum
                     const groupRow = document.createElement('tr');
                     groupRow.classList.add('group-row');
-                    groupRow.setAttribute('data-opp-num', oppNum);
+                    groupRow.setAttribute('data-opp-num', sanitizedOppNum); // Use sanitizedOppNum
                     groupRow.innerHTML = `
                         <td class="col-select">
                             <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
@@ -932,7 +939,7 @@
                     // Add rows for each sample in the group, initially hidden
                     group.forEach(sample => {
                         const sampleRow = document.createElement('tr');
-                        sampleRow.classList.add('grouped-row', `group-${oppNum}`);
+                        sampleRow.classList.add('grouped-row', `group-${sanitizedOppNum}`); // Use sanitizedOppNum
                         sampleRow.style.display = 'none'; // Initially hidden
                         sampleRow.innerHTML = `
                             <td class="col-select">
