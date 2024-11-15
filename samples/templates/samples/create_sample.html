@@ -268,10 +268,10 @@
             <tr>
                 <th class="col-select">Select</th>
                 <th class="col-opportunity">Opp Number</th>
-                <th class="col-id">ID</th>
-                <th class="col-date">Date Received</th>
                 <th class="col-customer">Customer</th>
                 <th class="col-rsm">RSM</th>
+                <th class="col-id">ID</th>
+                <th class="col-date">Date Received</th>
                 <th class="col-description">Description</th>
                 <th class="col-location">Location</th>
                 <th class="col-pictures">Pictures</th>
@@ -281,10 +281,10 @@
                     <input type="checkbox" id="select-all-select">
                 </th>
                 <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()"></div></th>
+                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
+                <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
             </tr>
@@ -766,11 +766,11 @@
                         continue;
                     }
 
-                    const tdId = row.getElementsByTagName('td')[1];
-                    const tdDate = row.getElementsByTagName('td')[2];
-                    const tdCustomer = row.getElementsByTagName('td')[3];
-                    const tdRsm = row.getElementsByTagName('td')[4];
-                    const tdOpportunity = row.getElementsByTagName('td')[5];
+                    const tdOpportunity = row.getElementsByTagName('td')[1];
+                    const tdCustomer = row.getElementsByTagName('td')[2];
+                    const tdRsm = row.getElementsByTagName('td')[3];
+                    const tdId = row.getElementsByTagName('td')[4];
+                    const tdDate = row.getElementsByTagName('td')[5];
                     const tdDescription = row.getElementsByTagName('td')[6];
                     const tdLocation = row.getElementsByTagName('td')[7];
 
@@ -852,16 +852,17 @@
                 if (group.length === 1) {
                     // If only one entry, display it as usual
                     const sample = group[0];
-                    const newRow = document.createElement('tr');
+                    const customer = group[0].customer; // Get the customer from the first sample
+                    const rsm = group[0].rsm;           // Get the RSM from the first sample
                     newRow.innerHTML = `
                         <td class="col-select">
                             <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
                         </td>
                         <td class="col-opportunity">${sample.opportunity_number}</td>
-                        <td class="col-id">${sample.unique_id}</td>
-                        <td class="col-date">${sample.date_received}</td>
                         <td class="col-customer">${sample.customer}</td>
                         <td class="col-rsm">${sample.rsm}</td>
+                        <td class="col-id">${sample.unique_id}</td>
+                        <td class="col-date">${sample.date_received}</td>
                         <td class="col-description">${sample.description}</td>
                         <td class="col-location">
                             <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
@@ -888,7 +889,9 @@
                             <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
                         </td>
                         <td class="col-opportunity">${oppNum}</td>
-                        <td colspan="7"> <!-- Adjust colspan to span remaining columns -->
+                        <td class="col-customer">${customer}</td>
+                        <td class="col-rsm">${rsm}</td>
+                        <td colspan="5"> <!-- Adjust colspan to span remaining columns -->
                             (${group.length} entries)
                         </td>
                     `;
