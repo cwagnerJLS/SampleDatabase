@@ -270,9 +270,9 @@
                 <th class="col-opportunity">Opp Number</th>
                 <th class="col-customer">Customer</th>
                 <th class="col-rsm">RSM</th>
-                <th class="col-id">ID</th>
                 <th class="col-date">Date Received</th>
                 <th class="col-description">Description</th>
+                <th class="col-id">ID</th>
                 <th class="col-location">Location</th>
                 <th class="col-pictures">Pictures</th>
             </tr>
@@ -283,9 +283,9 @@
                 <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
+                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
             </tr>
         </thead>
@@ -590,9 +590,9 @@
                                     <td class="col-opportunity">${sample.opportunity_number}</td>
                                     <td class="col-customer">${sample.customer}</td>
                                     <td class="col-rsm">${sample.rsm}</td>
-                                    <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-date">${sample.date_received}</td>
                                     <td class="col-description">${sample.description}</td>
+                                    <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-location">
                                         <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
                                             <option value="Choose a location" ${sample.location === "Choose a location" ? "selected" : ""}>Choose a location</option>
@@ -769,9 +769,9 @@
                     const tdOpportunity = row.getElementsByTagName('td')[1];
                     const tdCustomer = row.getElementsByTagName('td')[2];
                     const tdRsm = row.getElementsByTagName('td')[3];
-                    const tdId = row.getElementsByTagName('td')[4];
-                    const tdDate = row.getElementsByTagName('td')[5];
-                    const tdDescription = row.getElementsByTagName('td')[6];
+                    const tdDate = row.getElementsByTagName('td')[4];
+                    const tdDescription = row.getElementsByTagName('td')[5];
+                    const tdId = row.getElementsByTagName('td')[6];
                     const tdLocation = row.getElementsByTagName('td')[7];
 
                     if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
@@ -909,12 +909,12 @@
                             <td class="col-select">
                                 <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
                             </td>
+                            <td class="col-opportunity">${sample.opportunity_number}</td>
                             <td class="col-customer">${sample.customer}</td>
                             <td class="col-rsm">${sample.rsm}</td>
-                            <td class="col-opportunity">${sample.opportunity_number}</td>
-                            <td class="col-id">${sample.unique_id}</td>
                             <td class="col-date">${sample.date_received}</td>
                             <td class="col-description">${sample.description}</td>
+                            <td class="col-id">${sample.unique_id}</td>
                             <td class="col-location">
                                 <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
                                     <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
