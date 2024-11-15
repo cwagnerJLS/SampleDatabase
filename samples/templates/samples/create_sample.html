@@ -931,7 +931,7 @@
                     groupRow.setAttribute('data-opp-num', sanitizedOppNum); // Use sanitizedOppNum
                     groupRow.innerHTML = `
                         <td class="col-select">
-                            <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
+                            <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
                         </td>
                         <td class="col-opportunity">${oppNum}</td>
                         <td class="col-customer">${groupCustomer}</td>
@@ -982,14 +982,14 @@
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('expand-button')) {
                 const button = event.target;
-                const oppNum = button.getAttribute('data-opp-num');
+                const sanitizedOppNum = button.getAttribute('data-opp-num');
                 const isExpanded = button.textContent === '-';
 
                 // Toggle the button text
                 button.textContent = isExpanded ? '+' : '-';
 
                 // Show or hide the grouped rows
-                const groupedRows = document.querySelectorAll(`.group-${oppNum}`);
+                const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
                 groupedRows.forEach(row => {
                     row.style.display = isExpanded ? 'none' : '';
                 });
