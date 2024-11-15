@@ -190,7 +190,7 @@ def upload_files(request):
             logger.error(f"Error processing file {file.name}: {e}")
             return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
 
-        return JsonResponse({'status': 'success', 'message': 'Files uploaded successfully.', 'image_urls': image_urls})
+        return JsonResponse({'status': 'success', 'message': 'Files uploaded successfully.', 'images': image_urls})
 
     return JsonResponse({'status': 'error', 'error': 'Invalid request method.'})
 
