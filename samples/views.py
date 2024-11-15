@@ -20,6 +20,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 from django.core.files.base import ContentFile
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 
 
@@ -365,7 +366,28 @@ def get_sample_images(request):
     try:
         sample = Sample.objects.get(unique_id=sample_id)
         images = sample.images.all()
-        image_urls = [request.build_absolute_uri(image.image.url) for image in images]
-        return JsonResponse({'status': 'success', 'image_urls': image_urls})
+        image_data = [
+            {
+                'id': image.id,
+                'url': request.build_absolute_uri(image.image.url)
+            }
+            for image in images
+        ]
+        return JsonResponse({'status': 'success', 'images': image_data})
     except Sample.DoesNotExist:
         return JsonResponse({'status': 'error', 'error': 'Sample not found'})
+@require_POST
+def delete_sample_image(request):
+    image_id = request.POST.get('image_id')
+    try:
+        image = SampleImage.objects.get(id=image_id)
+        # Delete the image file from storage
+        image.image.delete(save=False)
+        # Delete the database record
+        image.delete()
+        return JsonResponse({'status': 'success'})
+    except SampleImage.DoesNotExist:
+        return JsonResponse({'status': 'error', 'error': 'Image not found'})
+    except Exception as e:
+        logger.error(f"Error deleting image {image_id}: {e}")
+        return JsonResponse({'status': 'error', 'error': 'An error occurred while deleting the image'})

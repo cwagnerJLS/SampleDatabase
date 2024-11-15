@@ -1162,20 +1162,25 @@
             });
         }
 
-        function displayThumbnails(imageUrls) {
+        function displayThumbnails(imageDataArray) {
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
             // Clear existing thumbnails
             thumbnailsContainer.innerHTML = '';
-            imageUrls.forEach(url => {
+            imageDataArray.forEach(imageData => {
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('thumbnail-wrapper');
 
                 const img = document.createElement('img');
-                img.src = url;
+                img.src = imageData.url;
 
                 const deleteButton = document.createElement('button');
                 deleteButton.classList.add('delete-button');
                 deleteButton.textContent = '×';
+
+                // Add event listener to delete button
+                deleteButton.addEventListener('click', function() {
+                    deleteImage(imageData.id, wrapper);
+                });
 
                 wrapper.appendChild(img);
                 wrapper.appendChild(deleteButton);
@@ -1183,7 +1188,32 @@
             });
         }
 
-        function closeUploadModal() {
+        function deleteImage(imageId, thumbnailElement) {
+            const formData = new FormData();
+            formData.append('image_id', imageId);
+
+            fetch("{% url 'delete_sample_image' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove the thumbnail element from the DOM
+                    thumbnailElement.parentNode.removeChild(thumbnailElement);
+                } else {
+                    alert('Error deleting image: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred while deleting the image.');
+            });
+        }
             document.getElementById('uploadModal').style.display = 'none';
             currentSampleId = null;
         }

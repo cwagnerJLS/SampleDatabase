@@ -16,6 +16,7 @@ urlpatterns = [
     path('manage_sample/<int:sample_id>/', views.manage_sample, name='manage_sample'),
     path('upload_files/', views.upload_files, name='upload_files'),
     path('get_sample_images/', views.get_sample_images, name='get_sample_images'),  # Added this line
+    path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
 ]
 
 if settings.DEBUG:
