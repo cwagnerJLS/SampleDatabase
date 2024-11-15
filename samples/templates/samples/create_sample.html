@@ -836,25 +836,6 @@
                     }
                 }
 
-                // Show or hide group rows based on whether they have visible samples
-                const groupRows = document.querySelectorAll('.group-row');
-                groupRows.forEach(groupRow => {
-                    const oppNum = groupRow.querySelector('.col-opportunity').textContent;
-                    if (groupsToShow.has(oppNum)) {
-                        groupRow.style.display = '';
-                        // Optionally collapse groups without matching samples
-                        const expandButton = groupRow.querySelector('.expand-button');
-                        expandButton.textContent = '+'; // Ensure the group is collapsed
-
-                        // Hide the grouped rows
-                        const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                        groupedRows.forEach(row => {
-                            row.style.display = 'none';
-                        });
-                    } else {
-                        groupRow.style.display = 'none';
-                    }
-                });
             };
 
             // Reset Form function
