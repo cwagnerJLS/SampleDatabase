@@ -834,13 +834,7 @@
                                     locationValue.toLowerCase().indexOf(locationFilter) > -1
                                 ) {
                                     groupHasMatch = true;
-
-                                    // Show or hide child rows based on group expansion state
-                                    if (isExpanded) {
-                                        childRow.style.display = '';
-                                    } else {
-                                        childRow.style.display = 'none';
-                                    }
+                                    childRow.style.display = ''; // Show matching child rows
                                 } else {
                                     childRow.style.display = 'none';
                                 }
@@ -849,8 +843,13 @@
 
                         if (groupHasMatch) {
                             row.style.display = '';
+                            const expandButton = row.querySelector('.expand-button');
+                            expandButton.textContent = '-'; // Automatically expand the group
                         } else {
                             row.style.display = 'none';
+                            groupedRows.forEach(childRow => {
+                                childRow.style.display = 'none'; // Hide all child rows
+                            });
                         }
 
                         continue; // Move to the next row
