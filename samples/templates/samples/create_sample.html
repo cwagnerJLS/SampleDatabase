@@ -849,6 +849,10 @@
             Object.keys(groupedSamples).forEach(oppNum => {
                 const group = groupedSamples[oppNum];
 
+                // Define new variables to hold the customer and RSM values from the group
+                const groupCustomer = group[0].customer;
+                const groupRsm = group[0].rsm;
+
                 if (group.length === 1) {
                     // If only one entry, display it as usual
                     const sample = group[0];
@@ -888,8 +892,8 @@
                             <button type="button" class="expand-button" data-opp-num="${oppNum}">+</button>
                         </td>
                         <td class="col-opportunity">${oppNum}</td>
-                        <td class="col-customer">${customer}</td>
-                        <td class="col-rsm">${rsm}</td>
+                        <td class="col-customer">${groupCustomer}</td>
+                        <td class="col-rsm">${groupRsm}</td>
                         <td colspan="5"> <!-- Adjust colspan to span remaining columns -->
                             (${group.length} entries)
                         </td>
