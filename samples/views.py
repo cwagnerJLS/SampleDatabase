@@ -180,7 +180,6 @@ def upload_files(request):
 
                 # Save the thumbnail image to the model
                 sample_image = SampleImage(sample=sample)
-                filename = f"thumb_{file.name}"
                 sample_image.image.save(filename, image_content)
                 sample_image.save()
 
