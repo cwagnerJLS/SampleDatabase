@@ -1088,7 +1088,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    displayThumbnails(data.image_urls);
+                    displayThumbnails(data.images);
                 } else {
                     console.error('Error fetching images:', data.error);
                 }
