@@ -149,7 +149,12 @@ def upload_files(request):
         image_urls = []
 
         try:
+            # Get the current count of images for the sample
+            existing_images_count = SampleImage.objects.filter(sample=sample).count()
+            image_count = existing_images_count
+
             for file in files:
+                image_count += 1  # Increment image count for each new file
                 # Validate file type
                 if not file.content_type.startswith('image/'):
                     return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
@@ -170,7 +175,10 @@ def upload_files(request):
                 # Create a ContentFile from the in-memory file
                 image_content = ContentFile(thumb_io.read())
 
-                # Save the thumbnail image to the model with a unique filename
+                # Generate the filename with ID and index number
+                filename = f"{sample.unique_id}({image_count}).jpg"
+
+                # Save the thumbnail image to the model
                 sample_image = SampleImage(sample=sample)
                 filename = f"thumb_{file.name}"
                 sample_image.image.save(filename, image_content)

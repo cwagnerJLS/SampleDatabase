@@ -40,9 +40,16 @@ class Sample(models.Model):
     def __str__(self):
         return f"Sample {self.unique_id} - {self.customer}"
 
+import os
+
+def get_image_upload_path(instance, filename):
+    opportunity_number = str(instance.sample.opportunity_number)
+    unique_id = str(instance.sample.unique_id)
+    return os.path.join(opportunity_number, unique_id, filename)
+
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='sample_thumbnails/')
+    image = models.ImageField(upload_to=get_image_upload_path)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
