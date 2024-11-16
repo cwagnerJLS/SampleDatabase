@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
+        body {
+            background-color: #f0f4f8; /* Light blue-gray background */
+            font-family: Arial, sans-serif;
+        }
         :root {
             --company-color: #002B5C; /* Pantone 289C */
         }
@@ -37,6 +41,23 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+        input[type="text"]:focus,
+        select:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            border-color: var(--company-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 43, 92, 0.5); /* Optional shadow effect */
+        }
+
+        .selected-row {
+            background-color: #b3c7d6; /* Lightened version of the company color */
+        }
+
+        .group-row button.expand-button {
+            color: var(--company-color);
+        }
+
         .button-container {
             display: flex;
             flex-wrap: nowrap;
@@ -147,6 +168,16 @@
             color: white; /* Make text white for contrast */
             background-color: #f2f2f2;
         }
+        .filter-input {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--company-color);
+            box-shadow: 0 0 5px rgba(0, 43, 92, 0.5);
+        }
+
         .filter-wrapper {
             display: flex;
             justify-content: center;
