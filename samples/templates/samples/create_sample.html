@@ -11,8 +11,11 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
-        /* CSS styles */
+        :root {
+            --company-color: #002B5C; /* Pantone 289C */
+        }
         .form-container {
+            border: 2px solid var(--company-color);
             display: flex;
             flex-wrap: wrap;
             align-items: flex-start;
@@ -43,6 +46,8 @@
             width: 100%;
         }
         .button-container button {
+            background-color: var(--company-color);
+            border: 1px solid var(--company-color);
             min-width: 120px;
             padding: 10px;
             border-radius: 5px;
@@ -53,6 +58,7 @@
             cursor: pointer;
         }
         .button-container button:hover {
+            background-color: #001f40; /* Slightly darker shade on hover */
             background-color: #0056b3;
         }
         .modal {
@@ -68,6 +74,7 @@
             padding-top: 60px;
         }
         .modal-content {
+            border: 2px solid var(--company-color);
             background-color: #fefefe;
             margin: 5% auto;
             padding: 20px;
@@ -81,6 +88,7 @@
             align-items: center;
         }
         .close {
+            color: var(--company-color);
             color: #aaa;
             font-size: 28px;
             font-weight: bold;
@@ -107,6 +115,7 @@
             border-radius: 5px;
         }
         .modal-content button {
+            background-color: var(--company-color);
             width: 130px;
             padding: 10px;
             border: none;
@@ -118,6 +127,7 @@
             margin: 0 10px;
         }
         .modal-content button:hover {
+            background-color: #001f40; /* Slightly darker shade on hover */
             background-color: #0056b3;
         }
         #samplesTable {
@@ -133,6 +143,8 @@
             word-wrap: break-word;
         }
         #samplesTable th {
+            background-color: var(--company-color);
+            color: white; /* Make text white for contrast */
             background-color: #f2f2f2;
         }
         .filter-wrapper {
