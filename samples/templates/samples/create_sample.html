@@ -256,7 +256,7 @@
             box-sizing: border-box;
         }
         .selected-row {
-            background-color: #ccffcc; /* Very light green */
+            background-color: #baf7ba; /* Light green color */
         }
         .col-select {
             width: 60px; /* Increased width to prevent wrapping */
@@ -1173,7 +1173,19 @@
             });
         });
 
-        // Event delegation to handle clicks on expand/collapse buttons
+        // Event listener for checkbox changes to highlight rows
+        document.addEventListener('change', function(event) {
+            if (event.target && event.target.name === 'select_checkbox') {
+                const row = event.target.closest('tr');
+                if (row) {
+                    if (event.target.checked) {
+                        row.classList.add('selected-row');
+                    } else {
+                        row.classList.remove('selected-row');
+                    }
+                }
+            }
+        });
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('expand-button')) {
                 const button = event.target;
