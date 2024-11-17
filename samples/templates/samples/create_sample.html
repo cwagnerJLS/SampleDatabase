@@ -532,7 +532,7 @@
                     <span class="close" onclick="closeAddSampleModal()">&times;</span>
                 </div>
                 <div class="modal-body add-sample-modal">
-                    <form id="addSampleForm">
+                    <form id="addSampleForm" onsubmit="submitForm(event); return false;">
                         <div class="modal-form-row">
                             <div class="modal-form-group">
                                 <label for="date_received">Date Received:</label>
@@ -546,7 +546,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="submitForm()">Submit</button>
+                    <button type="submit">Submit</button>
                     <button type="button" onclick="closeAddSampleModal()">Cancel</button>
                 </div>
             </div>
@@ -819,7 +819,8 @@
             };
 
             // Submit Form function
-            window.submitForm = function() {
+            window.submitForm = function(event) {
+                if (event) event.preventDefault();
                 const dateReceived = $('#date_received').val();
                 const quantity = $('#quantity').val();
 
