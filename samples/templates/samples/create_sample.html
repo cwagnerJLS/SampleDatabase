@@ -360,7 +360,22 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        /* Arrange form groups vertically and center-align */
+        /* Arrange form groups horizontally */
+        .modal-body .form-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+        }
+
+        /* Form group styling */
+        .modal-body .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 5px;
+        }
+
+        /* Modal-specific styles */
         .add-sample-modal .form-row {
             display: flex;
             flex-direction: column;
@@ -368,7 +383,6 @@
             gap: 10px;
         }
 
-        /* Adjust form group styling */
         .add-sample-modal .form-group {
             flex: 1;
             display: flex;
@@ -377,13 +391,11 @@
             text-align: center;
         }
 
-        /* Adjust label styling */
         .add-sample-modal .form-group label {
             margin-bottom: 5px;
             font-size: 14px;
         }
 
-        /* Adjust input styling */
         .add-sample-modal .form-group input {
             padding: 5px;
             font-size: 14px;
