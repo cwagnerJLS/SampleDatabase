@@ -114,11 +114,20 @@
 }
 
 /* Modal Dialog */
-.modal-dialog {
+/* Styles for Add Sample Modal */
+.add-sample-modal .modal-dialog {
     position: relative;
     margin: 5% auto;
     max-width: 400px;
     width: 80%;
+}
+
+/* Styles for Upload/View Modal */
+.upload-modal .modal-dialog {
+    position: relative;
+    margin: 5% auto;
+    max-width: 90%; /* Allow the modal to expand up to 90% of the viewport width */
+    width: auto;
 }
 
 /* Modal Content */
@@ -163,6 +172,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    justify-content: center; /* Center the thumbnails horizontally */
+    max-width: 100%; /* Allow the container to use full width */
 }
 
 #thumbnailsContainer .thumbnail-wrapper {
@@ -524,7 +535,7 @@
     </table>
 
     <!-- The Modal for Adding Samples -->
-    <div id="addSampleModal" class="modal">
+    <div id="addSampleModal" class="modal add-sample-modal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -554,7 +565,7 @@
     </div>
 
     <!-- The Upload/View Modal -->
-    <div id="uploadModal" class="modal">
+    <div id="uploadModal" class="modal upload-modal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
