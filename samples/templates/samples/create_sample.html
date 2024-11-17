@@ -15,6 +15,9 @@
             background-color: #FFFFFF; /* Set background to white */
             color: #000000; /* Set text color to black */
             font-family: Arial, sans-serif;
+            text-align: center;
+            width: 100%;
+            max-width: 200px; /* Set a max-width to prevent the input from stretching too much */
         }
         .selected-row {
             background-color: #baf7ba; /* Light green color */
@@ -357,10 +360,11 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        /* Arrange form groups horizontally */
+        /* Arrange form groups vertically and center-align */
         .modal-body .form-row {
             display: flex;
-            flex-wrap: nowrap;
+            flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
 
