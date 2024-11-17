@@ -40,7 +40,6 @@
             gap: 20px;
             margin-bottom: 20px;
             padding: 20px;
-            border: 1px solid #ccc;
             border-radius: 10px;
             background-color: #EAF2F8; /* Lighter blue background */
             color: #000000; /* Black text */
@@ -100,146 +99,146 @@
         .button-container button:hover {
             background-color: #001F40; /* Slightly darker shade on hover */
         }
-/* Modal Overlay */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 10;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5); /* Darker overlay for better focus */
-}
+        /* Modal Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Darker overlay for better focus */
+        }
 
-/* Modal Dialog */
-/* Styles for Add Sample Modal */
-.add-sample-modal .modal-dialog {
-    position: relative;
-    margin: 5% auto;
-    max-width: 400px;
-    width: 80%;
-}
+        /* Modal Dialog */
+        /* Styles for Add Sample Modal */
+        .add-sample-modal .modal-dialog {
+            position: relative;
+            margin: 5% auto;
+            max-width: 400px;
+            width: 80%;
+        }
 
-/* Styles for Upload/View Modal */
-.upload-modal .modal-dialog {
-    position: relative;
-    margin: 5% auto;
-    width: auto;           /* Allow the width to adjust automatically */
-    max-width: 90%;        /* Set the maximum width (90% of viewport) */
-}
+        /* Styles for Upload/View Modal */
+        .upload-modal .modal-dialog {
+            position: relative;
+            margin: 5% auto;
+            width: auto;           /* Allow the width to adjust automatically */
+            max-width: 90%;        /* Set the maximum width (90% of viewport) */
+        }
 
-/* Modal Content */
-.modal-content {
-    display: inline-block; /* Allow content width to adjust based on its content */
-    background-color: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    animation: fadeIn 0.3s ease;
-}
+        /* Modal Content */
+        .modal-content {
+            display: inline-block; /* Allow content width to adjust based on its content */
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
 
-/* Modal Header */
-.modal-header {
-    padding: 10px;
-    background-color: var(--company-color);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+        /* Modal Header */
+        .modal-header {
+            padding: 10px;
+            background-color: var(--company-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.modal-header h2 {
-    margin: 0;
-    font-size: 20px;
-}
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
 
-/* Close Button */
-.modal-header .close {
-    color: white;
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-}
+        /* Close Button */
+        .modal-header .close {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-/* Modal Body */
-.modal-body {
-    padding: 15px;
-    background-color: #f8f9fa;
-}
+        /* Modal Body */
+        .modal-body {
+            padding: 15px;
+            background-color: #f8f9fa;
+        }
 
-/* Thumbnails Container */
-#thumbnailsContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center; /* Center the thumbnails horizontally */
-}
+        /* Thumbnails Container */
+        #thumbnailsContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center; /* Center the thumbnails horizontally */
+        }
 
-#thumbnailsContainer .thumbnail-wrapper {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    border-radius: 5px;
-    overflow: hidden;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
+        #thumbnailsContainer .thumbnail-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-#thumbnailsContainer img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+        #thumbnailsContainer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-/* Delete Button on Thumbnails */
-.thumbnail-wrapper .delete-button {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: rgba(220, 53, 69, 0.9); /* Bootstrap danger color */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-weight: bold;
-    width: 25px;
-    height: 25px;
-    padding: 0;
-    text-align: center;
-    line-height: 25px;
-    font-size: 16px;
-    cursor: pointer;
-}
+        /* Delete Button on Thumbnails */
+        .thumbnail-wrapper .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(220, 53, 69, 0.9); /* Bootstrap danger color */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-weight: bold;
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            text-align: center;
+            line-height: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
 
-/* Modal Footer */
-.modal-footer {
-    padding: 10px 15px;
-    background-color: #f8f9fa;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
+        /* Modal Footer */
+        .modal-footer {
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
 
-/* Footer Buttons */
-.modal-footer button {
-    background-color: var(--company-color);
-    border: none;
-    padding: 8px 16px;
-    color: white;
-    border-radius: 5px;
-    font-size: 14px;
-    cursor: pointer;
-}
+        /* Footer Buttons */
+        .modal-footer button {
+            background-color: var(--company-color);
+            border: none;
+            padding: 8px 16px;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
-.modal-footer button:hover {
-    background-color: #001F40; /* Slightly darker shade */
-}
+        .modal-footer button:hover {
+            background-color: #001F40; /* Slightly darker shade */
+        }
 
-/* Fade-in Animation */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+        /* Fade-in Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         #samplesTable {
             margin-top: 20px;
             width: 100%;
@@ -389,34 +388,6 @@
         .add-sample-modal .form-group input {
             width: 100%;
             max-width: 200px; /* Set a max-width to prevent the input from stretching too much */
-        }
-
-        /* Modal-specific styles */
-        .add-sample-modal .form-row {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .add-sample-modal .form-group {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 5px;
-            text-align: center;
-        }
-
-        .add-sample-modal .form-group label {
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .add-sample-modal .form-group input {
-            padding: 5px;
-            font-size: 14px;
-            width: 100%;
-            max-width: 200px;
         }
 
         /* Modal-specific styles */
@@ -602,7 +573,6 @@
             let isPopulating = false; // Flag to prevent recursive triggering
             let currentSampleId = null; // For image uploads
 
-
             // Initialize Select2 for dropdowns with search capability
             $('#customer, #rsm, #opportunity_number').select2({
                 width: 'resolve',
@@ -644,6 +614,18 @@
                 if (confirmPrint) {
                     console.log('Gathering data for selected entries...');
 
+                    // Define affectedGroups as a Set to keep track of affected opportunity numbers
+                    const affectedGroups = new Set();
+                    // Collect the opportunity numbers of the selected samples
+                    selectedCheckboxes.forEach(checkbox => {
+                        const row = checkbox.closest('tr');
+                        const oppNumCell = row.querySelector('.col-opportunity');
+                        if (oppNumCell) {
+                            const oppNum = oppNumCell.textContent.trim();
+                            affectedGroups.add(oppNum);
+                        }
+                    });
+
                     fetch("{% url 'handle_print_request' %}", {
                         method: 'POST',
                         headers: {
@@ -671,29 +653,17 @@
                             // Here you would send this data to your printer
                             // For each affected group, check if any entries remain
                             affectedGroups.forEach(oppNum => {
-                                const remainingRows = document.querySelectorAll(`.group-${oppNum}`);
+                                const sanitizedOppNum = sanitizeOppNum(oppNum);
+                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
                                 if (remainingRows.length === 0) {
                                     // No more entries in the group, remove the group row
                                     const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
                                     if (groupRow) {
                                         groupRow.parentNode.removeChild(groupRow);
+                                    }
                                 }
-                            }
-                        }
-                    });
-                } else {
-                    console.error('Error generating labels:', data.error);
-                    alert(`Error: ${data.error}`);
-                }
-            })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                alert('An unexpected error occurred. Please try again.');
-            });
-        } else {
-            console.log('Print operation was canceled.');
-        }
-    };
+                            });
+
                         } else {
                             console.error('Error generating labels:', data.error);
                             alert(`Error: ${data.error}`);
@@ -734,6 +704,18 @@
                     formData.append('csrfmiddlewaretoken', csrftoken);
                     formData.append('ids', JSON.stringify(idsToDelete));
 
+                    // Define affectedGroups
+                    const affectedGroups = new Set();
+
+                    selectedCheckboxes.forEach(checkbox => {
+                        const row = checkbox.closest('tr');
+                        const oppNumCell = row.querySelector('.col-opportunity');
+                        if (oppNumCell) {
+                            const oppNum = oppNumCell.textContent.trim();
+                            affectedGroups.add(oppNum);
+                        }
+                    });
+
                     fetch("{% url 'delete_samples' %}", {
                         method: 'POST',
                         body: formData,
@@ -745,9 +727,20 @@
                                 const row = checkbox.closest('tr');
                                 row.parentNode.removeChild(row); // Remove the row from the table
                             });
-                            const oppNum = row.querySelector('.col-opportunity').textContent.trim();
-                            const sanitizedOppNum = sanitizeOppNum(oppNum); // Sanitize oppNum
-                            affectedGroups.add(sanitizedOppNum);
+
+                            // For each affected group, check if any entries remain
+                            affectedGroups.forEach(oppNum => {
+                                const sanitizedOppNum = sanitizeOppNum(oppNum);
+                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                                if (remainingRows.length === 0) {
+                                    // No more entries in the group, remove the group row
+                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
+                                    if (groupRow) {
+                                        groupRow.parentNode.removeChild(groupRow);
+                                    }
+                                }
+                            });
+
                             selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
                             console.log('Entries deleted successfully.');
                         } else {
@@ -1292,6 +1285,29 @@
                         tableBody.appendChild(sampleRow);
                     });
                 }
+            });
+
+            // Add event listener for expand/collapse buttons
+            document.querySelectorAll('.expand-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const sanitizedOppNum = this.getAttribute('data-opp-num');
+                    const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                    const isExpanded = this.textContent === '-';
+
+                    if (isExpanded) {
+                        // Collapse
+                        this.textContent = '+';
+                        groupedRows.forEach(row => {
+                            row.style.display = 'none';
+                        });
+                    } else {
+                        // Expand
+                        this.textContent = '-';
+                        groupedRows.forEach(row => {
+                            row.style.display = '';
+                        });
+                    }
+                });
             });
         }); // Properly close the DOMContentLoaded function
 
