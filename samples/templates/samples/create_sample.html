@@ -17,6 +17,16 @@
             font-family: Arial, sans-serif;
             width: 100%;
         }
+
+        @media (max-width: 600px) {
+            .form-container {
+                padding: 10px;
+            }
+
+            .input-group {
+                min-width: 100%;    /* Make input groups take full width on small screens */
+            }
+        }
         /* Lower the quantity field slightly */
         .add-sample-modal .modal-form-group.quantity-group {
             margin-top: 10px; /* Adjust this value to move the field further down or up */
@@ -33,20 +43,40 @@
             --company-color: #002B5C; /* Pantone 289C */
         }
         .form-container {
-            border: 2px solid var(--company-color);
             display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
+            flex-wrap: wrap;       /* Ensure items wrap to the next line if they don't fit */
+            justify-content: center; /* Center the content horizontally */
             gap: 20px;
-            margin-bottom: 20px;
+            margin: 0 auto 20px auto; /* Center the container and set bottom margin */
             padding: 20px;
+            max-width: 1200px;     /* Optional: set a maximum width for large screens */
+            border: 2px solid var(--company-color);
             border-radius: 10px;
-            background-color: #EAF2F8; /* Lighter blue background */
-            color: #000000; /* Black text */
+            background-color: #EAF2F8;
+            color: #000000;
         }
-        label {
-            margin-right: 10px;
+
+        .input-group {
+            flex: 1 1 200px;       /* Grow and shrink with a basis of 200px */
+            min-width: 200px;      /* Ensure a minimum width */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
             font-weight: bold;
+        }
+
+        .input-group select,
+        .input-group input[type="text"] {
+            width: 100%;           /* Make the inputs take the full width of the container */
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #CCC;
+            background-color: #FFFFFF;
+            color: #000000;
+            box-sizing: border-box; /* Include padding and border in the element's total width */
         }
 
         /* Modal-specific label styles */
@@ -80,16 +110,18 @@
 
         .button-container {
             display: flex;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;          /* Allow buttons to wrap to the next line if necessary */
             gap: 15px;
             margin-top: 20px;
-            justify-content: center;
+            justify-content: center;  /* Center the buttons horizontally */
             width: 100%;
         }
+
         .button-container button {
+            flex: 1 1 120px;          /* Make buttons flexible with a minimum width */
+            max-width: 200px;         /* Optional: set a maximum width */
             background-color: var(--company-color);
             border: 1px solid var(--company-color);
-            min-width: 120px;
             padding: 10px;
             border-radius: 5px;
             color: white;
@@ -440,29 +472,37 @@
         <!-- Include CSRF token in the form -->
         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
         <div class="form-container">
-            <label for="customer">Customer:</label>
-            <select id="customer" name="customer" onchange="filterOptions()">
-                <option value="">Select a Customer</option>
-                {% for customer in unique_customers %}
-                <option value="{{ customer }}">{{ customer }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-group">
+                <label for="customer">Customer:</label>
+                <select id="customer" name="customer" onchange="filterOptions()">
+                    <option value="">Select a Customer</option>
+                    {% for customer in unique_customers %}
+                    <option value="{{ customer }}">{{ customer }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-            <label for="rsm">RSM:</label>
-            <select id="rsm" name="rsm" onchange="filterOptions()">
-                <option value="">Select an RSM</option>
-                {% for rsm in unique_rsms %}
-                <option value="{{ rsm }}">{{ rsm }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-group">
+                <label for="rsm">RSM:</label>
+                <select id="rsm" name="rsm" onchange="filterOptions()">
+                    <option value="">Select an RSM</option>
+                    {% for rsm in unique_rsms %}
+                    <option value="{{ rsm }}">{{ rsm }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-            <label for="opportunity_number">Opportunity #:</label>
-            <select id="opportunity_number" name="opportunity_number" class="opportunity-dropdown" onchange="populateFieldsFromOpportunity()">
-                <option value="">Select an Opportunity</option>
-            </select>
+            <div class="input-group">
+                <label for="opportunity_number">Opportunity #:</label>
+                <select id="opportunity_number" name="opportunity_number" class="opportunity-dropdown" onchange="populateFieldsFromOpportunity()">
+                    <option value="">Select an Opportunity</option>
+                </select>
+            </div>
 
-            <label for="description">Description:</label>
-            <input type="text" id="description" name="description" readonly>
+            <div class="input-group">
+                <label for="description">Description:</label>
+                <input type="text" id="description" name="description" readonly>
+            </div>
         </div>
 
         <div class="button-container">
