@@ -437,13 +437,31 @@
     </table>
 
     <!-- The Modal for Adding Samples -->
-    <div id="addSampleDialog" title="Add Sample" style="display: none;">
-        <form id="addSampleForm">
-            <label for="date_received">Date Received:</label>
-            <input type="text" id="date_received" name="date_received">
-            <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" min="1">
-        </form>
+    <div id="addSampleModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add Sample</h2>
+                    <span class="close" onclick="closeAddSampleModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="addSampleForm">
+                        <div class="form-group">
+                            <label for="date_received">Date Received:</label>
+                            <input type="text" id="date_received" name="date_received">
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity:</label>
+                            <input type="number" id="quantity" name="quantity" min="1">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="submitForm()">Submit</button>
+                    <button type="button" onclick="closeAddSampleModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- The Upload/View Modal -->
@@ -484,25 +502,6 @@
             let isPopulating = false; // Flag to prevent recursive triggering
             let currentSampleId = null; // For image uploads
 
-            // Initialize the Add Sample Dialog
-            $("#addSampleDialog").dialog({
-                autoOpen: false,
-                modal: true,
-                buttons: {
-                    "Submit": function() {
-                        submitForm();
-                        $(this).dialog("close");
-                        resetAddSampleForm();
-                    },
-                    "Cancel": function() {
-                        $(this).dialog("close");
-                        resetAddSampleForm();
-                    }
-                },
-                open: function() {
-                    $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).datepicker("setDate", new Date());
-                }
-            });
 
             // Initialize Select2 for dropdowns with search capability
             $('#customer, #rsm, #opportunity_number').select2({
@@ -796,7 +795,7 @@
                         }
                     });
 
-                    closeModal();
+                    closeAddSampleModal();
                     resetForm();
                 }
             };
@@ -833,6 +832,20 @@
                 }
             };
 
+            // Open Add Sample Modal function
+            function openAddSampleModal() {
+                // Initialize date picker when modal opens
+                $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).datepicker("setDate", new Date());
+
+                document.getElementById('addSampleModal').style.display = 'block';
+            }
+
+            // Close Add Sample Modal function
+            function closeAddSampleModal() {
+                document.getElementById('addSampleModal').style.display = 'none';
+                resetAddSampleForm();
+            }
+
             // Validate and Show Modal function
             window.validateAndShowModal = function() {
                 const customer = document.getElementById('customer').value;
@@ -842,13 +855,16 @@
                 if (customer === "" || rsm === "" || opportunityNumber === "") {
                     alert("Please complete all selections before adding a sample.");
                 } else {
-                    $("#addSampleDialog").dialog("open");
+                    openAddSampleModal();
                 }
             };
 
-            // Close Modal function
-            window.closeModal = function() {
-                document.getElementById('myModal').style.display = "none";
+            // Close the modal when clicking outside of it
+            window.onclick = function(event) {
+                const modal = document.getElementById('addSampleModal');
+                if (event.target === modal) {
+                    closeAddSampleModal();
+                }
             };
 
             // Reset Filters function
