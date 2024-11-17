@@ -15,9 +15,7 @@
             background-color: #FFFFFF; /* Set background to white */
             color: #000000; /* Set text color to black */
             font-family: Arial, sans-serif;
-            text-align: center;
             width: 100%;
-            max-width: 200px; /* Set a max-width to prevent the input from stretching too much */
         }
         .selected-row {
             background-color: #baf7ba; /* Light green color */
@@ -46,6 +44,13 @@
         label {
             margin-right: 10px;
             font-weight: bold;
+        }
+
+        /* Modal-specific label styles */
+        .add-sample-modal label {
+            margin-right: 0; /* Override margin-right */
+            margin-bottom: 5px;
+            font-size: 14px;
         }
         select, input[type="text"] {
             min-width: 200px;
@@ -360,19 +365,43 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        /* Arrange form groups horizontally */
-        .modal-body .form-row {
+        /* Center content inside the modal */
+        .add-sample-modal {
+            text-align: center;
+        }
+
+        /* Limit the width of inputs inside the modal */
+        .add-sample-modal .form-group input {
+            width: 100%;
+            max-width: 200px; /* Set a max-width to prevent the input from stretching too much */
+        }
+
+        /* Modal-specific styles */
+        .add-sample-modal .form-row {
             display: flex;
-            flex-wrap: nowrap;
+            flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
 
-        /* Form group styling */
-        .modal-body .form-group {
+        .add-sample-modal .form-group {
             flex: 1;
             display: flex;
             flex-direction: column;
             margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .add-sample-modal .form-group label {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .add-sample-modal .form-group input {
+            padding: 5px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 200px;
         }
 
         /* Modal-specific styles */
@@ -500,12 +529,12 @@
                 </div>
                 <div class="modal-body add-sample-modal">
                     <form id="addSampleForm">
-                        <div class="form-row">
-                            <div class="form-group">
+                        <div class="modal-form-row">
+                            <div class="modal-form-group">
                                 <label for="date_received">Date Received:</label>
                                 <input type="text" id="date_received" name="date_received">
                             </div>
-                            <div class="form-group">
+                            <div class="modal-form-group">
                                 <label for="quantity">Quantity:</label>
                                 <input type="number" id="quantity" name="quantity" min="1">
                             </div>
