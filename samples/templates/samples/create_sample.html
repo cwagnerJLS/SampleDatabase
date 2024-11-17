@@ -1278,73 +1278,9 @@
                     });
                 }
             });
-        });
+        }); // Properly close the DOMContentLoaded function
 
-        window.resetAddSampleForm = function() {
-            $('#addSampleForm')[0].reset();
-        }
-
-        // Event listener for checkbox changes to highlight rows
-        document.addEventListener('change', function(event) {
-            if (event.target && event.target.name === 'select_checkbox') {
-                const row = event.target.closest('tr');
-                if (row) {
-                    if (event.target.checked) {
-                        row.classList.add('selected-row');
-                    } else {
-                        row.classList.remove('selected-row');
-                    }
-                }
-            }
-        });
-        document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('expand-button')) {
-                const button = event.target;
-                const sanitizedOppNum = button.getAttribute('data-opp-num');
-                const isExpanded = button.textContent === '-';
-
-                // Toggle the button text
-                button.textContent = isExpanded ? '+' : '-';
-
-                // Show or hide the grouped rows
-                const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                groupedRows.forEach(row => {
-                    row.style.display = isExpanded ? 'none' : '';
-                });
-            }
-            // Image Upload and Thumbnails Display Functions
-        });
-
-        // Event listener for the "Select All" checkbox
-        selectAllSelectCheckbox.addEventListener('change', function() {
-            const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
-            visibleSampleRows.forEach(function(row) {
-                const checkbox = row.querySelector('input[name="select_checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = this.checked;
-                    if (this.checked) {
-                        row.classList.add('selected-row');
-                    } else {
-                        row.classList.remove('selected-row');
-                    }
-                }
-            }, this);
-        });
-
-        // Event listener for checkbox changes to highlight rows
-        document.addEventListener('change', function(event) {
-            if (event.target && event.target.name === 'select_checkbox') {
-                const row = event.target.closest('tr');
-                if (row) {
-                    if (event.target.checked) {
-                        row.classList.add('selected-row');
-                    } else {
-                        row.classList.remove('selected-row');
-                    }
-                }
-            }
-        });
-
+        // Functions that should be globally accessible
         function handlePictureUploadView(sampleId) {
             currentSampleId = sampleId;
             // Open the modal
@@ -1432,48 +1368,48 @@
             });
         }
 
-function displayThumbnails(imageDataArray) {
-    const thumbnailsContainer = document.getElementById('thumbnailsContainer');
-    // Clear existing thumbnails
-    thumbnailsContainer.innerHTML = '';
+        function displayThumbnails(imageDataArray) {
+            const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+            // Clear existing thumbnails
+            thumbnailsContainer.innerHTML = '';
 
-    const thumbnailWidth = 120; // Width of each thumbnail including padding/margin
-    const gap = 10;             // Gap between thumbnails
-    const maxModalWidth = window.innerWidth * 0.9; // 90% of viewport width as max
+            const thumbnailWidth = 120; // Width of each thumbnail including padding/margin
+            const gap = 10;             // Gap between thumbnails
+            const maxModalWidth = window.innerWidth * 0.9; // 90% of viewport width as max
 
-    // Determine the number of thumbnails per row that can fit within maxModalWidth
-    const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
-    const totalThumbnails = imageDataArray.length;
+            // Determine the number of thumbnails per row that can fit within maxModalWidth
+            const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
+            const totalThumbnails = imageDataArray.length;
 
-    // Calculate the required modal width
-    const columns = Math.min(totalThumbnails, thumbnailsPerRow);
-    const neededWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
+            // Calculate the required modal width
+            const columns = Math.min(totalThumbnails, thumbnailsPerRow);
+            const neededWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
 
-    // Adjust the modal width
-    const modalDialog = document.querySelector('.upload-modal .modal-dialog');
-    modalDialog.style.width = neededWidth + 'px';
+            // Adjust the modal width
+            const modalDialog = document.querySelector('.upload-modal .modal-dialog');
+            modalDialog.style.width = neededWidth + 'px';
 
-    imageDataArray.forEach(imageData => {
-        const wrapper = document.createElement('div');
-        wrapper.classList.add('thumbnail-wrapper');
+            imageDataArray.forEach(imageData => {
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('thumbnail-wrapper');
 
-        const img = document.createElement('img');
-        img.src = imageData.url;
+                const img = document.createElement('img');
+                img.src = imageData.url;
 
-        const deleteButton = document.createElement('button');
-        deleteButton.classList.add('delete-button');
-        deleteButton.textContent = '×';
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-button');
+                deleteButton.textContent = '×';
 
-        // Add event listener to delete button
-        deleteButton.addEventListener('click', function() {
-            deleteImage(imageData.id, wrapper);
-        });
+                // Add event listener to delete button
+                deleteButton.addEventListener('click', function() {
+                    deleteImage(imageData.id, wrapper);
+                });
 
-        wrapper.appendChild(img);
-        wrapper.appendChild(deleteButton);
-        thumbnailsContainer.appendChild(wrapper);
-    });
-}
+                wrapper.appendChild(img);
+                wrapper.appendChild(deleteButton);
+                thumbnailsContainer.appendChild(wrapper);
+            });
+        }
 
         function deleteImage(imageId, thumbnailElement) {
             const formData = new FormData();
