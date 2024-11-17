@@ -658,21 +658,10 @@
                 }
             });
 
-            document.addEventListener('change', function(event) {
-                if (event.target && event.target.name === 'select_checkbox') {
-                    const row = event.target.closest('tr');
-                    if (event.target.checked) {
-                        row.classList.add('selected-row');
-                    } else {
-                        row.classList.remove('selected-row');
-                    }
-                }
-            });
-
             // Select All functionality with row highlighting
             selectAllSelectCheckbox.addEventListener('change', function() {
-                const visibleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"])');
-                visibleRows.forEach(function(row) {
+                const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
+                visibleSampleRows.forEach(function(row) {
                     const checkbox = row.querySelector('input[name="select_checkbox"]');
                     if (checkbox) {
                         checkbox.checked = this.checked;
