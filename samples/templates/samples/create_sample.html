@@ -166,9 +166,8 @@
             color: #000000; /* Black text */
         }
         #samplesTable th {
-            background-color: var(--company-color);
-            color: white; /* Make text white for contrast */
-            background-color: #f2f2f2;
+            background-color: #f2f2f2; /* Light gray background */
+            color: #000000; /* Set text color to black */
         }
         .filter-input {
             border: 1px solid #CCC; /* Light gray border */
@@ -197,7 +196,8 @@
             background-color: lightcyan;
         }
         .col-select {
-            width: 40px;
+            width: 60px; /* Increased width to prevent wrapping */
+            white-space: nowrap; /* Prevent content from wrapping */
         }
         .col-id { width: 40px; text-align: center; }
         .col-date { width: 80px; }
