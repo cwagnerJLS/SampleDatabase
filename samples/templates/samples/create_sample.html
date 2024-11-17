@@ -16,8 +16,6 @@
             color: #000000; /* Set text color to black */
             font-family: Arial, sans-serif;
             width: 100%;
-            // Set focus to the quantity field
-            document.getElementById('quantity').focus();
         }
         /* Lower the quantity field slightly */
         .add-sample-modal .modal-form-group.quantity-group {
@@ -929,6 +927,11 @@
                 $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).datepicker("setDate", new Date());
 
                 document.getElementById('addSampleModal').style.display = 'block';
+
+                // Set focus to the quantity field after ensuring the element is rendered
+                setTimeout(function() {
+                    document.getElementById('quantity').focus();
+                }, 0);
             }
 
             // Close Add Sample Modal function
