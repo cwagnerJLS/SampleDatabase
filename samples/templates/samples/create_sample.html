@@ -126,8 +126,8 @@
 .upload-modal .modal-dialog {
     position: relative;
     margin: 5% auto;
-    max-width: 90%; /* Allow the modal to expand up to 90% of the viewport width */
-    width: auto;
+    width: auto;           /* Allow the width to adjust automatically */
+    max-width: 90%;        /* Set the maximum width (90% of viewport) */
 }
 
 /* Modal Content */
@@ -173,7 +173,6 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center; /* Center the thumbnails horizontally */
-    max-width: 100%; /* Allow the container to use full width */
 }
 
 #thumbnailsContainer .thumbnail-wrapper {
@@ -1433,30 +1432,48 @@
             });
         }
 
-        function displayThumbnails(imageDataArray) {
-            const thumbnailsContainer = document.getElementById('thumbnailsContainer');
-            // Clear existing thumbnails
-            thumbnailsContainer.innerHTML = '';
-            imageDataArray.forEach(imageData => {
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('thumbnail-wrapper');
+function displayThumbnails(imageDataArray) {
+    const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+    // Clear existing thumbnails
+    thumbnailsContainer.innerHTML = '';
 
-                const img = document.createElement('img');
-                img.src = imageData.url;
+    const thumbnailWidth = 120; // Width of each thumbnail including padding/margin
+    const gap = 10;             // Gap between thumbnails
+    const maxModalWidth = window.innerWidth * 0.9; // 90% of viewport width as max
 
-                const deleteButton = document.createElement('button');
-                deleteButton.classList.add('delete-button');
-                deleteButton.textContent = '×';
+    // Determine the number of thumbnails per row that can fit within maxModalWidth
+    const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
+    const totalThumbnails = imageDataArray.length;
 
-                // Add event listener to delete button
-                deleteButton.addEventListener('click', function() {
-                    deleteImage(imageData.id, wrapper);
-                });
+    // Calculate the required modal width
+    const columns = Math.min(totalThumbnails, thumbnailsPerRow);
+    const neededWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
 
-                wrapper.appendChild(img);
-                wrapper.appendChild(deleteButton);
-                thumbnailsContainer.appendChild(wrapper);
-            });
+    // Adjust the modal width
+    const modalDialog = document.querySelector('.upload-modal .modal-dialog');
+    modalDialog.style.width = neededWidth + 'px';
+
+    imageDataArray.forEach(imageData => {
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('thumbnail-wrapper');
+
+        const img = document.createElement('img');
+        img.src = imageData.url;
+
+        const deleteButton = document.createElement('button');
+        deleteButton.classList.add('delete-button');
+        deleteButton.textContent = '×';
+
+        // Add event listener to delete button
+        deleteButton.addEventListener('click', function() {
+            deleteImage(imageData.id, wrapper);
+        });
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(deleteButton);
+        thumbnailsContainer.appendChild(wrapper);
+    });
+}
         }
 
         function deleteImage(imageId, thumbnailElement) {
