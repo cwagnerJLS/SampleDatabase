@@ -104,9 +104,9 @@
 /* Modal Dialog */
 .modal-dialog {
     position: relative;
-    margin: 10% auto;
-    max-width: 800px;
-    width: 90%;
+    margin: 5% auto;
+    max-width: 400px;
+    width: 80%;
 }
 
 /* Modal Content */
@@ -135,7 +135,7 @@
 /* Close Button */
 .modal-header .close {
     color: white;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: bold;
     cursor: pointer;
 }
@@ -201,10 +201,10 @@
 .modal-footer button {
     background-color: var(--company-color);
     border: none;
-    padding: 10px 20px;
+    padding: 8px 16px;
     color: white;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
 }
 
@@ -214,7 +214,7 @@
 
 /* Fade-in Animation */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
+    from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
         #samplesTable {
@@ -357,6 +357,41 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+        /* Arrange form groups horizontally */
+        .modal-body .form-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+        }
+
+        /* Adjust form group styling */
+        .modal-body .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 5px;
+        }
+
+        /* Adjust label styling */
+        .modal-body .form-group label {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        /* Adjust input styling */
+        .modal-body .form-group input {
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        /* General text styling within the modal */
+        .modal-content {
+            line-height: 1.2;
+        }
+
+        .modal-body p, .modal-body label {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -446,13 +481,15 @@
                 </div>
                 <div class="modal-body">
                     <form id="addSampleForm">
-                        <div class="form-group">
-                            <label for="date_received">Date Received:</label>
-                            <input type="text" id="date_received" name="date_received">
-                        </div>
-                        <div class="form-group">
-                            <label for="quantity">Quantity:</label>
-                            <input type="number" id="quantity" name="quantity" min="1">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date_received">Date Received:</label>
+                                <input type="text" id="date_received" name="date_received">
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Quantity:</label>
+                                <input type="number" id="quantity" name="quantity" min="1">
+                            </div>
                         </div>
                     </form>
                 </div>
