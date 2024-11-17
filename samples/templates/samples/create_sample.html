@@ -365,32 +365,6 @@
         const csrftoken = '{{ csrf_token }}';
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
-        // Open Modal Function (if not already defined)
-        function openUploadModal() {
-            const modal = document.getElementById('uploadModal');
-            modal.style.display = 'block';
-        }
-
-        // Close Modal Function
-        function closeUploadModal() {
-            const modal = document.getElementById('uploadModal');
-            modal.style.display = 'none';
-        }
-
-        // Close Modal on Overlay Click
-        window.onclick = function(event) {
-            const modal = document.getElementById('uploadModal');
-            if (event.target == modal) {
-                closeUploadModal();
-            }
-        }
-
-        // Close Modal on Escape Key Press
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeUploadModal();
-            }
-        });
     </script>
 
     <form method="POST" id="sampleForm">
@@ -463,18 +437,13 @@
     </table>
 
     <!-- The Modal for Adding Samples -->
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+    <div id="addSampleDialog" title="Add Sample" style="display: none;">
+        <form id="addSampleForm">
             <label for="date_received">Date Received:</label>
             <input type="text" id="date_received" name="date_received">
             <label for="quantity">Quantity:</label>
             <input type="number" id="quantity" name="quantity" min="1">
-            <div style="display: flex; justify-content: space-between;">
-                <button type="button" onclick="submitForm()">Submit</button>
-                <button type="button" onclick="closeModal()">Cancel</button>
-            </div>
-        </div>
+        </form>
     </div>
 
     <!-- The Upload/View Modal -->
@@ -515,8 +484,26 @@
             let isPopulating = false; // Flag to prevent recursive triggering
             let currentSampleId = null; // For image uploads
 
-            // Initialize datepicker
-            $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).val(todayDate);
+            // Initialize the Add Sample Dialog
+            $("#addSampleDialog").dialog({
+                autoOpen: false,
+                modal: true,
+                buttons: {
+                    "Submit": function() {
+                        submitForm();
+                        $(this).dialog("close");
+                        resetAddSampleForm();
+                    },
+                    "Cancel": function() {
+                        $(this).dialog("close");
+                        resetAddSampleForm();
+                    }
+                },
+                open: function() {
+                    // Initialize datepicker when the dialog opens
+                    $("#date_received").datepicker({ dateFormat: 'yy-mm-dd' }).datepicker("setDate", new Date());
+                }
+            });
 
             // Initialize Select2 for dropdowns with search capability
             $('#customer, #rsm, #opportunity_number').select2({
@@ -746,8 +733,8 @@
 
             // Submit Form function
             window.submitForm = function() {
-                const dateReceived = document.getElementById('date_received').value;
-                const quantity = document.getElementById('quantity').value;
+                const dateReceived = $('#date_received').val();
+                const quantity = $('#quantity').val();
 
                 if (quantity === "") {
                     alert("Please enter the quantity.");
@@ -856,7 +843,7 @@
                 if (customer === "" || rsm === "" || opportunityNumber === "") {
                     alert("Please complete all selections before adding a sample.");
                 } else {
-                    document.getElementById('myModal').style.display = "block";
+                    $("#addSampleDialog").dialog("open");
                 }
             };
 
@@ -1172,6 +1159,10 @@
                 }
             });
         });
+
+        function resetAddSampleForm() {
+            $('#addSampleForm')[0].reset();
+        }
 
         // Event listener for checkbox changes to highlight rows
         document.addEventListener('change', function(event) {
