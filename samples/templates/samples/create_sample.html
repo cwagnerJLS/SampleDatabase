@@ -678,7 +678,22 @@
                                     if (groupRow) {
                                         groupRow.parentNode.removeChild(groupRow);
                                 }
-                            }); // Move this closing parenthesis and brace here
+                            }
+                        }
+                    });
+                } else {
+                    console.error('Error generating labels:', data.error);
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch Error:', error);
+                alert('An unexpected error occurred. Please try again.');
+            });
+        } else {
+            console.log('Print operation was canceled.');
+        }
+    };
                         } else {
                             console.error('Error generating labels:', data.error);
                             alert(`Error: ${data.error}`);
