@@ -17,6 +17,10 @@
             font-family: Arial, sans-serif;
             width: 100%;
         }
+        /* Lower the quantity field slightly */
+        .add-sample-modal .modal-form-group.quantity-group {
+            margin-top: 10px; /* Adjust this value to move the field further down or up */
+        }
         .selected-row {
             background-color: #baf7ba; /* Light green color */
         }
@@ -530,7 +534,7 @@
                 <div class="modal-body add-sample-modal">
                     <form id="addSampleForm">
                         <div class="modal-form-row">
-                            <div class="modal-form-group">
+                            <div class="modal-form-group quantity-group">
                                 <label for="date_received">Date Received:</label>
                                 <input type="text" id="date_received" name="date_received">
                             </div>
