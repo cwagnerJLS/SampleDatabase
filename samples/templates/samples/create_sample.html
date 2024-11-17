@@ -361,7 +361,7 @@
             border-radius: 5px;
         }
         /* Arrange form groups vertically and center-align */
-        .modal-body .form-row {
+        .add-sample-modal .form-row {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -369,23 +369,26 @@
         }
 
         /* Adjust form group styling */
-        .modal-body .form-group {
+        .add-sample-modal .form-group {
             flex: 1;
             display: flex;
             flex-direction: column;
             margin-bottom: 5px;
+            text-align: center;
         }
 
         /* Adjust label styling */
-        .modal-body .form-group label {
+        .add-sample-modal .form-group label {
             margin-bottom: 5px;
             font-size: 14px;
         }
 
         /* Adjust input styling */
-        .modal-body .form-group input {
+        .add-sample-modal .form-group input {
             padding: 5px;
             font-size: 14px;
+            width: 100%;
+            max-width: 200px;
         }
 
         /* General text styling within the modal */
@@ -483,7 +486,7 @@
                     <h2>Add Sample</h2>
                     <span class="close" onclick="closeAddSampleModal()">&times;</span>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body add-sample-modal">
                     <form id="addSampleForm">
                         <div class="form-row">
                             <div class="form-group">
