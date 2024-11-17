@@ -926,7 +926,7 @@
             }
 
             // Close Add Sample Modal function
-            function closeAddSampleModal() {
+            window.closeAddSampleModal = function() {
                 document.getElementById('addSampleModal').style.display = 'none';
                 resetAddSampleForm();
             }
@@ -1260,7 +1260,7 @@
             });
         });
 
-        function resetAddSampleForm() {
+        window.resetAddSampleForm = function() {
             $('#addSampleForm')[0].reset();
         }
 
