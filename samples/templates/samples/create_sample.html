@@ -59,9 +59,6 @@
             box-shadow: 0 0 5px rgba(0, 43, 92, 0.5); /* Optional shadow effect */
         }
 
-        .selected-row {
-            background-color: #b3c7d6; /* Lightened version of the company color */
-        }
 
         .group-row button.expand-button {
             color: var(--company-color);
@@ -661,9 +658,8 @@
                 }
             });
 
-            // Highlight selected rows using event delegation
-            document.querySelector('#samplesTable tbody').addEventListener('change', function(event) {
-                if (event.target.name === 'select_checkbox') {
+            document.addEventListener('change', function(event) {
+                if (event.target && event.target.name === 'select_checkbox') {
                     const row = event.target.closest('tr');
                     if (event.target.checked) {
                         row.classList.add('selected-row');
