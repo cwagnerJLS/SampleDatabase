@@ -1107,7 +1107,6 @@
 
             // Filter Table function
             window.filterTable = function() {
-                const groupsToShow = new Set();
                 const idFilter = document.getElementById('idFilter').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
                 const customerFilter = document.getElementById('customerFilter').value.toLowerCase();
@@ -1182,7 +1181,6 @@
                         continue; // Move to the next row
                     }
 
-                    // Process rows that are not part of a group (if any)
                     if (!row.classList.contains('grouped-row')) {
                         const tdOpportunity = row.getElementsByTagName('td')[1];
                         const tdCustomer = row.getElementsByTagName('td')[2];
