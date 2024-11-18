@@ -163,7 +163,7 @@
         }
 
         /* Styles for Upload/View Modal */
-        .upload-modal .modal-dialog {
+        body .upload-modal .modal-dialog {
             position: relative;
             margin: 5% auto;
             width: auto;           /* Allow the width to adjust automatically */
@@ -1481,7 +1481,7 @@
             const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
             const totalThumbnails = imageDataArray.length;
 
-            // Calculate the required modal width
+            // Calculate the required modal width based on thumbnails
             const columns = Math.min(totalThumbnails, thumbnailsPerRow);
             const calculatedWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
 
