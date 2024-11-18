@@ -1186,43 +1186,42 @@
                         }
 
                         continue; // Move to the next row
-                    }
+                    } // Added this closing brace to end the 'if' block
 
                     // Process rows that are not part of a group (if any)
-                        const tdOpportunity = row.getElementsByTagName('td')[1];
-                        const tdCustomer = row.getElementsByTagName('td')[2];
-                        const tdRsm = row.getElementsByTagName('td')[3];
-                        const tdDate = row.getElementsByTagName('td')[4];
-                        const tdDescription = row.getElementsByTagName('td')[5];
-                        const tdId = row.getElementsByTagName('td')[6];
-                        const tdLocation = row.getElementsByTagName('td')[7];
+                    const tdOpportunity = row.getElementsByTagName('td')[1];
+                    const tdCustomer = row.getElementsByTagName('td')[2];
+                    const tdRsm = row.getElementsByTagName('td')[3];
+                    const tdDate = row.getElementsByTagName('td')[4];
+                    const tdDescription = row.getElementsByTagName('td')[5];
+                    const tdId = row.getElementsByTagName('td')[6];
+                    const tdLocation = row.getElementsByTagName('td')[7];
 
-                        if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
-                            const idValue = tdId.textContent || tdId.innerText;
-                            const dateValue = tdDate.textContent || tdDate.innerText;
-                            const customerValue = tdCustomer.textContent || tdCustomer.innerText;
-                            const rsmValue = tdRsm.textContent || tdRsm.innerText;
-                            const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
-                            const descriptionValue = tdDescription.textContent || tdDescription.innerText;
-                            const locationValue = tdLocation.textContent || tdLocation.innerText;
+                    if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
+                        const idValue = tdId.textContent || tdId.innerText;
+                        const dateValue = tdDate.textContent || tdDate.innerText;
+                        const customerValue = tdCustomer.textContent || tdCustomer.innerText;
+                        const rsmValue = tdRsm.textContent || tdRsm.innerText;
+                        const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
+                        const descriptionValue = tdDescription.textContent || tdDescription.innerText;
+                        const locationValue = tdLocation.textContent || tdLocation.innerText;
 
-                            if (
-                                idValue.toLowerCase().indexOf(idFilter) > -1 &&
-                                dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
-                                customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
-                                rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
-                                opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
-                                descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
-                                locationValue.toLowerCase().indexOf(locationFilter) > -1
-                            ) {
-                                row.style.display = '';
-                            } else {
-                                row.style.display = 'none';
-                            }
+                        if (
+                            idValue.toLowerCase().indexOf(idFilter) > -1 &&
+                            dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
+                            customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
+                            rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
+                            opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
+                            descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
+                            locationValue.toLowerCase().indexOf(locationFilter) > -1
+                        ) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
                         }
                     }
-                }
-            };
+                } // End of 'for' loop
+            }; // End of 'filterTable' function
 
             // Reset Form function
             window.resetForm = function() {
