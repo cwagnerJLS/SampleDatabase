@@ -1105,7 +1105,7 @@
                 });
             }
 
-            // Filter Table function
+            const groupsToShow = new Set();
             window.filterTable = function() {
                 const idFilter = document.getElementById('idFilter').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
@@ -1170,21 +1170,23 @@
                         if (groupHasMatch) {
                             row.style.display = '';
                             const expandButton = row.querySelector('.expand-button');
-                            expandButton.textContent = '-'; // Automatically expand the group
-                        } else {
-                            row.style.display = 'none';
-                            groupedRows.forEach(childRow => {
-                                childRow.style.display = 'none'; // Hide all child rows
-                            });
+                            if (filtersApplied) {
+                                expandButton.textContent = '-'; // Expand group if filters are applied
+                                groupedRows.forEach(childRow => {
+                                    childRow.style.display = ''; // Show matching child rows
+                                });
+                            } else {
+                                expandButton.textContent = '+';
+                                groupedRows.forEach(childRow => {
+                                    childRow.style.display = 'none'; // Keep child rows hidden when no filters
+                                });
+                            }
                         }
 
                         continue; // Move to the next row
                     }
 
-                    if (!row.classList.contains('grouped-row')) {
-                        const tdOpportunity = row.getElementsByTagName('td')[1];
-                        const tdCustomer = row.getElementsByTagName('td')[2];
-                        const tdRsm = row.getElementsByTagName('td')[3];
+                    // Process rows that are not part of a group (if any)
                         const tdDate = row.getElementsByTagName('td')[4];
                         const tdDescription = row.getElementsByTagName('td')[5];
                         const tdId = row.getElementsByTagName('td')[6];
