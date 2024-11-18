@@ -933,7 +933,7 @@
                                     <td class="col-description">${sample.description}</td>
                                     <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-location">
-                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
+                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
                                             <option value="Choose a location" ${sample.location === "Choose a location" ? "selected" : ""}>Choose a location</option>
                                             <option value="Test Lab Fridge">Test Lab Fridge</option>
                                             <option value="Test Lab Freezer">Test Lab Freezer</option>
@@ -944,7 +944,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
@@ -1115,6 +1115,8 @@
                 const descriptionFilter = document.getElementById('descriptionFilter').value.toLowerCase();
                 const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
 
+                const filtersApplied = idFilter || dateFilter || customerFilter || rsmFilter || opportunityFilter || descriptionFilter || locationFilter;
+
                 const table = document.getElementById('samplesTable');
                 const tr = table.getElementsByTagName('tr');
 
@@ -1187,6 +1189,9 @@
                     }
 
                     // Process rows that are not part of a group (if any)
+                        const tdOpportunity = row.getElementsByTagName('td')[1];
+                        const tdCustomer = row.getElementsByTagName('td')[2];
+                        const tdRsm = row.getElementsByTagName('td')[3];
                         const tdDate = row.getElementsByTagName('td')[4];
                         const tdDescription = row.getElementsByTagName('td')[5];
                         const tdId = row.getElementsByTagName('td')[6];
@@ -1270,7 +1275,7 @@
                         <td class="col-description">${sample.description}</td>
                         <td class="col-id">${sample.unique_id}</td>
                         <td class="col-location">
-                            <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
+                            <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
                                 <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
                                 <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
                                 <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
@@ -1281,7 +1286,7 @@
                             </select>
                         </td>
                         <td class="col-pictures">
-                            <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                            <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
                     `;
                     tableBody.appendChild(newRow);
@@ -1320,7 +1325,7 @@
                             <td class="col-description">${sample.description}</td>
                             <td class="col-id">${sample.unique_id}</td>
                             <td class="col-location">
-                                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${sample.unique_id}, this.value)">
+                                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
                                     <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
                                     <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
                                     <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
@@ -1331,7 +1336,7 @@
                                 </select>
                             </td>
                             <td class="col-pictures">
-                                <button type="button" onclick="handlePictureUploadView(${sample.unique_id})">Upload/View</button>
+                                <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
