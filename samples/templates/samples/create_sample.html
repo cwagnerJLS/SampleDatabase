@@ -1475,6 +1475,7 @@
             const thumbnailWidth = 120; // Width of each thumbnail including padding/margin
             const gap = 10;             // Gap between thumbnails
             const maxModalWidth = window.innerWidth * 0.9; // 90% of viewport width as max
+            const minModalWidth = 600;  // Set your desired minimum modal width here
 
             // Determine the number of thumbnails per row that can fit within maxModalWidth
             const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
@@ -1482,7 +1483,10 @@
 
             // Calculate the required modal width
             const columns = Math.min(totalThumbnails, thumbnailsPerRow);
-            const neededWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
+            const calculatedWidth = columns * (thumbnailWidth + gap) - gap; // Subtract extra gap at the end
+
+            // Ensure the modal width is at least the minimum width
+            const neededWidth = Math.max(calculatedWidth, minModalWidth);
 
             // Adjust the modal width
             const modalDialog = document.querySelector('.upload-modal .modal-dialog');
