@@ -1073,6 +1073,17 @@
 
                 // Reapply filters to clear the table
                 filterTable();
+
+                // Collapse all groups
+                const expandButtons = document.querySelectorAll('.expand-button');
+                expandButtons.forEach(button => {
+                    button.textContent = '+';
+                    const sanitizedOppNum = button.getAttribute('data-opp-num'); // Already sanitized
+                    const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                    groupedRows.forEach(row => {
+                        row.style.display = 'none';
+                    });
+                });
             };
 
             // Update Select Options function
