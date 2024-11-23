@@ -7,7 +7,7 @@ def backup_database():
     local_db_path = '/home/jls/Desktop/SampleDatabase/db.sqlite3'
     backup_folder = '/home/jls/Desktop/SampleDatabase/backups'
     remote = 'TestLabSamples'
-    remote_folder = 'Sample Documentation'
+    remote_folder = 'Backups'
 
     # Ensure the backup folder exists
     if not os.path.exists(backup_folder):
