@@ -63,7 +63,7 @@ def test_onedrive_connection(remote, remote_folder):
 def main():
     # Define your remote name and folder here
     remote = 'TestLabSamples'  # Replace with your rclone remote name
-    remote_folder = 'Sample Documentation'  # Replace with your OneDrive folder
+    remote_folder = 'Backups'  # Replace with your OneDrive folder
 
     test_onedrive_connection(remote, remote_folder)
 
