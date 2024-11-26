@@ -1,7 +1,6 @@
 import os
 import re
 import random
-from django.core.files.storage import FileSystemStorage
 from django.utils.deconstruct import deconstructible
 from django.db import models
 from django.conf import settings
@@ -13,7 +12,7 @@ class CustomFileSystemStorage(FileSystemStorage):
         s = str(name).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.()]+', '', s)
 
-class FullSizeImageStorage(CustomFileSystemStorage):
+class FullSizeImageStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
         location = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
         super().__init__(location=location, *args, **kwargs)
