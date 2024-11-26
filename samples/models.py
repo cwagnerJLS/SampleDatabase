@@ -9,11 +9,16 @@ from django.conf import settings
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
     def get_valid_name(self, name):
-        # Allow letters, digits, hyphens, underscores, dots, and parentheses
-        s = str(name).strip().replace(' ', '_')
-        return re.sub(r'(?u)[^-\w.()]+', '', s)
+        import os  # Add this import at the top if not already present
+        # Split the path into directory and filename
+        dir_name, base_name = os.path.split(name)
+        # Sanitize the base filename
+        s = str(base_name).strip().replace(' ', '_')
+        base_name = re.sub(r'(?u)[^-\w.()]+', '', s)
+        # Reconstruct the full path
+        return os.path.join(dir_name, base_name)
 
-class FullSizeImageStorage(FileSystemStorage):
+class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
         location = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
         super().__init__(location=location, *args, **kwargs)
