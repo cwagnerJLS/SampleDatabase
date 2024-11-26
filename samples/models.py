@@ -77,12 +77,12 @@ class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
     # Thumbnail image field
     image = models.ImageField(
-        upload_to=get_full_size_image_upload_path,
+        upload_to=get_image_upload_path,  # Correct function for thumbnails
         storage=CustomFileSystemStorage()
     )
     # Full-size image field
     full_size_image = models.ImageField(
-        upload_to=get_image_upload_path,
+        upload_to=get_full_size_image_upload_path,  # Correct function for full-size images
         storage=FullSizeImageStorage(),
         null=True,  # Allow null for existing records
         blank=True
