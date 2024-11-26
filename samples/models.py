@@ -69,11 +69,15 @@ def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
     return os.path.join(opportunity_number, filename)
 
+def get_full_size_image_upload_path(instance, filename):
+    # Return just the filename without adding opportunity_number
+    return filename
+
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
     # Thumbnail image field
     image = models.ImageField(
-        upload_to=get_image_upload_path,
+        upload_to=get_full_size_image_upload_path,
         storage=CustomFileSystemStorage()
     )
     # Full-size image field
