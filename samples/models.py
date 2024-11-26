@@ -66,7 +66,23 @@ class Sample(models.Model):
         # Delete the full-size image file if it exists
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
+        # Get the directory paths for both images
+        thumbnail_dir = os.path.dirname(self.image.path)
+        full_size_dir = os.path.dirname(self.full_size_image.path)
+
         # Call the superclass delete method to delete the database record
+
+        # Function to check and delete directory if empty
+        def remove_if_empty(directory):
+            if os.path.isdir(directory) and not os.listdir(directory):
+                try:
+                    os.rmdir(directory)
+                except Exception:
+                    pass  # You might want to log this exception
+
+        # Remove directories if they are empty
+        remove_if_empty(thumbnail_dir)
+        remove_if_empty(full_size_dir)
         super().delete(*args, **kwargs)
         return f"Sample {self.unique_id} - {self.customer}"
 
