@@ -54,7 +54,15 @@ class Sample(models.Model):
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def delete(self, *args, **kwargs):
+        # Delete the thumbnail image file if it exists
+        if self.image and self.image.storage.exists(self.image.name):
+            self.image.delete(save=False)
+        # Delete the full-size image file if it exists
+        if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
+            self.full_size_image.delete(save=False)
+        # Call the superclass delete method to delete the database record
+        super().delete(*args, **kwargs)
         return f"Sample {self.unique_id} - {self.customer}"
 
 def get_image_upload_path(instance, filename):
