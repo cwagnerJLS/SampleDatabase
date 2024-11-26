@@ -1,9 +1,10 @@
 import os
-from django.core.files.storage import FileSystemStorage
-from django.utils.deconstruct import deconstructible
 import re
 import random
+from django.core.files.storage import FileSystemStorage
+from django.utils.deconstruct import deconstructible
 from django.db import models
+from django.conf import settings
 
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
@@ -11,6 +12,11 @@ class CustomFileSystemStorage(FileSystemStorage):
         # Allow letters, digits, hyphens, underscores, dots, and parentheses
         s = str(name).strip().replace(' ', '_')
         return re.sub(r'(?u)[^-\w.()]+', '', s)
+
+class FullSizeImageStorage(CustomFileSystemStorage):
+    def __init__(self, *args, **kwargs):
+        location = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
+        super().__init__(location=location, *args, **kwargs)
 
 def generate_unique_id():
     return random.randint(1000, 9999)
@@ -51,15 +57,24 @@ class Sample(models.Model):
     def __str__(self):
         return f"Sample {self.unique_id} - {self.customer}"
 
-import os
-
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
     return os.path.join(opportunity_number, filename)
 
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=get_image_upload_path, storage=CustomFileSystemStorage())
+    # Thumbnail image field
+    image = models.ImageField(
+        upload_to=get_image_upload_path,
+        storage=CustomFileSystemStorage()
+    )
+    # Full-size image field
+    full_size_image = models.ImageField(
+        upload_to=get_image_upload_path,
+        storage=FullSizeImageStorage(),
+        null=True,  # Allow null for existing records
+        blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
