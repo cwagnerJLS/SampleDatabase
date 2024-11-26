@@ -13,8 +13,11 @@ def save_full_size_image(sample_image_id, temp_file_path):
         sample_image = SampleImage.objects.get(id=sample_image_id)
         sample = sample_image.sample
 
-        # Use the same filename as the thumbnail
-        filename = os.path.basename(sample_image.image.name)
+        # Extract the base filename from the thumbnail image name
+        thumbnail_filename = os.path.basename(sample_image.image.name)
+
+        # Use the same filename for the full-size image
+        filename = thumbnail_filename
 
         # Read the binary data from the temporary file
         with open(temp_file_path, 'rb') as f:

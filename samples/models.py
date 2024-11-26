@@ -70,7 +70,7 @@ def get_image_upload_path(instance, filename):
     return os.path.join(opportunity_number, filename)
 
 def get_full_size_image_upload_path(instance, filename):
-    # Return just the filename without adding opportunity_number
+    opportunity_number = str(instance.sample.opportunity_number)
     return filename
 
 class SampleImage(models.Model):
