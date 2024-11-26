@@ -17,9 +17,6 @@ def save_full_size_image(sample_image_id, temp_file_path):
         image_count = SampleImage.objects.filter(sample=sample).count()
         filename = f"{sample.unique_id}({image_count}).jpg"
 
-        # Determine the upload path
-        upload_path = get_image_upload_path(sample_image, filename)
-
         # Read the binary data from the temporary file
         with open(temp_file_path, 'rb') as f:
             file_data = f.read()
@@ -27,8 +24,8 @@ def save_full_size_image(sample_image_id, temp_file_path):
         # Create a ContentFile from the binary data
         full_size_image_content = ContentFile(file_data)
 
-        # Save the full-size image using the storage backend
-        sample_image.full_size_image.save(upload_path, full_size_image_content)
+        # Save the full-size image using just the filename
+        sample_image.full_size_image.save(filename, full_size_image_content)
         sample_image.save()
 
         logger.info(f"Full-size image saved for SampleImage ID {sample_image_id}")
