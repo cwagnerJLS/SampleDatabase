@@ -1,28 +1,25 @@
 import os
-import subprocess
 import logging
 import json
-import random
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse, HttpResponse
-from .models import Sample, SampleImage
-import pandas as pd
+from django.http import JsonResponse
+from django.urls import reverse
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
+from django.views.decorators.http import require_POST
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from .models import Sample, SampleImage
+from .tasks import save_full_size_image  # Import the Celery task
+import pandas as pd
 import qrcode
 import base64
 from io import BytesIO
-import os
-from django.conf import settings
-from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
-from django.core.files.base import ContentFile
-from django.urls import reverse
-from django.views.decorators.http import require_POST
-
-
+import tempfile
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -135,7 +132,6 @@ def create_sample(request):
         logger.error(f"Error rendering create_sample page: {e}")
         return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
-#@csrf_exempt
 def upload_files(request):
     if request.method == 'POST' and request.FILES:
         files = request.FILES.getlist('files')
@@ -156,6 +152,7 @@ def upload_files(request):
 
             for file in files:
                 image_count += 1  # Increment image count for each new file
+
                 # Validate file type
                 if not file.content_type.startswith('image/'):
                     return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
@@ -186,6 +183,16 @@ def upload_files(request):
 
                 # Collect the URL to return to the client
                 image_urls.append(sample_image.image.url)
+
+                # Save the uploaded file to a temporary file
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+                    for chunk in file.chunks():
+                        temp_file.write(chunk)
+                    temp_file_path = temp_file.name
+
+                # Enqueue Celery task with the path to the temporary file
+                save_full_size_image.delay(sample_image.id, temp_file_path)
+
         except Exception as e:
             logger.error(f"Error processing file {file.name}: {e}")
             return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
@@ -355,12 +362,6 @@ def manage_sample(request, sample_id):
     # For GET requests, render the template with the sample data
     return render(request, 'samples/manage_sample.html', {'sample': sample})
 
-def generate_unique_id():
-    while True:
-        new_id = random.randint(1000, 9999)
-        if not Sample.objects.filter(unique_id=new_id).exists():
-            return new_id
-
 def get_sample_images(request):
     sample_id = request.GET.get('sample_id')
     try:
@@ -376,6 +377,7 @@ def get_sample_images(request):
         return JsonResponse({'status': 'success', 'images': image_data})
     except Sample.DoesNotExist:
         return JsonResponse({'status': 'error', 'error': 'Sample not found'})
+
 @require_POST
 def delete_sample_image(request):
     image_id = request.POST.get('image_id')
