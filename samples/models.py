@@ -111,12 +111,28 @@ class SampleImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def delete(self, *args, **kwargs):
+        # Get the directory paths for both images before deleting
+        thumbnail_dir = os.path.dirname(self.image.path) if self.image else None
+        full_size_dir = os.path.dirname(self.full_size_image.path) if self.full_size_image else None
+
         # Delete the thumbnail image from storage
         if self.image and self.image.storage.exists(self.image.name):
             self.image.delete(save=False)
         # Delete the full-size image from storage
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
+
         # Call the superclass delete method to delete the database record
         super().delete(*args, **kwargs)
-        return f"Image for Sample {self.sample.unique_id}"
+
+        # Function to check and delete directory if empty
+        def remove_if_empty(directory):
+            if directory and os.path.isdir(directory) and not os.listdir(directory):
+                try:
+                    os.rmdir(directory)
+                except Exception:
+                    pass  # You might want to log this exception
+
+        # Remove directories if they are empty
+        remove_if_empty(thumbnail_dir)
+        remove_if_empty(full_size_dir)
