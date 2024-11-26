@@ -94,5 +94,13 @@ class SampleImage(models.Model):
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def delete(self, *args, **kwargs):
+        # Delete the thumbnail image from storage
+        if self.image and self.image.storage.exists(self.image.name):
+            self.image.delete(save=False)
+        # Delete the full-size image from storage
+        if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
+            self.full_size_image.delete(save=False)
+        # Call the superclass delete method to delete the database record
+        super().delete(*args, **kwargs)
         return f"Image for Sample {self.sample.unique_id}"
