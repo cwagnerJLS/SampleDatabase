@@ -76,7 +76,7 @@ def get_image_upload_path(instance, filename):
 
 def get_full_size_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
-    return filename
+    return os.path.join(opportunity_number, filename)
 
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
