@@ -1582,46 +1582,46 @@
                 });
             }, intervalTime);
         }
-            const formData = new FormData();
-            for (let i = 0; i < files.length; i++) {
-                formData.append('files', files[i]);
-            }
-            formData.append('sample_id', sampleId);
-
-            fetch("{% url 'upload_files' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrftoken
-                },
-                credentials: 'same-origin'  // Include cookies in the request
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // The files were uploaded successfully; no alert needed.
-                    handlePictureUploadView(sampleId);
-                    // Start polling for full-size images
-                    var uploadedImageIds = data.image_ids;
-                    pollForFullSizeImages(sampleId, uploadedImageIds);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (error.error) {
-                    alert('Error: ' + error.error);
-                } else {
-                    alert('An unexpected error occurred.');
-                }
-            });
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
         }
+        formData.append('sample_id', sampleId);
+
+        fetch("{% url 'upload_files' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            credentials: 'same-origin'  // Include cookies in the request
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                // The files were uploaded successfully; no alert needed.
+                handlePictureUploadView(sampleId);
+                // Start polling for full-size images
+                var uploadedImageIds = data.image_ids;
+                pollForFullSizeImages(sampleId, uploadedImageIds);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.error) {
+                alert('Error: ' + error.error);
+            } else {
+                alert('An unexpected error occurred.');
+            }
+        });
+    }
 
         function displayThumbnails(imageDataArray) {
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
