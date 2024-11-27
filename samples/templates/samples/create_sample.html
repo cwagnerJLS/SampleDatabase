@@ -59,7 +59,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;            /* Prevent scrolling on the overlay */
+            overflow: auto;              /* Allow scrolling if content exceeds viewport */
             z-index: 9999;
             background-color: rgba(0, 0, 0, 0.5);
         }
@@ -78,10 +78,11 @@
         #fullSizeModal .modal-content {
             display: flex;
             flex-direction: column;
-            width: 100%;
-            max-height: 90vh;    /* Allow modal content to adjust height up to 90% of viewport */
-            height: auto;        /* Let height adjust automatically */
-            overflow: hidden;    /* Prevent content overflow */
+            width: auto;                  /* Adjust width based on content */
+            height: auto;                 /* Adjust height based on content */
+            max-width: 90vw;              /* Constrain to 90% of viewport width */
+            max-height: 90vh;             /* Constrain to 90% of viewport height */
+            overflow: hidden;             /* Prevent content overflow */
         }
 
         /* Modal Header */
@@ -97,7 +98,7 @@
 
         /* Modal Body */
         #fullSizeModal .modal-body {
-            flex: 1 1 auto;                    /* Allow the body to shrink and grow as needed */
+            flex: none;                   /* Prevent flex resizing */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -108,11 +109,10 @@
 
         /* Image Styling */
         #fullSizeModal .modal-body img {
-            max-width: 100%;
-            max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;               /* Scale image while maintaining aspect ratio */
+            max-width: 90vw;              /* Constrain image width */
+            max-height: 90vh;             /* Constrain image height */
         }
 
         @media (max-width: 600px) {
