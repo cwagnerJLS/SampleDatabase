@@ -1608,7 +1608,8 @@
                     deleteImage(imageData.id, wrapper);
                 });
 
-                wrapper.appendChild(img);
+                link.appendChild(img);  // Wrap the image in the link
+                wrapper.appendChild(link);  // Append the link to the wrapper
                 wrapper.appendChild(deleteButton);
                 thumbnailsContainer.appendChild(wrapper);
             });
