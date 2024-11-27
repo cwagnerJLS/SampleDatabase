@@ -26,6 +26,87 @@
             width: 100%;
         }
 
+        /* Styles for Full-Size Image Modal */
+        #fullSizeModal .modal-dialog {
+            position: relative;
+            margin: 5% auto;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        #fullSizeModal .modal-content {
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #fullSizeModal .modal-header {
+            padding: 10px;
+            background-color: var(--company-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #fullSizeModal .modal-header h2 {
+            margin: 0;
+        }
+
+        #fullSizeModal .modal-header .close {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #fullSizeModal .modal-body {
+            padding: 15px;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        #fullSizeModal .modal-body img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        function viewFullSizeImage(fullSizeImageUrl) {
+            // Create or show a modal to display the full-size image
+            const fullSizeModal = document.getElementById('fullSizeModal');
+            if (!fullSizeModal) {
+                // Create the modal if it doesn't exist
+                const modalDiv = document.createElement('div');
+                modalDiv.id = 'fullSizeModal';
+                modalDiv.classList.add('modal');
+                modalDiv.innerHTML = `
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Full-Size Image</h2>
+                                <span class="close" onclick="closeFullSizeModal()">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <img id="fullSizeImage" src="${fullSizeImageUrl}" alt="Full-Size Image" style="width: 100%; height: auto;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modalDiv);
+            } else {
+                // If modal exists, update the image source
+                const fullSizeImage = document.getElementById('fullSizeImage');
+                fullSizeImage.src = fullSizeImageUrl;
+            }
+
+            // Show the modal
+            document.getElementById('fullSizeModal').style.display = 'block';
+        }
+
+        function closeFullSizeModal() {
+            document.getElementById('fullSizeModal').style.display = 'none';
+        }
+
         @media (max-width: 600px) {
             .form-container {
                 padding: 10px;
@@ -481,6 +562,11 @@
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
     </script>
+
+    <!-- Full-Size Image Modal -->
+    <div id="fullSizeModal" class="modal" style="display: none;">
+        <!-- The content will be dynamically generated in JavaScript -->
+    </div>
 
     <form method="POST" id="sampleForm">
         <!-- Include CSRF token in the form -->
@@ -1497,8 +1583,21 @@
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('thumbnail-wrapper');
 
+                // Create an anchor tag linking to the full-size image
+                const link = document.createElement('a');
+                link.href = imageData.full_size_url || imageData.url;  // Use full_size_url if available
+                link.target = '_blank';  // Open in a new tab or modify as needed
+
+                // Alternatively, if using a modal, set up a click event
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    viewFullSizeImage(imageData.full_size_url || imageData.url);
+                });
+
                 const img = document.createElement('img');
                 img.src = imageData.url;
+
+                link.appendChild(img);
 
                 const deleteButton = document.createElement('button');
                 deleteButton.classList.add('delete-button');

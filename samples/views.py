@@ -370,7 +370,8 @@ def get_sample_images(request):
         image_data = [
             {
                 'id': image.id,
-                'url': request.build_absolute_uri(image.image.url)
+                'url': request.build_absolute_uri(image.image.url),
+                'full_size_url': request.build_absolute_uri(image.full_size_image.url) if image.full_size_image else None
             }
             for image in images
         ]
