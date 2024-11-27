@@ -666,14 +666,10 @@
         // Add the functions here
         function viewFullSizeImage(fullSizeImageUrl) {
             console.log('viewFullSizeImage called with URL:', fullSizeImageUrl);
-            // Create or show a modal to display the full-size image
             const fullSizeModal = document.getElementById('fullSizeModal');
-            if (!fullSizeModal) {
-                // Create the modal if it doesn't exist
-                const modalDiv = document.createElement('div');
-                modalDiv.id = 'fullSizeModal';
-                modalDiv.classList.add('modal');
-                modalDiv.innerHTML = `
+            if (fullSizeModal) {
+                // Set the innerHTML of the modal
+                fullSizeModal.innerHTML = `
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -681,24 +677,26 @@
                                 <span class="close" onclick="closeFullSizeModal()">&times;</span>
                             </div>
                             <div class="modal-body">
-                                <img id="fullSizeImage" src="${fullSizeImageUrl}" alt="Full-Size Image" style="width: 100%; height: auto;">
+                                <img src="${fullSizeImageUrl}" alt="Full-Size Image" style="width: 100%; height: auto;">
                             </div>
                         </div>
                     </div>
                 `;
-                document.body.appendChild(modalDiv);
+                // Show the modal
+                fullSizeModal.style.display = 'block';
             } else {
-                // If modal exists, update the image source
-                const fullSizeImage = document.getElementById('fullSizeImage');
-                fullSizeImage.src = fullSizeImageUrl;
+                console.error('Modal container not found in the DOM.');
             }
-
-            // Show the modal
-            document.getElementById('fullSizeModal').style.display = 'block';
         }
 
         function closeFullSizeModal() {
-            document.getElementById('fullSizeModal').style.display = 'none';
+            const fullSizeModal = document.getElementById('fullSizeModal');
+            if (fullSizeModal) {
+                fullSizeModal.style.display = 'none';
+                fullSizeModal.innerHTML = ''; // Optionally clear the modal content
+            } else {
+                console.error('Modal container not found in the DOM.');
+            }
         }
         function sanitizeOppNum(oppNum) {
             return oppNum.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
