@@ -623,15 +623,29 @@
             event.stopPropagation(); // Prevent event bubbling
             if (window.currentImageIndex > 0) {
                 window.currentImageIndex--;
-                viewFullSizeImage(window.currentImageIndex);
+            } else {
+                window.currentImageIndex = window.currentImageDataArray.length - 1; // Loop back to last image
             }
+            viewFullSizeImage(window.currentImageIndex);
         }
 
         function showNextImage(event) {
             event.stopPropagation(); // Prevent event bubbling
             if (window.currentImageIndex < window.currentImageDataArray.length - 1) {
                 window.currentImageIndex++;
-                viewFullSizeImage(window.currentImageIndex);
+            } else {
+                window.currentImageIndex = 0; // Loop back to first image
+            }
+            viewFullSizeImage(window.currentImageIndex);
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'ArrowLeft') {
+                showPrevImage(event);
+            } else if (event.key === 'ArrowRight') {
+                showNextImage(event);
+            } else if (event.key === 'Escape') {
+                closeFullSizeModal(event);
             }
         }
     </script>
@@ -830,8 +844,8 @@
                 `;
                 // Show the modal
                 fullSizeModal.style.display = 'flex';
-            } else {
-                console.error('Modal container not found in the DOM.');
+                // Add this line to attach the keydown event listener
+                document.addEventListener('keydown', handleKeyDown);
             }
         }
 
@@ -847,6 +861,24 @@
             if (fullSizeModal) {
                 fullSizeModal.style.display = 'none';
                 fullSizeModal.innerHTML = ''; // Optionally clear the modal content
+            }
+        }
+
+        function closeFullSizeModal(event) {
+            if (event) {
+                // Only close if clicked outside the modal content
+                const modalContent = document.querySelector('#fullSizeModal .modal-content');
+                if (modalContent && modalContent.contains(event.target)) {
+                    return;
+                }
+            }
+            const fullSizeModal = document.getElementById('fullSizeModal');
+            if (fullSizeModal) {
+                fullSizeModal.style.display = 'none';
+                fullSizeModal.innerHTML = ''; // Optionally clear the modal content
+
+                // Add this line to remove the keydown event listener
+                document.removeEventListener('keydown', handleKeyDown);
             } else {
                 console.error('Modal container not found in the DOM.');
             }
