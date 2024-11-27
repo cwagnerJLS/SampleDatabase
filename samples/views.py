@@ -144,7 +144,7 @@ def upload_files(request):
             return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
         image_urls = []
-        image_ids = []  # Collect image IDs
+        image_ids = []  # Initialize the list to collect image IDs
 
         try:
             # Get the current count of images for the sample
@@ -184,6 +184,8 @@ def upload_files(request):
 
                 # Collect the URL and ID to return to the client
                 image_urls.append(sample_image.image.url)
+
+                image_ids.append(sample_image.id)  # Collect the image ID
 
                 # Save the uploaded file to a temporary file
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:

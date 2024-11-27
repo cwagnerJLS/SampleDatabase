@@ -667,7 +667,38 @@
 
     <!-- JavaScript code -->
     <script>
-        // Add the functions here
+        function pollForFullSizeImages(sampleId, imageIds) {
+            var attempts = 0;
+            var maxAttempts = 10; // Number of polling attempts
+            var intervalTime = 2000; // Interval between attempts in milliseconds (2 seconds)
+
+            var interval = setInterval(function() {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    clearInterval(interval);
+                    return;
+                }
+                fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        var allFullSizeAvailable = imageIds.every(function(id) {
+                            var image = data.images.find(img => img.id === id);
+                            return image && image.full_size_url;
+                        });
+                        if (allFullSizeAvailable) {
+                            clearInterval(interval);
+                            // Refresh the thumbnails
+                            displayThumbnails(data.images);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    clearInterval(interval);
+                });
+            }, intervalTime);
+        }
         function viewFullSizeImage(fullSizeImageUrl) {
             console.log('viewFullSizeImage called with URL:', fullSizeImageUrl);
             const fullSizeModal = document.getElementById('fullSizeModal');
@@ -688,9 +719,7 @@
                 `;
                 // Show the modal
                 fullSizeModal.style.display = 'block';
-                // Start polling for full-size images
-                var uploadedImageIds = data.image_ids;
-                pollForFullSizeImages(sampleId, uploadedImageIds);
+            } else {
                 console.error('Modal container not found in the DOM.');
             }
         }
@@ -1625,7 +1654,14 @@
                 link.href = imageData.full_size_url || imageData.url;  // Use full_size_url if available
                 link.target = '_blank';  // Open in a new tab or modify as needed
 
-                console.log('Thumbnail clicked');
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    if (imageData.full_size_url) {
+                        viewFullSizeImage(imageData.full_size_url);
+                    } else {
+                        alert('The full-size image is still being processed. Please try again shortly.');
+                    }
+                });
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
                     if (imageData.full_size_url) {
