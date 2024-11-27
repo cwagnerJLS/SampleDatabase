@@ -2,6 +2,7 @@ import os
 import datetime
 import subprocess
 import sys
+import logging
 
 def list_backups(backup_folder):
     """List all backup files in the backup folder, sorted by date descending."""
@@ -71,20 +72,42 @@ def restore_backup(selected_backup_path, original_db_path):
             timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             current_backup = f"{original_db_path}.current_backup_{timestamp}"
             os.rename(original_db_path, current_backup)
+            logging.info(f"Current database backed up as '{current_backup}'.")
             print(f"Current database backed up as '{current_backup}'.")
 
         # Copy the selected backup to the original database path
         subprocess.run(['cp', selected_backup_path, original_db_path], check=True)
+        logging.info(f"Successfully restored '{original_db_path}' from '{selected_backup_path}'.")
         print(f"Successfully restored '{original_db_path}' from '{selected_backup_path}'.")
     except subprocess.CalledProcessError as e:
+        logging.error(f"Error during restoration: {e}")
         print(f"Error during restoration: {e}")
     except Exception as ex:
+        logging.error(f"An unexpected error occurred: {ex}")
         print(f"An unexpected error occurred: {ex}")
+
+def setup_logging(log_file):
+    """Set up logging to file and console."""
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    # Also log to console
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 def main():
     # Define paths
-    backup_folder = '/home/jls/Desktop/SampleDatabase/backups'
+    backup_folder = '/home/jls/Desktop/SampleDatabase/OneDrive_Sync/_Backups'
     original_db_path = '/home/jls/Desktop/SampleDatabase/db.sqlite3'
+    log_file = '/home/jls/Desktop/SampleDatabase/restore.log'
+
+    # Setup logging
+    setup_logging(log_file)
 
     # List available backups
     backups = list_backups(backup_folder)
