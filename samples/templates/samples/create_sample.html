@@ -26,6 +26,19 @@
             width: 100%;
         }
 
+        /* Limit the modal content height */
+        #fullSizeModal .modal-dialog {
+            max-height: 90vh;
+            margin: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        #fullSizeModal .modal-content {
+            max-height: 90vh;
+            overflow: hidden;
+        }
+
         /* Ensure the modal header displays the filename properly */
         #fullSizeModal .modal-header h2 {
             margin: 0;
@@ -718,7 +731,7 @@
                                 <span class="close" onclick="closeFullSizeModal()">&times;</span>
                             </div>
                             <div class="modal-body">
-                                <img src="${fullSizeImageUrl}" alt="${filename}" style="width: 100%; height: auto;">
+                                <img src="${fullSizeImageUrl}" alt="${filename}" style="max-height: 90vh; width: auto; display: block; margin: auto;">
                             </div>
                         </div>
                     </div>
