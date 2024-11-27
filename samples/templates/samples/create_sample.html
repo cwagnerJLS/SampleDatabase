@@ -50,7 +50,7 @@
             background-color: var(--company-color);
             color: white;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end; /* Align items to the right */
             align-items: center;
         }
 
@@ -706,7 +706,7 @@
                 fullSizeModal.innerHTML = `
                     <div class="modal-dialog">
                         <div class="modal-content">
-                            <div class="modal-header">
+                            <div class="modal-header full-size-modal-header">
                                 <span class="close" onclick="closeFullSizeModal()">&times;</span>
                             </div>
                             <div class="modal-body">
