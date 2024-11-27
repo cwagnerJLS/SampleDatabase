@@ -26,6 +26,52 @@
             width: 100%;
         }
 
+        /* Navigation Buttons */
+        .modal-body .prev-button,
+        .modal-body .next-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            font-size: 30px;
+            font-weight: bold;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            user-select: none;
+            z-index: 2;
+        }
+
+        .modal-body .prev-button {
+            left: 10px;
+        }
+
+        .modal-body .next-button {
+            right: 10px;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ensure that navigation buttons appear over the image */
+        .modal-body {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Adjust modal content to accommodate arrows */
+        #fullSizeModal .modal-content {
+            position: relative;
+        }
+
         /* Limit the modal content height */
         #fullSizeModal .modal-dialog {
             max-height: 90vh;
@@ -573,10 +619,25 @@
         const csrftoken = '{{ csrf_token }}';
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
+        function showPrevImage(event) {
+            event.stopPropagation(); // Prevent event bubbling
+            if (window.currentImageIndex > 0) {
+                window.currentImageIndex--;
+                viewFullSizeImage(window.currentImageIndex);
+            }
+        }
+
+        function showNextImage(event) {
+            event.stopPropagation(); // Prevent event bubbling
+            if (window.currentImageIndex < window.currentImageDataArray.length - 1) {
+                window.currentImageIndex++;
+                viewFullSizeImage(window.currentImageIndex);
+            }
+        }
     </script>
 
     <!-- Full-Size Image Modal -->
-    <div id="fullSizeModal" class="modal" style="display: none;">
+    <div id="fullSizeModal" class="modal" style="display: none;" onclick="closeFullSizeModal(event)">
         <!-- The content will be dynamically generated in JavaScript -->
     </div>
 
@@ -742,8 +803,13 @@
             }, intervalTime);
         }
 
-        function viewFullSizeImage(fullSizeImageUrl, filename) {
-            console.log('viewFullSizeImage called with URL:', fullSizeImageUrl);
+        function viewFullSizeImage(index) {
+            console.log('viewFullSizeImage called with index:', index);
+            window.currentImageIndex = index;
+            const imageDataArray = window.currentImageDataArray;
+            const imageData = imageDataArray[index];
+            const fullSizeImageUrl = imageData.full_size_url;
+            const filename = imageData.filename;
             const fullSizeModal = document.getElementById('fullSizeModal');
             if (fullSizeModal) {
                 // Set the innerHTML of the modal
@@ -755,7 +821,9 @@
                                 <span class="close" onclick="closeFullSizeModal()">&times;</span>
                             </div>
                             <div class="modal-body">
+                                ${index > 0 ? '<button class="prev-button" onclick="showPrevImage(event)">&#10094;</button>' : ''}
                                 <img src="${fullSizeImageUrl}" alt="${filename}">
+                                ${index < imageDataArray.length - 1 ? '<button class="next-button" onclick="showNextImage(event)">&#10095;</button>' : ''}
                             </div>
                         </div>
                     </div>
@@ -767,7 +835,14 @@
             }
         }
 
-        function closeFullSizeModal() {
+        function closeFullSizeModal(event) {
+            if (event) {
+                // Only close if clicked outside the modal content
+                const modalContent = document.querySelector('#fullSizeModal .modal-content');
+                if (modalContent && modalContent.contains(event.target)) {
+                    return;
+                }
+            }
             const fullSizeModal = document.getElementById('fullSizeModal');
             if (fullSizeModal) {
                 fullSizeModal.style.display = 'none';
@@ -1637,6 +1712,9 @@
         }
 
         function displayThumbnails(imageDataArray) {
+            // Store the image data globally
+            window.currentImageDataArray = imageDataArray;
+
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
             // Clear existing thumbnails
             thumbnailsContainer.innerHTML = '';
@@ -1673,7 +1751,8 @@
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
                     if (imageData.full_size_url) {
-                        viewFullSizeImage(imageData.full_size_url, imageData.filename);
+                        // Pass the index instead of the URL
+                        viewFullSizeImage(index);
                     } else {
                         alert('The full-size image is still being processed. Please try again shortly.');
                     }
