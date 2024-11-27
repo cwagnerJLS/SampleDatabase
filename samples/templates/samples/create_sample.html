@@ -75,7 +75,6 @@
             max-width: 100%;
             height: auto;
         }
-        }
 
         @media (max-width: 600px) {
             .form-container {
@@ -162,7 +161,6 @@
             outline: none;
             box-shadow: 0 0 5px rgba(0, 43, 92, 0.5); /* Optional shadow effect */
         }
-
 
         .group-row button.expand-button {
             color: var(--company-color);
@@ -699,6 +697,7 @@
                 });
             }, intervalTime);
         }
+
         function viewFullSizeImage(fullSizeImageUrl) {
             console.log('viewFullSizeImage called with URL:', fullSizeImageUrl);
             const fullSizeModal = document.getElementById('fullSizeModal');
@@ -733,6 +732,7 @@
                 console.error('Modal container not found in the DOM.');
             }
         }
+
         function sanitizeOppNum(oppNum) {
             return oppNum.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
         }
@@ -1056,7 +1056,7 @@
                                     <td class="col-description">${sample.description}</td>
                                     <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-location">
-                                        <select data-sample-id="{{ sample.unique_id }}" onchange="updateSampleLocation('{{ sample.unique_id|escapejs }}', this.value)">
+                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
                                             <option value="Choose a location" ${sample.location === "Choose a location" ? "selected" : ""}>Choose a location</option>
                                             <option value="Test Lab Fridge">Test Lab Fridge</option>
                                             <option value="Test Lab Freezer">Test Lab Freezer</option>
@@ -1067,7 +1067,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView('{{ sample.unique_id|escapejs }}')">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
@@ -1320,7 +1320,7 @@
                         }
 
                         continue; // Move to the next row
-                    } // Added this closing brace to end the 'if' block
+                    }
 
                     // Process rows that are not part of a group (if any)
                     const tdOpportunity = row.getElementsByTagName('td')[1];
@@ -1354,8 +1354,8 @@
                             row.style.display = 'none';
                         }
                     }
-                } // End of 'for' loop
-            }; // End of 'filterTable' function
+                }
+            };
 
             // Reset Form function
             window.resetForm = function() {
@@ -1396,7 +1396,7 @@
                 if (group.length === 1) {
                     // If only one entry, display it as usual
                     const sample = group[0];
-                    const newRow = document.createElement('tr'); // Add this line
+                    const newRow = document.createElement('tr');
                     newRow.innerHTML = `
                         <td class="col-select">
                             <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
@@ -1592,7 +1592,6 @@
             });
         }
 
-
         function displayThumbnails(imageDataArray) {
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
             // Clear existing thumbnails
@@ -1627,14 +1626,6 @@
                 link.href = imageData.full_size_url || imageData.url;  // Use full_size_url if available
                 link.target = '_blank';  // Open in a new tab or modify as needed
 
-                link.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    if (imageData.full_size_url) {
-                        viewFullSizeImage(imageData.full_size_url);
-                    } else {
-                        alert('The full-size image is still being processed. Please try again shortly.');
-                    }
-                });
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
                     if (imageData.full_size_url) {
