@@ -1739,7 +1739,7 @@
             const modalDialog = document.querySelector('.upload-modal .modal-dialog');
             modalDialog.style.width = neededWidth + 'px';
 
-            imageDataArray.forEach(imageData => {
+            imageDataArray.forEach((imageData, index) => {
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('thumbnail-wrapper');
 
