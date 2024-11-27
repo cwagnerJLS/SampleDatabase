@@ -142,6 +142,7 @@ def upload_files(request):
         try:
             sample = Sample.objects.get(unique_id=sample_id)
         except Sample.DoesNotExist:
+            logger.error("Sample not found with ID: %s", sample_id)
             return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
         image_urls = []
@@ -157,6 +158,7 @@ def upload_files(request):
 
                 # Validate file type
                 if not file.content_type.startswith('image/'):
+                    logger.error("Invalid file type: %s", file.content_type)
                     return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
 
                 # Open the uploaded image
@@ -185,7 +187,6 @@ def upload_files(request):
 
                 # Collect the URL and ID to return to the client
                 image_urls.append(sample_image.image.url)
-
                 image_ids.append(sample_image.id)  # Collect the image ID
 
                 # Save the uploaded file to a temporary file
@@ -194,13 +195,22 @@ def upload_files(request):
                         temp_file.write(chunk)
                     temp_file_path = temp_file.name
 
+                # Log the task invocation
+                logger.info(
+                    "Enqueuing save_full_size_image task for SampleImage ID %s with temp_file_path %s",
+                    sample_image.id,
+                    temp_file_path
+                )
+
                 # Enqueue Celery task with the path to the temporary file
                 save_full_size_image.delay(sample_image.id, temp_file_path)
+                logger.debug("Task enqueued successfully for SampleImage ID %s", sample_image.id)
 
         except Exception as e:
-            logger.error(f"Error processing file {file.name}: {e}")
-            return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
+            logger.exception("Error processing files: %s", e)
+            return JsonResponse({'status': 'error', 'error': 'Error processing files.'}, status=500)
 
+        logger.info("Files uploaded successfully for Sample ID %s", sample_id)
         return JsonResponse({
             'status': 'success',
             'message': 'Files uploaded successfully.',
@@ -208,7 +218,8 @@ def upload_files(request):
             'image_ids': image_ids  # Include image IDs in the response
         })
 
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method.'})
+    logger.error("Invalid request method: %s", request.method)
+    return JsonResponse({'status': 'error', 'error': 'Invalid request method.'}, status=405)
 
 def update_sample_location(request):
     if request.method == 'POST':

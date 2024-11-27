@@ -41,3 +41,8 @@ def save_full_size_image(sample_image_id, temp_file_path):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
             logger.info(f"Temporary file {temp_file_path} deleted.")
+
+@shared_task
+def test_task():
+    logger.info("Test task executed successfully.")
+    return "Success"
