@@ -19,5 +19,7 @@ urlpatterns = [
     path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
 ]
 
+import os  # Make sure to import os
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

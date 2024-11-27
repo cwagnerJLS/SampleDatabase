@@ -21,7 +21,8 @@ class CustomFileSystemStorage(FileSystemStorage):
 class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
         location = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
-        super().__init__(location=location, *args, **kwargs)
+        base_url = '/onedrive_media/'
+        super().__init__(location=location, base_url=base_url, *args, **kwargs)
 
 def generate_unique_id():
     return random.randint(1000, 9999)
