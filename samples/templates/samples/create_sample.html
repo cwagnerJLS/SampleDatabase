@@ -70,41 +70,6 @@
             max-width: 100%;
             height: auto;
         }
-
-        function viewFullSizeImage(fullSizeImageUrl) {
-            // Create or show a modal to display the full-size image
-            const fullSizeModal = document.getElementById('fullSizeModal');
-            if (!fullSizeModal) {
-                // Create the modal if it doesn't exist
-                const modalDiv = document.createElement('div');
-                modalDiv.id = 'fullSizeModal';
-                modalDiv.classList.add('modal');
-                modalDiv.innerHTML = `
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h2>Full-Size Image</h2>
-                                <span class="close" onclick="closeFullSizeModal()">&times;</span>
-                            </div>
-                            <div class="modal-body">
-                                <img id="fullSizeImage" src="${fullSizeImageUrl}" alt="Full-Size Image" style="width: 100%; height: auto;">
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modalDiv);
-            } else {
-                // If modal exists, update the image source
-                const fullSizeImage = document.getElementById('fullSizeImage');
-                fullSizeImage.src = fullSizeImageUrl;
-            }
-
-            // Show the modal
-            document.getElementById('fullSizeModal').style.display = 'block';
-        }
-
-        function closeFullSizeModal() {
-            document.getElementById('fullSizeModal').style.display = 'none';
         }
 
         @media (max-width: 600px) {
