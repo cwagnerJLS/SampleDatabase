@@ -35,8 +35,13 @@
         }
 
         #fullSizeModal .modal-content {
-            max-height: 90vh;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: auto;                  /* Adjust width based on content */
+            height: auto;                 /* Adjust height based on content */
+            max-width: 90vw;              /* Constrain to 90% of viewport width */
+            max-height: 90vh;             /* Constrain to 90% of viewport height */
+            overflow: hidden;             /* Prevent content overflow */
         }
 
         /* Ensure the modal header displays the filename properly */
