@@ -144,6 +144,7 @@ def upload_files(request):
             return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
         image_urls = []
+        image_ids = []  # Collect image IDs
 
         try:
             # Get the current count of images for the sample
@@ -181,7 +182,7 @@ def upload_files(request):
                 sample_image.image.save(filename, image_content)
                 sample_image.save()
 
-                # Collect the URL to return to the client
+                # Collect the URL and ID to return to the client
                 image_urls.append(sample_image.image.url)
 
                 # Save the uploaded file to a temporary file
@@ -197,7 +198,12 @@ def upload_files(request):
             logger.error(f"Error processing file {file.name}: {e}")
             return JsonResponse({'status': 'error', 'error': f'Error processing file: {file.name}'})
 
-        return JsonResponse({'status': 'success', 'message': 'Files uploaded successfully.', 'images': image_urls})
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Files uploaded successfully.',
+            'images': image_urls,
+            'image_ids': image_ids  # Include image IDs in the response
+        })
 
     return JsonResponse({'status': 'error', 'error': 'Invalid request method.'})
 

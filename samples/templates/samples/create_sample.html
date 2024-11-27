@@ -688,7 +688,9 @@
                 `;
                 // Show the modal
                 fullSizeModal.style.display = 'block';
-            } else {
+                // Start polling for full-size images
+                var uploadedImageIds = data.image_ids;
+                pollForFullSizeImages(sampleId, uploadedImageIds);
                 console.error('Modal container not found in the DOM.');
             }
         }
@@ -1519,7 +1521,38 @@
             });
         }
 
-        function uploadFiles(files, sampleId) {
+        function pollForFullSizeImages(sampleId, imageIds) {
+            var attempts = 0;
+            var maxAttempts = 10; // Number of polling attempts
+            var intervalTime = 2000; // Interval between attempts in milliseconds (2 seconds)
+
+            var interval = setInterval(function() {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    clearInterval(interval);
+                    return;
+                }
+                fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        var allFullSizeAvailable = imageIds.every(function(id) {
+                            var image = data.images.find(img => img.id === id);
+                            return image && image.full_size_url;
+                        });
+                        if (allFullSizeAvailable) {
+                            clearInterval(interval);
+                            // Refresh the thumbnails
+                            displayThumbnails(data.images);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    clearInterval(interval);
+                });
+            }, intervalTime);
+        }
             const formData = new FormData();
             for (let i = 0; i < files.length; i++) {
                 formData.append('files', files[i]);
@@ -1595,7 +1628,11 @@
                 console.log('Thumbnail clicked');
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
-                    viewFullSizeImage(imageData.full_size_url || imageData.url);
+                    if (imageData.full_size_url) {
+                        viewFullSizeImage(imageData.full_size_url);
+                    } else {
+                        alert('The full-size image is still being processed. Please try again shortly.');
+                    }
                 });
 
                 const img = document.createElement('img');
