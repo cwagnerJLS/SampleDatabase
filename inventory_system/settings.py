@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'samples',  # Your app
+    'samples.apps.SamplesConfig',  # Your app
 ]
 
 MIDDLEWARE = [
@@ -136,3 +136,10 @@ LOGGING = {
         },
     },
 }
+
+# Celery Configuration Options
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as the message broker
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Store task results in Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
