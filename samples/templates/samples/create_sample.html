@@ -66,11 +66,12 @@
 
         /* Modal Dialog */
         #fullSizeModal .modal-dialog {
-            max-width: 90vw;             /* Max width: 90% of viewport */
-            max-height: 90vh;            /* Max height: 90% of viewport */
+            max-width: 90vw;
+            max-height: 90vh;
             margin: auto;
             display: flex;
             flex-direction: column;
+            height: auto;        /* Allow height to adjust automatically */
         }
 
         /* Modal Content */
@@ -78,8 +79,9 @@
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 100%;
-            overflow: hidden;            /* Prevent content overflow */
+            max-height: 90vh;    /* Allow modal content to adjust height up to 90% of viewport */
+            height: auto;        /* Let height adjust automatically */
+            overflow: hidden;    /* Prevent content overflow */
         }
 
         /* Modal Header */
@@ -95,12 +97,13 @@
 
         /* Modal Body */
         #fullSizeModal .modal-body {
-            flex-grow: 1;
+            flex: 1 1 auto;                    /* Allow the body to shrink and grow as needed */
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;            /* Prevent scrolling inside modal body */
+            overflow: hidden;                  /* Prevent scrolling inside modal body */
             padding: 0;
+            max-height: 100%;                  /* Ensure the body doesn't exceed parent height */
         }
 
         /* Image Styling */
@@ -109,7 +112,7 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;         /* Scale image while maintaining aspect ratio */
+            object-fit: contain;               /* Scale image while maintaining aspect ratio */
         }
 
         @media (max-width: 600px) {
