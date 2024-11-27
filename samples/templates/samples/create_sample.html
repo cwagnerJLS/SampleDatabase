@@ -1592,39 +1592,6 @@
             });
         }
 
-        function pollForFullSizeImages(sampleId, imageIds) {
-            var attempts = 0;
-            var maxAttempts = 10; // Number of polling attempts
-            var intervalTime = 2000; // Interval between attempts in milliseconds (2 seconds)
-
-            var interval = setInterval(function() {
-                attempts++;
-                if (attempts > maxAttempts) {
-                    clearInterval(interval);
-                    return;
-                }
-                fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        var allFullSizeAvailable = imageIds.every(function(id) {
-                            var image = data.images.find(img => img.id === id);
-                            return image && image.full_size_url;
-                        });
-                        if (allFullSizeAvailable) {
-                            clearInterval(interval);
-                            // Refresh the thumbnails
-                            displayThumbnails(data.images);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    clearInterval(interval);
-                });
-            }, intervalTime);
-        }
-    }
 
         function displayThumbnails(imageDataArray) {
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
