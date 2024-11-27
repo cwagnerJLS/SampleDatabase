@@ -1606,6 +1606,9 @@
                 if (data.status === 'success') {
                     // The files were uploaded successfully; no alert needed.
                     handlePictureUploadView(sampleId);
+                    // Start polling for full-size images
+                    var uploadedImageIds = data.image_ids;
+                    pollForFullSizeImages(sampleId, uploadedImageIds);
                 } else {
                     alert('Error: ' + data.error);
                 }
