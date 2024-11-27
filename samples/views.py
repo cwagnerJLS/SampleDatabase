@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+import os
 from .models import Sample, SampleImage
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
@@ -378,6 +379,7 @@ def get_sample_images(request):
         image_data = [
             {
                 'id': image.id,
+                'filename': os.path.basename(image.image.name),
                 'url': request.build_absolute_uri(image.image.url),
                 'full_size_url': request.build_absolute_uri(image.full_size_image.url) if image.full_size_image else None
             }

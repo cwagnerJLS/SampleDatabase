@@ -26,6 +26,16 @@
             width: 100%;
         }
 
+        /* Ensure the modal header displays the filename properly */
+        #fullSizeModal .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+            max-width: 80%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         /* Increase z-index for the full-size modal */
         #fullSizeModal {
             z-index: 20; /* Set a higher z-index than other modals */
@@ -698,7 +708,7 @@
             }, intervalTime);
         }
 
-        function viewFullSizeImage(fullSizeImageUrl) {
+        function viewFullSizeImage(fullSizeImageUrl, filename) {
             console.log('viewFullSizeImage called with URL:', fullSizeImageUrl);
             const fullSizeModal = document.getElementById('fullSizeModal');
             if (fullSizeModal) {
@@ -707,10 +717,11 @@
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header full-size-modal-header">
+                                <h2>${filename}</h2>
                                 <span class="close" onclick="closeFullSizeModal()">&times;</span>
                             </div>
                             <div class="modal-body">
-                                <img src="${fullSizeImageUrl}" alt="Full-Size Image" style="width: 100%; height: auto;">
+                                <img src="${fullSizeImageUrl}" alt="${filename}" style="width: 100%; height: auto;">
                             </div>
                         </div>
                     </div>
@@ -1628,7 +1639,7 @@
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
                     if (imageData.full_size_url) {
-                        viewFullSizeImage(imageData.full_size_url);
+                        viewFullSizeImage(imageData.full_size_url, imageData.filename);
                     } else {
                         alert('The full-size image is still being processed. Please try again shortly.');
                     }
