@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import subprocess
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -450,6 +451,13 @@ def handle_print_request(request):
                 description = sample.description
 
                 generate_label(output_path, qr_data, id_value, date_received, rsm_value, description)
+
+                # Send the label PDF to the default printer
+                try:
+                    subprocess.run(['lpr', output_path], check=True)
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Error printing label for sample {sample_id}: {e}")
+                    return JsonResponse({'status': 'error', 'error': f'Failed to print label for sample {sample_id}'}, status=500)
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError:
