@@ -975,12 +975,7 @@
                     })
                     .then(data => {
                         if (data.status === 'success') {
-                            console.log('Labels to print:', data.labels);
-
-                            data.labels.forEach(label => {
-                                console.log(`Label ID: ${label.id}`);
-                                console.log(`QR Code: data:image/png;base64,${label.qr_code}`);
-                            });
+                            alert('Labels have been generated and saved to the Labels folder.');
 
                             // Here you would send this data to your printer
                             // For each affected group, check if any entries remain
