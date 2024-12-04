@@ -406,6 +406,8 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     wrapped_paragraph.drawOn(c, 0, 0)
 
     c.save()
+
+def handle_print_request(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
