@@ -937,72 +937,63 @@
                 const idsToPrint = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
 
                 if (idsToPrint.length === 0) {
-                    alert('No entries selected for printing.');
                     return;
                 }
 
-                const confirmPrint = confirm(`You have selected ${idsToPrint.length} entries to print. Do you want to proceed?`);
+                console.log(`Proceeding to print ${idsToPrint.length} entries.`);
 
-                if (confirmPrint) {
-                    console.log('Gathering data for selected entries...');
+                // Define affectedGroups as a Set to keep track of affected opportunity numbers
+                const affectedGroups = new Set();
+                // Collect the opportunity numbers of the selected samples
+                selectedCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const oppNumCell = row.querySelector('.col-opportunity');
+                    if (oppNumCell) {
+                        const oppNum = oppNumCell.textContent.trim();
+                        affectedGroups.add(oppNum);
+                    }
+                });
 
-                    // Define affectedGroups as a Set to keep track of affected opportunity numbers
-                    const affectedGroups = new Set();
-                    // Collect the opportunity numbers of the selected samples
-                    selectedCheckboxes.forEach(checkbox => {
-                        const row = checkbox.closest('tr');
-                        const oppNumCell = row.querySelector('.col-opportunity');
-                        if (oppNumCell) {
-                            const oppNum = oppNumCell.textContent.trim();
-                            affectedGroups.add(oppNum);
-                        }
-                    });
+                fetch("{% url 'handle_print_request' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({'ids': idsToPrint}),
+                    credentials: 'same-origin'  // Include cookies in the request
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Labels have been generated successfully
 
-                    fetch("{% url 'handle_print_request' %}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        },
-                        body: JSON.stringify({'ids': idsToPrint}),
-                        credentials: 'same-origin'  // Include cookies in the request
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => { throw err; });
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.status === 'success') {
-                            alert('Labels have been generated and saved to the Labels folder.');
-
-                            // Here you would send this data to your printer
-                            // For each affected group, check if any entries remain
-                            affectedGroups.forEach(oppNum => {
-                                const sanitizedOppNum = sanitizeOppNum(oppNum);
-                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                                if (remainingRows.length === 0) {
-                                    // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                    if (groupRow) {
-                                        groupRow.parentNode.removeChild(groupRow);
-                                    }
+                        // Here you would send this data to your printer
+                        // For each affected group, check if any entries remain
+                        affectedGroups.forEach(oppNum => {
+                            const sanitizedOppNum = sanitizeOppNum(oppNum);
+                            const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                            if (remainingRows.length === 0) {
+                                // No more entries in the group, remove the group row
+                                const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
+                                if (groupRow) {
+                                    groupRow.parentNode.removeChild(groupRow);
                                 }
-                            });
+                            }
+                        });
 
-                        } else {
-                            console.error('Error generating labels:', data.error);
-                            alert(`Error: ${data.error}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch Error:', error);
-                        alert('An unexpected error occurred. Please try again.');
-                    });
-                } else {
-                    console.log('Print operation was canceled.');
-                }
+                    } else {
+                        console.error('Error generating labels:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                });
             };
 
             // Minimize all groups
