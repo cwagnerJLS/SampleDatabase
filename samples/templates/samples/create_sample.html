@@ -492,6 +492,10 @@
             width: 130px;
             vertical-align: middle;
         }
+        .col-documentation {
+            width: 130px;
+            vertical-align: middle;
+        }
         .button-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -719,6 +723,7 @@
                 <th class="col-id">ID</th>
                 <th class="col-location">Location</th>
                 <th class="col-pictures" rowspan="2">Pictures</th>
+                <th class="col-documentation" rowspan="2">Documentation</th>
             </tr>
             <tr>
                 <th class="col-select">
@@ -1564,6 +1569,10 @@
                         <td class="col-pictures">
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
+                        <td class="col-documentation">
+                            <button type="button">Download</button>
+                            <button type="button">Upload</button>
+                        </td>
                     `;
                     tableBody.appendChild(newRow);
                 } else {
@@ -1579,7 +1588,7 @@
                         <td class="col-opportunity">${oppNum}</td>
                         <td class="col-customer">${groupCustomer}</td>
                         <td class="col-rsm">${groupRsm}</td>
-                        <td colspan="5"> <!-- Adjust colspan to span remaining columns -->
+                        <td colspan="6"> <!-- Increased colspan by 1 -->
                             (${group.length} entries)
                         </td>
                     `;
@@ -1613,6 +1622,10 @@
                             </td>
                             <td class="col-pictures">
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
+                            </td>
+                            <td class="col-documentation">
+                                <button type="button">Download</button>
+                                <button type="button">Upload</button>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
