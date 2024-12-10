@@ -26,6 +26,30 @@
             width: 100%;
         }
 
+        /* Style the container to arrange child elements horizontally */
+        .doc-buttons {
+            display: flex;
+            justify-content: center; /* Center the buttons horizontally */
+            align-items: center;     /* Center the buttons vertically */
+            gap: 5px;                /* Adjust spacing between buttons */
+        }
+
+        /* Optional: Ensure buttons have consistent styling */
+        .doc-buttons button {
+            flex: none;
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: var(--company-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .doc-buttons button:hover {
+            background-color: #001F40; /* Slightly darker shade on hover */
+        }
+
         /* Navigation Buttons */
         .modal-body .prev-button,
         .modal-body .next-button {
@@ -1570,8 +1594,10 @@
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
                         <td class="col-documentation">
-                            <button type="button">Download</button>
-                            <button type="button">Upload</button>
+                            <div class="doc-buttons">
+                                <button type="button">Download</button>
+                                <button type="button">Upload</button>
+                            </div>
                         </td>
                     `;
                     tableBody.appendChild(newRow);
@@ -1624,8 +1650,10 @@
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                             </td>
                             <td class="col-documentation">
-                                <button type="button">Download</button>
-                                <button type="button">Upload</button>
+                                <div class="doc-buttons">
+                                    <button type="button">Download</button>
+                                    <button type="button">Upload</button>
+                                </div>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
