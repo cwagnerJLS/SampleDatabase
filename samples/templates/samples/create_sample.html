@@ -36,21 +36,6 @@
         }
 
         /* Optional: Ensure buttons have consistent styling */
-        .doc-buttons button {
-            flex: 1;
-            max-width: 100%;
-            padding: 5px;
-            font-size: 14px;
-            background-color: #f0f0f0; /* Light grey background */
-            color: black;              /* Black text */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .doc-buttons button:hover {
-            background-color: #e0e0e0; /* Slightly darker grey on hover */
-        }
 
         /* Navigation Buttons */
         .modal-body .prev-button,
@@ -1653,10 +1638,8 @@
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                             </td>
                             <td class="col-documentation">
-                                <div class="doc-buttons">
-                                    <button type="button">Download</button>
-                                    <button type="button">Upload</button>
-                                </div>
+                                <button type="button">Download</button>
+                                <button type="button">Upload</button>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
