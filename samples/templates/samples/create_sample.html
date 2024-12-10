@@ -31,13 +31,15 @@
             display: flex;
             justify-content: center; /* Center the buttons horizontally */
             align-items: center;     /* Center the buttons vertically */
-            gap: 5px;                /* Adjust spacing between buttons */
+            gap: 5px;                /* Space between buttons */
+            width: 100%;             /* Ensure the container uses full column width */
         }
 
         /* Optional: Ensure buttons have consistent styling */
         .doc-buttons button {
-            flex: none;
-            padding: 5px 10px;
+            flex: 1;               /* Allows buttons to share available space equally */
+            max-width: 100%;       /* Ensure buttons don't exceed the container width */
+            padding: 5px;
             font-size: 14px;
             background-color: var(--company-color);
             color: white;
@@ -517,8 +519,9 @@
             vertical-align: middle;
         }
         .col-documentation {
-            width: 130px;
+            width: 130px; /* Adjust if necessary */
             vertical-align: middle;
+            text-align: center; /* Center content horizontally */
         }
         .button-grid {
             display: grid;
