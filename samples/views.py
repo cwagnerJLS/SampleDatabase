@@ -532,14 +532,35 @@ def download_documentation(request, sample_id):
         date_received=sample.date_received
     ).order_by('unique_id')
 
-    # Define the template path using BASE_DIR for OS compatibility
+    # Define the output directory and filename
+    output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
+    output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
+    output_path = os.path.join(output_dir, output_filename)
+
+    # Check if the file already exists
+    if os.path.exists(output_path):
+        # Serve the existing file
+        with open(output_path, 'rb') as fh:
+            response = HttpResponse(
+                fh.read(),
+                content_type='application/vnd.ms-excel.sheet.macroEnabled.12'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+            return response
+
+    # File doesn't exist, proceed to create it
     template_path = os.path.join(settings.BASE_DIR, 'Documentation', 'Documentation_Template.xlsm')
     if not os.path.exists(template_path):
         return HttpResponse("Template file not found.", status=500)
 
-    # Load the Excel template with macros preserved
     wb = load_workbook(template_path, keep_vba=True)
     ws = wb.active  # Modify if your data is not in the first sheet
+
+    # Get all samples with the same opportunity number and date received
+    samples = Sample.objects.filter(
+        opportunity_number=sample.opportunity_number,
+        date_received=sample.date_received
+    ).order_by('unique_id')
 
     # Populate the cells with the sample information
     ws['B1'] = sample.customer
@@ -552,14 +573,13 @@ def download_documentation(request, sample_id):
     for idx, s in enumerate(samples):
         ws.cell(row=start_row + idx, column=1).value = s.unique_id  # Column A
 
-    # Save the modified workbook in a directory named after the opportunity number
-    output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
+    # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
-    output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
-    output_path = os.path.join(output_dir, output_filename)
+
+    # Save the modified workbook
     wb.save(output_path)
 
-    # Serve the file as a downloadable response
+    # Serve the newly created file
     with open(output_path, 'rb') as fh:
         response = HttpResponse(
             fh.read(),
