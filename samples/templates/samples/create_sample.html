@@ -26,13 +26,19 @@
             width: 100%;
         }
 
-        /* Adjust padding for the Download and Upload buttons in the Documentation column */
+        /* Adjust margin for the Download and Upload buttons in the Documentation column */
         .doc-buttons .download-button {
-            padding-left: 10px; /* Adjust this value as needed */
+            margin-right: 10px; /* Adjust this value as needed */
         }
 
         .doc-buttons .upload-button {
-            padding-right: 10px; /* Adjust this value as needed */
+            margin-left: 10px; /* Adjust this value as needed */
+        }
+
+        .doc-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Optional hover effects */
@@ -515,7 +521,7 @@
             color: #000000; /* Black text */
         }
         .col-pictures {
-            width: 130px;
+            width: 100px; /* Decreased width */
             vertical-align: middle;
         }
         .col-documentation {
