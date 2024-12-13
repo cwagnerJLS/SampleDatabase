@@ -659,6 +659,10 @@
         const csrftoken = '{{ csrf_token }}';
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
+        function downloadDocumentation(sampleId) {
+            window.location.href = '/download_documentation/' + sampleId + '/';
+        }
+
         function showPrevImage(event) {
             event.stopPropagation(); // Prevent event bubbling
             if (window.currentImageIndex > 0) {
