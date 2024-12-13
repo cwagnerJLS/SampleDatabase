@@ -688,6 +688,9 @@
                 closeFullSizeModal(event);
             }
         }
+        function downloadDocumentation(sampleId) {
+            window.location.href = '/download_documentation/' + sampleId + '/';
+        }
     </script>
 
     <!-- Full-Size Image Modal -->
@@ -1250,7 +1253,8 @@
                                     </td>
                                     <td class="col-documentation">
                                         <div class="doc-buttons">
-                                            <a href="/download_documentation/${sample.unique_id}/" class="upload-view-button download-button">Download</a><button type="button" class="upload-view-button upload-button">Upload</button>
+                                            <button type="button" onclick="downloadDocumentation('${sample.unique_id}')" class="upload-view-button download-button">Download</button>
+                                            <button type="button" class="upload-view-button upload-button">Upload</button>
                                         </div>
                                     </td>
                                 `;
@@ -1663,7 +1667,7 @@
                             </td>
                             <td class="col-documentation">
                                 <div class="doc-buttons">
-                                    <a href="/download_documentation/${sample.unique_id}/" class="upload-view-button download-button">Download</a>
+                                    <button type="button" onclick="downloadDocumentation('${sample.unique_id}')" class="upload-view-button download-button">Download</button>
                                     <button type="button" class="upload-view-button upload-button">Upload</button>
                                 </div>
                             </td>
