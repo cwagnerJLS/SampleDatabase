@@ -519,7 +519,6 @@ def get_sample_images(request):
     except Sample.DoesNotExist:
         return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
-@require_POST
 def download_documentation(request, sample_id):
     try:
         # Retrieve the sample with the given unique ID
