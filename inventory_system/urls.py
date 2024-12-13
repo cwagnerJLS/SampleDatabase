@@ -15,7 +15,8 @@ urlpatterns = [
     path('handle_print_request/', views.handle_print_request, name='handle_print_request'),
     path('manage_sample/<int:sample_id>/', views.manage_sample, name='manage_sample'),
     path('upload_files/', views.upload_files, name='upload_files'),
-    path('get_sample_images/', views.get_sample_images, name='get_sample_images'),  # Added this line
+    path('get_sample_images/', views.get_sample_images, name='get_sample_images'),
+    path('download_documentation/<int:sample_id>/', views.download_documentation, name='download_documentation'),
     path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
 ]
 

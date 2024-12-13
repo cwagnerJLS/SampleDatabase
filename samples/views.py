@@ -22,6 +22,8 @@ import base64
 from io import BytesIO
 from PIL import Image
 import tempfile
+from django.http import HttpResponse, Http404
+from openpyxl import load_workbook
 from reportlab.lib.pagesizes import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
@@ -518,7 +520,54 @@ def get_sample_images(request):
         return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
 @require_POST
-def delete_sample_image(request):
+def download_documentation(request, sample_id):
+    try:
+        # Retrieve the sample with the given unique ID
+        sample = Sample.objects.get(unique_id=sample_id)
+    except Sample.DoesNotExist:
+        raise Http404("Sample not found")
+
+    # Get all samples with the same opportunity number and date received
+    samples = Sample.objects.filter(
+        opportunity_number=sample.opportunity_number,
+        date_received=sample.date_received
+    ).order_by('unique_id')
+
+    # Define the template path using BASE_DIR for OS compatibility
+    template_path = os.path.join(settings.BASE_DIR, 'Documentation', 'Documentation_Template.xlsm')
+    if not os.path.exists(template_path):
+        return HttpResponse("Template file not found.", status=500)
+
+    # Load the Excel template with macros preserved
+    wb = load_workbook(template_path, keep_vba=True)
+    ws = wb.active  # Modify if your data is not in the first sheet
+
+    # Populate the cells with the sample information
+    ws['B1'] = sample.customer
+    ws['B2'] = sample.rsm
+    ws['B3'] = sample.opportunity_number
+    ws['B4'] = sample.date_received.strftime('%Y-%m-%d')
+
+    # Starting from cell A8, list the unique IDs of the related samples
+    start_row = 8
+    for idx, s in enumerate(samples):
+        ws.cell(row=start_row + idx, column=1).value = s.unique_id  # Column A
+
+    # Save the modified workbook in a directory named after the opportunity number
+    output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
+    os.makedirs(output_dir, exist_ok=True)
+    output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
+    output_path = os.path.join(output_dir, output_filename)
+    wb.save(output_path)
+
+    # Serve the file as a downloadable response
+    with open(output_path, 'rb') as fh:
+        response = HttpResponse(
+            fh.read(),
+            content_type='application/vnd.ms-excel.sheet.macroEnabled.12'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+        return response
     image_id = request.POST.get('image_id')
     try:
         image = SampleImage.objects.get(id=image_id)
