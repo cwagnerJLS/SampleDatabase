@@ -555,17 +555,12 @@ def upload_documentation(request):
             return JsonResponse({'status': 'error', 'error': 'Error saving file'})
     else:
         return JsonResponse({'status': 'error', 'error': 'No file uploaded'})
+def download_documentation(request, sample_id):
     try:
         # Retrieve the sample with the given unique ID
         sample = Sample.objects.get(unique_id=sample_id)
     except Sample.DoesNotExist:
         raise Http404("Sample not found")
-
-    # Get all samples with the same opportunity number and date received
-    samples = Sample.objects.filter(
-        opportunity_number=sample.opportunity_number,
-        date_received=sample.date_received
-    ).order_by('unique_id')
 
     # Define the output directory and filename
     output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
@@ -622,8 +617,6 @@ def upload_documentation(request):
         )
         response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
         return response
-@require_POST
-def delete_sample_image(request):
     image_id = request.POST.get('image_id')
     try:
         image = SampleImage.objects.get(id=image_id)
