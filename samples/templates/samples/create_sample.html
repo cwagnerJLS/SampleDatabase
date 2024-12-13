@@ -717,8 +717,11 @@
                         return;
                     }
 
+                    // Convert sampleId to an integer
+                    const sampleIdInt = parseInt(sampleId, 10);
+
                     // Fetch sample data from the samples array
-                    const sample = samples.find(s => s.unique_id === sampleId);
+                    const sample = samples.find(s => s.unique_id === sampleIdInt);
                     if (!sample) {
                         alert('Sample data not found.');
                         document.body.removeChild(fileInput);
