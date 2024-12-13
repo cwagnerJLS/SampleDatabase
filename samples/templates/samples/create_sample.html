@@ -717,7 +717,11 @@
                         return;
                     }
 
-                    // **New Code Starts Here**
+                    if (file.name.toLowerCase() !== expectedFilename.toLowerCase()) {
+                        alert(`Invalid filename. Expected filename: ${expectedFilename}`);
+                        document.body.removeChild(fileInput);
+                        return;
+                    }
                     // Fetch sample data from the samples array
                     const sample = samples.find(s => s.unique_id === sampleId);
                     if (!sample) {
