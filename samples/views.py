@@ -568,6 +568,8 @@ def download_documentation(request, sample_id):
         )
         response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
         return response
+@require_POST
+def delete_sample_image(request):
     image_id = request.POST.get('image_id')
     try:
         image = SampleImage.objects.get(id=image_id)
