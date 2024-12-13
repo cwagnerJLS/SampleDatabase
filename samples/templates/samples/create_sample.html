@@ -717,11 +717,6 @@
                         return;
                     }
 
-                    if (file.name.toLowerCase() !== expectedFilename.toLowerCase()) {
-                        alert(`Invalid filename. Expected filename: ${expectedFilename}`);
-                        document.body.removeChild(fileInput);
-                        return;
-                    }
                     // Fetch sample data from the samples array
                     const sample = samples.find(s => s.unique_id === sampleId);
                     if (!sample) {
@@ -734,11 +729,6 @@
                     const expectedFilename = `Documentation_${sample.opportunity_number}_${sample.date_received.replace(/-/g, '')}.xlsm`;
             
                     // Compare filenames (case-insensitive)
-                    if (file.name.toLowerCase() !== expectedFilename.toLowerCase()) {
-                        alert(`Invalid filename. Expected filename: ${expectedFilename}`);
-                        document.body.removeChild(fileInput);
-                        return;
-                    }
                     // **New Code Ends Here**
                     const formData = new FormData();
                     formData.append('file', file);
