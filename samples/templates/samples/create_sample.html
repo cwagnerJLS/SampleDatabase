@@ -1656,8 +1656,10 @@
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                             </td>
                             <td class="col-documentation">
-                                <button type="button" class="upload-view-button download-button">Download</button>
-                                <button type="button" class="upload-view-button upload-button">Upload</button>
+                                <div class="doc-buttons">
+                                    <button type="button" class="upload-view-button download-button">Download</button>
+                                    <button type="button" class="upload-view-button upload-button">Upload</button>
+                                </div>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
