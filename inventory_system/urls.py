@@ -18,6 +18,7 @@ urlpatterns = [
     path('get_sample_images/', views.get_sample_images, name='get_sample_images'),
     path('download_documentation/<int:sample_id>/', views.download_documentation, name='download_documentation'),
     path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
+    path('upload_documentation/', views.upload_documentation, name='upload_documentation'),
 ]
 
 import os  # Make sure to import os

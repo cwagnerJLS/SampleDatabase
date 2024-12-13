@@ -692,6 +692,61 @@
                 closeFullSizeModal(event);
             }
         }
+        function uploadDocumentation(sampleId) {
+            // Create a hidden file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsm,.xlsx'; // Accept Excel files
+            fileInput.style.display = 'none';
+
+            // Append to the body
+            document.body.appendChild(fileInput);
+
+            // Trigger the file dialog
+            fileInput.click();
+
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                const file = fileInput.files[0];
+                if (file) {
+                    // Validate file type (optional but recommended)
+                    const allowedExtensions = /(\.xlsm|\.xlsx)$/i;
+                    if (!allowedExtensions.exec(file.name)) {
+                        alert('Please upload a valid Excel file (.xlsm or .xlsx).');
+                        document.body.removeChild(fileInput);
+                        return;
+                    }
+
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('sample_id', sampleId);
+
+                    // Send the file via AJAX to the server
+                    fetch('{% url "upload_documentation" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('Documentation uploaded successfully.');
+                        } else {
+                            alert('Error uploading documentation: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An unexpected error occurred during upload.');
+                    });
+                }
+                // Clean up
+                document.body.removeChild(fileInput);
+            });
+        }
     </script>
 
     <!-- Full-Size Image Modal -->
@@ -1255,7 +1310,7 @@
                                     <td class="col-documentation">
                                         <div class="doc-buttons">
                                             <button type="button" onclick="downloadDocumentation('${sample.unique_id}')" class="upload-view-button download-button">Download</button>
-                                            <button type="button" class="upload-view-button upload-button">Upload</button>
+                                            <button type="button" onclick="uploadDocumentation('${sample.unique_id}')" class="upload-view-button upload-button">Upload</button>
                                         </div>
                                     </td>
                                 `;
