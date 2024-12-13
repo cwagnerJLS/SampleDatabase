@@ -18,6 +18,8 @@ from .models import Sample, SampleImage
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
 import qrcode
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 import base64
 from io import BytesIO
 from PIL import Image
@@ -555,6 +557,21 @@ def upload_documentation(request):
             return JsonResponse({'status': 'error', 'error': 'Error saving file'})
     else:
         return JsonResponse({'status': 'error', 'error': 'No file uploaded'})
+@csrf_exempt  # Add this if you're not using CSRF tokens properly
+@require_POST
+def delete_sample_image(request):
+    image_id = request.POST.get('image_id')
+    try:
+        image = SampleImage.objects.get(id=image_id)
+        # Delete the SampleImage instance (its delete method handles file deletion)
+        image.delete()
+        return JsonResponse({'status': 'success'})
+    except SampleImage.DoesNotExist:
+        return JsonResponse({'status': 'error', 'error': 'Image not found'})
+    except Exception as e:
+        logger.error(f"Error deleting image {image_id}: {e}")
+        return JsonResponse({'status': 'error', 'error': 'An error occurred while deleting the image'})
+
 def download_documentation(request, sample_id):
     try:
         # Retrieve the sample with the given unique ID
@@ -617,14 +634,3 @@ def download_documentation(request, sample_id):
         )
         response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
         return response
-    image_id = request.POST.get('image_id')
-    try:
-        image = SampleImage.objects.get(id=image_id)
-        # Delete the SampleImage instance (its delete method handles file deletion)
-        image.delete()
-        return JsonResponse({'status': 'success'})
-    except SampleImage.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Image not found'})
-    except Exception as e:
-        logger.error(f"Error deleting image {image_id}: {e}")
-        return JsonResponse({'status': 'error', 'error': 'An error occurred while deleting the image'})
