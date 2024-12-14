@@ -535,7 +535,7 @@ def upload_documentation(request):
             return JsonResponse({'status': 'error', 'error': 'Sample not found'})
 
         # Define the output directory and filename (same as in download_documentation)
-        output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
+        output_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', 'Documentation', sample.opportunity_number)
         output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
         output_path = os.path.join(output_dir, output_filename)
 
