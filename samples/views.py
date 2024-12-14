@@ -25,7 +25,7 @@ from io import BytesIO
 from PIL import Image
 import tempfile
 from django.http import HttpResponse, Http404
-from openpyxl import load_workbook
+import xlwings as xw
 from reportlab.lib.pagesizes import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
@@ -600,31 +600,37 @@ def download_documentation(request, sample_id):
     if not os.path.exists(template_path):
         return HttpResponse("Template file not found.", status=500)
 
-    wb = load_workbook(template_path, keep_vba=True)
-    ws = wb.active  # Modify if your data is not in the first sheet
-
-    # Get all samples with the same opportunity number and date received
-    samples = Sample.objects.filter(
-        opportunity_number=sample.opportunity_number,
-        date_received=sample.date_received
-    ).order_by('unique_id')
-
-    # Populate the cells with the sample information
-    ws['B1'] = sample.customer
-    ws['B2'] = sample.rsm
-    ws['B3'] = sample.opportunity_number
-    ws['B4'] = sample.date_received.strftime('%Y-%m-%d')
-
-    # Starting from cell A8, list the unique IDs of the related samples
-    start_row = 8
-    for idx, s in enumerate(samples):
-        ws.cell(row=start_row + idx, column=1).value = s.unique_id  # Column A
-
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save the modified workbook
-    wb.save(output_path)
+    # Use xlwings to open the template and modify it
+    app = xw.App(visible=False)  # Prevents Excel window from appearing
+    try:
+        wb = xw.Book(template_path)
+        ws = wb.sheets.active  # Modify if your data is not in the first sheet
+
+        # Populate the cells with the sample information
+        ws.range('B1').value = sample.customer
+        ws.range('B2').value = sample.rsm
+        ws.range('B3').value = sample.opportunity_number
+        ws.range('B4').value = sample.date_received.strftime('%Y-%m-%d')
+
+        # Get all samples with the same opportunity number and date received
+        samples = Sample.objects.filter(
+            opportunity_number=sample.opportunity_number,
+            date_received=sample.date_received
+        ).order_by('unique_id')
+
+        # Starting from cell A8, list the unique IDs of the related samples
+        start_row = 8
+        for idx, s in enumerate(samples):
+            ws.range(f'A{start_row + idx}').value = s.unique_id  # Column A
+
+        # Save the modified workbook
+        wb.save(output_path)
+    finally:
+        wb.close()
+        app.quit()
 
     # Serve the newly created file
     with open(output_path, 'rb') as fh:
