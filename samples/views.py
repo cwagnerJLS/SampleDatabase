@@ -580,7 +580,7 @@ def download_documentation(request, sample_id):
         raise Http404("Sample not found")
 
     # Define the output directory and filename
-    output_dir = os.path.join(settings.BASE_DIR, 'Documentation', sample.opportunity_number)
+    output_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', 'Documentation', sample.opportunity_number)
     output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
     output_path = os.path.join(output_dir, output_filename)
 
@@ -596,7 +596,7 @@ def download_documentation(request, sample_id):
             return response
 
     # File doesn't exist, proceed to create it
-    template_path = os.path.join(settings.BASE_DIR, 'Documentation', 'Documentation_Template.xlsm')
+    template_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', 'Documentation', 'Documentation_Template.xlsm')
     if not os.path.exists(template_path):
         return HttpResponse("Template file not found.", status=500)
 
