@@ -26,6 +26,25 @@
             width: 100%;
         }
 
+        .thumbnail-wrapper .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-weight: bold;
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            text-align: center;
+            line-height: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 1;  /* Ensure button is in front of the image */
+        }
+
         /* Adjust margin for the Download and Upload buttons in the Documentation column */
         .doc-buttons .download-button,
         .doc-buttons .upload-button {
