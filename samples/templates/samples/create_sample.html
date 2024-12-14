@@ -732,7 +732,11 @@
                     const expectedFilename = `Documentation_${sample.opportunity_number}_${sample.date_received.replace(/-/g, '')}.xlsm`;
             
                     // Compare filenames (case-insensitive)
-                    // **New Code Ends Here**
+                    if (file.name.toLowerCase() !== expectedFilename.toLowerCase()) {
+                        alert(`Invalid filename. Expected filename: ${expectedFilename}`);
+                        document.body.removeChild(fileInput);
+                        return;
+                    }
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('sample_id', sampleId);
