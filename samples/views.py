@@ -522,42 +522,6 @@ def get_sample_images(request):
 
 @csrf_exempt  # Add this if you're not using CSRF tokens properly
 @require_POST
-def upload_documentation(request):
-    if request.FILES:
-        file = request.FILES.get('file')
-        sample_id = request.POST.get('sample_id')
-
-        # Validate sample_id
-        try:
-            sample = Sample.objects.get(unique_id=sample_id)
-        except Sample.DoesNotExist:
-            return JsonResponse({'status': 'error', 'error': 'Sample not found'})
-
-        # Define the output directory and filename (same as in download_documentation)
-        output_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', 'Documentation', sample.opportunity_number)
-        output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
-        output_path = os.path.join(output_dir, output_filename)
-
-        # Ensure the output directory exists
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Validate file type
-        if not file.name.lower().endswith(('.xlsm', '.xlsx')):
-            return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only Excel files are allowed.'})
-
-        # Save the uploaded file
-        try:
-            with open(output_path, 'wb') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            logger.error(f"Error saving uploaded file: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Error saving file'})
-    else:
-        return JsonResponse({'status': 'error', 'error': 'No file uploaded'})
-@csrf_exempt  # Add this if you're not using CSRF tokens properly
-@require_POST
 def delete_sample_image(request):
     image_id = request.POST.get('image_id')
     try:
