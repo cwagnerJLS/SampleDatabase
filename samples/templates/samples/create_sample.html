@@ -1345,12 +1345,7 @@
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
                                     </td>
-                                    <td class="col-documentation">
-                                        <div class="doc-buttons">
-                                            <button type="button" onclick="downloadDocumentation('${sample.unique_id}')" class="upload-view-button download-button">Download</button>
-                                            <button type="button" onclick="uploadDocumentation('${sample.unique_id}')" class="upload-view-button upload-button">Upload</button>
-                                        </div>
-                                    </td>
+                                    <td class="col-documentation"></td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
                             });
@@ -1703,12 +1698,7 @@
                         <td class="col-pictures">
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
-                        <td class="col-documentation">
-                            <div class="doc-buttons">
-                                <button type="button" onclick="downloadDocumentation('${sample.unique_id}')" class="upload-view-button download-button">Download</button>
-                                <button type="button" onclick="uploadDocumentation('${sample.unique_id}')" class="upload-view-button upload-button">Upload</button>
-                            </div>
-                        </td>
+                        <td class="col-documentation"></td>
                     `;
                     tableBody.appendChild(newRow);
                 } else {

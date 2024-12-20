@@ -25,7 +25,6 @@ from io import BytesIO
 from PIL import Image
 import tempfile
 from django.http import HttpResponse, Http404
-import xlwings as xw
 from reportlab.lib.pagesizes import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
