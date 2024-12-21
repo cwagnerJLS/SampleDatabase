@@ -80,7 +80,9 @@ def create_sample(request):
 
             try:
                 quantity = int(quantity)
-                date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
+                # Only parse date_received if it's a string
+                if isinstance(date_received, str):
+                    date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
             except ValueError as e:
                 logger.error(f"Invalid data format: {e}")
                 return JsonResponse({'status': 'error', 'error': 'Invalid data format'})
