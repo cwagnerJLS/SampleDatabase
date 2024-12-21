@@ -137,50 +137,6 @@ def create_sample(request):
                 wb.close()
                 app.quit()
 
-            if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
-                logger.error("Missing data in POST request")
-                return JsonResponse({'status': 'error', 'error': 'Missing data'})
-
-            try:
-                quantity = int(quantity)
-                date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
-            except ValueError as e:
-                logger.error(f"Invalid data format: {e}")
-                return JsonResponse({'status': 'error', 'error': 'Invalid data format'})
-
-            location = "Choose a location"
-            logger.debug(f"Received data: customer={customer}, rsm={rsm}, opportunity_number={opportunity_number}, "
-                         f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
-
-            # Create sample entries
-            created_samples = []
-            for i in range(quantity):
-                sample = Sample.objects.create(
-                    date_received=date_received,
-                    customer=customer,
-                    rsm=rsm,
-                    opportunity_number=opportunity_number,
-                    description=description,
-                    storage_location=location,
-                    quantity=1  # Each entry represents a single unit
-                )
-                created_samples.append(sample)
-
-            logger.debug(f"Created samples: {created_samples}")
-            return JsonResponse({
-                'status': 'success',
-                'created_samples': [
-                    {
-                        'unique_id': sample.unique_id,
-                        'date_received': sample.date_received.strftime('%Y-%m-%d'),
-                        'customer': sample.customer,
-                        'rsm': sample.rsm,
-                        'opportunity_number': sample.opportunity_number,
-                        'description': sample.description,
-                        'location': sample.storage_location
-                    } for sample in created_samples
-                ]
-            })
 
         except Exception as e:
             logger.error(f"Error in create_sample view: {e}")
