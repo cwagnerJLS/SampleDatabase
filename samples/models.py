@@ -66,39 +66,20 @@ class Sample(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Delete the thumbnail image file if it exists
-        if self.image and self.image.storage.exists(self.image.name):
-            self.image.delete(save=False)
-        # Delete the full-size image file if it exists
-        if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
-            self.full_size_image.delete(save=False)
-        # Get the directory paths for both images
-        thumbnail_dir = os.path.dirname(self.image.path)
-        full_size_dir = os.path.dirname(self.full_size_image.path)
-
         opportunity_number = self.opportunity_number
+
         # Call the superclass delete method to delete the database record
         super().delete(*args, **kwargs)
+
         # Check if any samples remain with the same opportunity number
         if not Sample.objects.filter(opportunity_number=opportunity_number).exists():
             dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
             if os.path.exists(dir_path):
-                shutil.rmtree(dir_path)
-                logger.debug(f"Deleted directory for opportunity number {opportunity_number}")
-
-        # Function to check and delete directory if empty
-        def remove_if_empty(directory):
-            if os.path.isdir(directory) and not os.listdir(directory):
                 try:
-                    os.rmdir(directory)
-                except Exception:
-                    pass  # You might want to log this exception
-
-        # Remove directories if they are empty
-        remove_if_empty(thumbnail_dir)
-        remove_if_empty(full_size_dir)
-        super().delete(*args, **kwargs)
-        return f"Sample {self.unique_id} - {self.customer}"
+                    shutil.rmtree(dir_path)
+                    logger.debug(f"Deleted directory for opportunity number {opportunity_number}")
+                except Exception as e:
+                    logger.error(f"Error deleting directory {dir_path}: {e}")
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)

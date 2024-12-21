@@ -294,8 +294,8 @@ def delete_samples(request):
             samples_to_delete = Sample.objects.filter(unique_id__in=ids)
             # Get the list of opportunity numbers
             opportunity_numbers = samples_to_delete.values_list('opportunity_number', flat=True).distinct()
-            # Delete the samples
-            samples_to_delete.delete()
+            for sample in samples_to_delete:
+                sample.delete()  # Calls the delete method on each instance
             logger.debug(f"Deleted samples with IDs: {ids}")
 
             # Check if any samples remain with the same opportunity numbers
