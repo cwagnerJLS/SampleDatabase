@@ -117,8 +117,12 @@ def create_sample(request):
                 ws.range('B3').value = opportunity_number
                 ws.range('B4').value = description
 
-                # Enter unique IDs and dates starting from row 8
-                start_row = 8
+                # Find the last used row in column A starting from row 8
+                last_row = ws.range('A' + str(ws.cells.last_cell.row)).end('up').row
+                # Ensure start_row is at least 8
+                start_row = max(last_row + 1, 8) if last_row >= 8 else 8
+
+                # Enter unique IDs and dates starting from start_row
                 for idx, sample in enumerate(created_samples):
                     ws.range(f'A{start_row + idx}').value = sample.unique_id
                     ws.range(f'B{start_row + idx}').value = sample.date_received.strftime('%Y-%m-%d')
