@@ -1233,7 +1233,6 @@
             // Submit Form function
             window.submitForm = function(event) {
                 if (event) event.preventDefault();
-                const placeholderLink = `#placeholder-link-${data.created_samples[0].opportunity_number}`;
                 const dateReceived = $('#date_received').val();
                 const quantity = $('#quantity').val();
 
@@ -1263,14 +1262,12 @@
                     }).then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
+                            const placeholderLink = `#placeholder-link-${data.created_samples[0].opportunity_number}`;
                             data.created_samples.forEach(sample => {
                                 const newRow = document.createElement('tr');
                                 newRow.innerHTML = `
                                     <td class="col-select">
                                         <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
-                                    </td>
-                                    <td class="col-documentation">
-                                        <a href="${placeholderLink}">Link</a>
                                     </td>
                                     <td class="col-opportunity">${sample.opportunity_number}</td>
                                     <td class="col-customer">${sample.customer}</td>
@@ -1292,8 +1289,9 @@
                                     <td class="col-pictures">
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
+                                    <td class="col-documentation">
+                                        <a href="${placeholderLink}">Link</a>
                                     </td>
-                                    <td class="col-documentation"></td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
                             });
