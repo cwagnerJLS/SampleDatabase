@@ -2,7 +2,11 @@ import os
 import re
 import random
 import shutil
+import logging
 from django.utils.deconstruct import deconstructible
+
+# Configure logging
+logger = logging.getLogger(__name__)
 from django.db import models
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
