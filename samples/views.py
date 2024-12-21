@@ -62,6 +62,18 @@ def create_sample(request):
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
+            
+            # Copy DocumentationTemplate.xlsm into the opportunity directory and rename it
+            document_template_src = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+            document_destination = os.path.join(directory_path, f"Documentation_{opportunity_number}.xlsm")
+
+            if not os.path.exists(document_destination):
+                try:
+                    shutil.copyfile(document_template_src, document_destination)
+                except Exception as e:
+                    logger.error(f"Error copying documentation template: {e}")
+                    return JsonResponse({'status': 'error', 'error': 'Error copying documentation template'}, status=500)
+
             if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
                 logger.error("Missing data in POST request")
                 return JsonResponse({'status': 'error', 'error': 'Missing data'})
