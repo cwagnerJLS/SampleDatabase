@@ -18,6 +18,7 @@ from .models import Sample, SampleImage
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
 import qrcode
+import xlwings as xw
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import base64
