@@ -74,6 +74,32 @@ def create_sample(request):
                     logger.error(f"Error copying documentation template: {e}")
                     return JsonResponse({'status': 'error', 'error': 'Error copying documentation template'}, status=500)
 
+            # Open the copied Excel file and modify it
+            try:
+                app = xw.App(visible=False)  # Prevents Excel window from appearing
+                wb = xw.Book(document_destination)
+                ws = wb.sheets.active  # Modify if your data is not in the first sheet
+
+                # Populate the cells with the sample information
+                ws.range('B1').value = customer
+                ws.range('B2').value = rsm
+                ws.range('B3').value = opportunity_number
+                ws.range('B4').value = description
+
+                # Enter unique IDs and dates starting from row 8
+                start_row = 8
+                for idx, sample in enumerate(created_samples):
+                    ws.range(f'A{start_row + idx}').value = sample.unique_id
+                    ws.range(f'B{start_row + idx}').value = sample.date_received.strftime('%Y-%m-%d')
+
+                wb.save()
+            except Exception as e:
+                logger.error(f"Error modifying Excel file: {e}")
+                return JsonResponse({'status': 'error', 'error': 'Error modifying Excel file'}, status=500)
+            finally:
+                wb.close()
+                app.quit()
+
             if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
                 logger.error("Missing data in POST request")
                 return JsonResponse({'status': 'error', 'error': 'Missing data'})
