@@ -1096,10 +1096,6 @@
                             const oppNum = oppNumCell.textContent.trim();
                             affectedGroups.add(oppNum);
                         }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                        alert('An error occurred while saving the sample.');
                     });
 
                     fetch("{% url 'delete_samples' %}", {
