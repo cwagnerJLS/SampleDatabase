@@ -1096,13 +1096,23 @@
                             const oppNum = oppNumCell.textContent.trim();
                             affectedGroups.add(oppNum);
                         }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred while saving the sample.');
                     });
 
                     fetch("{% url 'delete_samples' %}", {
                         method: 'POST',
                         body: formData,
                         credentials: 'same-origin'  // Include cookies
-                    }).then(response => response.json())
+                    }).then(response => {
+                        if (!response.ok) {
+                            // Handle HTTP errors
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.status === 'success') {
                             selectedCheckboxes.forEach(checkbox => {
@@ -1126,6 +1136,8 @@
                             selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
                             console.log('Entries deleted successfully.');
                         } else {
+                            console.error('Error saving sample:', data.error);
+                            alert(`Error saving sample: ${data.error}`);
                             console.error('Error deleting entries:', data.error);
                         }
                     });

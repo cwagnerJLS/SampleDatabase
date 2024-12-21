@@ -142,6 +142,23 @@ def create_sample(request):
             logger.error(f"Error in create_sample view: {e}")
             return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
 
+        # Return success response outside the try-except block
+        logger.debug("Sample(s) created successfully")
+        return JsonResponse({
+            'status': 'success',
+            'created_samples': [
+                {
+                    'unique_id': sample.unique_id,
+                    'date_received': sample.date_received.strftime('%Y-%m-%d'),
+                    'customer': sample.customer,
+                    'rsm': sample.rsm,
+                    'opportunity_number': sample.opportunity_number,
+                    'description': sample.description,
+                    'location': sample.storage_location
+                } for sample in created_samples
+            ]
+        })
+
     logger.debug("Rendering create_sample page")
 
     try:
