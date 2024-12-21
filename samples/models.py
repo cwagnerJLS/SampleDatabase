@@ -1,6 +1,7 @@
 import os
 import re
 import random
+import shutil
 from django.utils.deconstruct import deconstructible
 from django.db import models
 from django.core.files.storage import FileSystemStorage
@@ -71,7 +72,15 @@ class Sample(models.Model):
         thumbnail_dir = os.path.dirname(self.image.path)
         full_size_dir = os.path.dirname(self.full_size_image.path)
 
+        opportunity_number = self.opportunity_number
         # Call the superclass delete method to delete the database record
+        super().delete(*args, **kwargs)
+        # Check if any samples remain with the same opportunity number
+        if not Sample.objects.filter(opportunity_number=opportunity_number).exists():
+            dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+            if os.path.exists(dir_path):
+                shutil.rmtree(dir_path)
+                logger.debug(f"Deleted directory for opportunity number {opportunity_number}")
 
         # Function to check and delete directory if empty
         def remove_if_empty(directory):

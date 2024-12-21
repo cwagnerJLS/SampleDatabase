@@ -2,6 +2,7 @@ import os
 import logging
 import json
 import subprocess
+import shutil
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
@@ -289,8 +290,22 @@ def delete_samples(request):
     if request.method == 'POST':
         try:
             ids = json.loads(request.POST.get('ids', '[]'))
-            Sample.objects.filter(unique_id__in=ids).delete()
+            # Retrieve the samples to be deleted
+            samples_to_delete = Sample.objects.filter(unique_id__in=ids)
+            # Get the list of opportunity numbers
+            opportunity_numbers = samples_to_delete.values_list('opportunity_number', flat=True).distinct()
+            # Delete the samples
+            samples_to_delete.delete()
             logger.debug(f"Deleted samples with IDs: {ids}")
+
+            # Check if any samples remain with the same opportunity numbers
+            for opp_num in opportunity_numbers:
+                if not Sample.objects.filter(opportunity_number=opp_num).exists():
+                    # Delete the directory
+                    dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opp_num)
+                    if os.path.exists(dir_path):
+                        shutil.rmtree(dir_path)
+                        logger.debug(f"Deleted directory for opportunity number {opp_num}")
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON data: {e}")
