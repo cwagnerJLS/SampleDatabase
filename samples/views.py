@@ -56,7 +56,10 @@ def create_sample(request):
             date_received = request.POST.get('date_received')
             quantity = request.POST.get('quantity')
 
-            # Check for missing data
+            # Create directory in OneDrive_Sync named after the opportunity number
+            directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+            if not os.path.exists(directory_path):
+                os.makedirs(directory_path)
             if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
                 logger.error("Missing data in POST request")
                 return JsonResponse({'status': 'error', 'error': 'Missing data'})
