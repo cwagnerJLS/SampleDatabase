@@ -678,6 +678,8 @@
         const csrftoken = '{{ csrf_token }}';
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
+        const opportunityLinks = {{ opportunity_links|safe }};
+
         function downloadDocumentation(sampleId) {
             window.location.href = '/download_documentation/' + sampleId + '/';
         }
@@ -1271,7 +1273,9 @@
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
                                     </td>
-                                    <td class="col-documentation"></td>
+                                    <td class="col-documentation">
+                                        ${opportunityLinks[sample.opportunity_number] ? `<a href="${opportunityLinks[sample.opportunity_number]}" target="_blank">Documentation</a>` : ''}
+                                    </td>
                                 `;
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
                             });
