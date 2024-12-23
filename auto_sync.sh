@@ -45,9 +45,19 @@ trap cleanup SIGINT SIGTERM EXIT
 #                           HELPER FUNCTIONS
 ###############################################################################
 
+# (Optional) Helper function to ensure empty folders have a .keep file
+# so rclone sees them as non-empty and will create them on the remote.
+add_placeholder_files_for_empty_directories() {
+    echo "$(date): Checking for empty folders and adding .keep files..."
+    find "$WATCH_DIR" -type d -empty -exec sh -c 'touch "$1/.keep"' _ {} \;
+}
+
 # Full sync logic: sync all files, handling additions, deletions, and updates
 sync_main() {
     echo "$(date): ===== SYNC START ====="
+
+    # (Optional) Create placeholder files in any empty directories
+    add_placeholder_files_for_empty_directories
 
     if rclone sync "$WATCH_DIR" "$REMOTE" \
         --progress \
@@ -55,6 +65,7 @@ sync_main() {
         --checkers 4 \
         --transfers 4 \
         --ignore-size \
+        --create-empty-src-dirs \
         -vv
     then
         echo "$(date): Sync completed successfully."
