@@ -65,6 +65,7 @@ sync_main() {
         --checkers 4 \
         --transfers 4 \
         --ignore-size \
+        --ignore-checksum \
         --create-empty-src-dirs \
         -vv
     then
