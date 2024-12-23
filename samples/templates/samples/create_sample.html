@@ -1633,7 +1633,9 @@
                         <td class="col-pictures">
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
-                        <td class="col-documentation"></td>
+                        <td class="col-documentation">
+                            ${opportunityLinks[sample.opportunity_number] ? `<a href="${opportunityLinks[sample.opportunity_number]}" target="_blank">Documentation</a>` : ''}
+                        </td>
                     `;
                     tableBody.appendChild(newRow);
                 } else {
