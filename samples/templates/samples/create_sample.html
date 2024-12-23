@@ -1337,6 +1337,11 @@
                 resetAddSampleForm();
             }
 
+            // Reset Add Sample Form function
+            function resetAddSampleForm() {
+                document.getElementById('addSampleForm').reset();
+            }
+
             // Validate and Show Modal function
             window.validateAndShowModal = function() {
                 const customer = document.getElementById('customer').value;
