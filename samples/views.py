@@ -1,3 +1,4 @@
+import shutil
 import os
 import logging
 import json
@@ -63,7 +64,14 @@ def create_sample(request):
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
-            if not all([customer, rsm, opportunity_number, description, date_received, quantity]):
+            # Copy DocumentationTemplate.xlsm into the new directory and rename it
+            template_file = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+            if os.path.exists(template_file):
+                new_filename = f"Documentation_{opportunity_number}.xlsm"
+                destination_file = os.path.join(directory_path, new_filename)
+                shutil.copy(template_file, destination_file)
+            else:
+                logger.error(f"Documentation template not found at {template_file}")
                 logger.error("Missing data in POST request")
                 return JsonResponse({'status': 'error', 'error': 'Missing data'})
 
