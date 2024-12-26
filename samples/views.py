@@ -66,14 +66,23 @@ def create_sample(request):
                 os.makedirs(directory_path)
             # Copy DocumentationTemplate.xlsm into the new directory and rename it
             template_file = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+            logger.debug(f"Looking for template file at: {template_file}")
+
             if os.path.exists(template_file):
+                logger.debug("Template file exists.")
                 new_filename = f"Documentation_{opportunity_number}.xlsm"
                 destination_file = os.path.join(directory_path, new_filename)
-                shutil.copy(template_file, destination_file)
+                try:
+                    shutil.copy(template_file, destination_file)
+                    logger.debug(f"Copied template file to: {destination_file}")
+                except PermissionError as e:
+                    logger.error(f"Permission error while copying template file: {e}")
+                    return JsonResponse({'status': 'error', 'error': 'Permission denied when copying template file'}, status=500)
             else:
-                logger.error(f"Documentation template not found at {template_file}")
-                logger.error("Missing data in POST request")
-                return JsonResponse({'status': 'error', 'error': 'Missing data'})
+                base_dir_contents = os.listdir(settings.BASE_DIR)
+                logger.debug(f"Contents of BASE_DIR ({settings.BASE_DIR}): {base_dir_contents}")
+                logger.error(f"Documentation template not found at: {template_file}")
+                return JsonResponse({'status': 'error', 'error': f'Documentation template not found at {template_file}'}, status=500)
 
             try:
                 quantity = int(quantity)
