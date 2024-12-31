@@ -45,39 +45,10 @@ trap cleanup SIGINT SIGTERM EXIT
 #                           HELPER FUNCTIONS
 ###############################################################################
 
-# (Optional) Helper function to ensure empty folders have a .keep file
-# so rclone sees them as non-empty and will create them on the remote.
+# Optional: Maintain .keep files in empty directories
 add_placeholder_files_for_empty_directories() {
     echo "$(date): Checking for empty folders and adding .keep files..."
     find "$WATCH_DIR" -type d -empty -exec sh -c 'touch "$1/.keep"' _ {} \;
-}
-
-# Full sync logic: sync all files, handling additions, deletions, and updates
-sync_main() {
-    echo "$(date): ===== SYNC START ====="
-
-    # (Optional) Create placeholder files in any empty directories
-    add_placeholder_files_for_empty_directories
-
-    if rclone sync "$WATCH_DIR" "$REMOTE" \
-        --progress \
-        --log-file="$LOG_FILE" \
-        --checkers 4 \
-        --transfers 4 \
-        --ignore-size \
-        --ignore-checksum \
-        --create-empty-src-dirs \
-        -vv
-    then
-        echo "$(date): Sync completed successfully."
-    else
-        echo "$(date): Error during sync. Check $LOG_FILE for details."
-    fi
-
-    echo "$(date): ===== SYNC END ====="
-
-    # Update CSV tracking after sync
-    update_csv
 }
 
 # Function to update CSV with current 4-digit folders
@@ -99,9 +70,7 @@ update_csv() {
     for folder in "${current_folders[@]}"; do
         if [[ ! " ${csv_folders[@]} " =~ " ${folder} " ]]; then
             echo "$(date): Adding folder $folder to CSV."
-            # Generate SharePoint hyperlink using rclone
             link=$(rclone link "${REMOTE}${folder}" --onedrive-link-scope=organization 2>>"$LOG_FILE" | tail -n 1)
-
             if [[ -n "$link" ]]; then
                 echo "${folder},${link}" >> "$OPPORTUNITY_CSV"
                 echo "$(date): Added folder $folder with link $link to CSV."
@@ -122,6 +91,66 @@ update_csv() {
     done
 
     echo "$(date): CSV tracking updated."
+}
+
+###############################################################################
+#                               SYNC LOGIC
+###############################################################################
+
+sync_main() {
+    echo "$(date): ===== SYNC START ====="
+
+    # Keep empty directories from vanishing
+    add_placeholder_files_for_empty_directories
+
+    # 1) Local → Remote for NON-Excel files
+    echo "$(date): Syncing NON-Excel files from local to remote..."
+    rclone sync "$WATCH_DIR" "$REMOTE" \
+        --exclude "*.xls*" \
+        --progress \
+        --log-file="$LOG_FILE" \
+        --checkers 4 \
+        --transfers 4 \
+        --ignore-size \
+        --ignore-checksum \
+        --create-empty-src-dirs \
+        -vv \
+    || echo "$(date): Error pushing NON-Excel files to SharePoint."
+
+    # 2) Local → Remote for Excel files
+    echo "$(date): Syncing Excel files from local to remote..."
+    rclone sync "$WATCH_DIR" "$REMOTE" \
+        --include "*.xls*" \
+        --exclude "*" \
+        --progress \
+        --log-file="$LOG_FILE" \
+        --checkers 4 \
+        --transfers 4 \
+        --ignore-size \
+        --ignore-checksum \
+        --create-empty-src-dirs \
+        -vv \
+    || echo "$(date): Error pushing Excel files to SharePoint."
+
+    # 3) Remote → Local for Excel files
+    echo "$(date): Pulling Excel files from remote to local..."
+    rclone sync "$REMOTE" "$WATCH_DIR" \
+        --include "*.xls*" \
+        --exclude "*" \
+        --progress \
+        --log-file="$LOG_FILE" \
+        --checkers 4 \
+        --transfers 4 \
+        --ignore-size \
+        --ignore-checksum \
+        --create-empty-src-dirs \
+        -vv \
+    || echo "$(date): Error pulling Excel files from SharePoint."
+
+    echo "$(date): ===== SYNC END ====="
+
+    # Update CSV tracking after sync
+    update_csv
 }
 
 ###############################################################################
