@@ -140,6 +140,12 @@ def create_sample(request):
         if not os.path.exists(template_file):
             logger.error(f"Documentation template not found at: {template_file}")
 
+        # Define excel_file before the loop
+        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
+        if not os.path.exists(excel_file):
+            logger.error(f"Excel file not found at {excel_file}")
+            return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
+
         # Loop through each opportunity number
         for opportunity_number in opportunity_numbers:
             # Define the directory path for this opportunity number
@@ -159,12 +165,8 @@ def create_sample(request):
                     logger.debug(f"Copied template file to: {destination_file}")
                 except Exception as e:
                     logger.error(f"Error copying template file for opportunity {opportunity_number}: {e}")
-                # Load the Excel file
-                excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
-                if not os.path.exists(excel_file):
-                    logger.error(f"Excel file not found at {excel_file}")
-                    return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
 
+        # Now excel_file is defined, so you can read it
         df = pd.read_excel(excel_file)
 
         # Get unique customers and RSMs
