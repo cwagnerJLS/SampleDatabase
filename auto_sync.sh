@@ -107,6 +107,7 @@ sync_main() {
     echo "$(date): Syncing NON-Excel files from local to remote..."
     rclone sync "$WATCH_DIR" "$REMOTE" \
         --exclude "*.xls*" \
+        --exclude "*.osts*" \
         --progress \
         --log-file="$LOG_FILE" \
         --checkers 4 \
