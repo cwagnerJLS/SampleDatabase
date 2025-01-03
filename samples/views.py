@@ -131,7 +131,33 @@ def create_sample(request):
 
     logger.debug("Rendering create_sample page")
 
-    try:
+    # Retrieve all unique opportunity numbers from the Sample objects in the database
+    opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
+
+    # Path to the DocumentationTemplate.xlsm file
+    template_file = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+    if not os.path.exists(template_file):
+        logger.error(f"Documentation template not found at: {template_file}")
+
+    # Loop through each opportunity number
+    for opportunity_number in opportunity_numbers:
+        # Define the directory path for this opportunity number
+        directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+        # Define the expected documentation file path
+        new_filename = f"Documentation_{opportunity_number}.xlsm"
+        destination_file = os.path.join(directory_path, new_filename)
+
+        # Check if the documentation file already exists
+        if not os.path.exists(destination_file):
+            logger.debug(f"Documentation file does not exist for opportunity {opportunity_number}, creating it.")
+            # Ensure the directory exists
+            os.makedirs(directory_path, exist_ok=True)
+            # Copy the template file to the destination
+            try:
+                shutil.copy(template_file, destination_file)
+                logger.debug(f"Copied template file to: {destination_file}")
+            except Exception as e:
+                logger.error(f"Error copying template file for opportunity {opportunity_number}: {e}")
         # Load the Excel file
         excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
         if not os.path.exists(excel_file):
