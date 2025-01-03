@@ -131,6 +131,8 @@ def create_sample(request):
 
     logger.debug("Rendering create_sample page")
 
+    try:
+
     # Retrieve all unique opportunity numbers from the Sample objects in the database
     opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
 
@@ -158,11 +160,11 @@ def create_sample(request):
                 logger.debug(f"Copied template file to: {destination_file}")
             except Exception as e:
                 logger.error(f"Error copying template file for opportunity {opportunity_number}: {e}")
-        # Load the Excel file
-        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
-        if not os.path.exists(excel_file):
-            logger.error(f"Excel file not found at {excel_file}")
-            return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
+            # Load the Excel file
+            excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
+            if not os.path.exists(excel_file):
+                logger.error(f"Excel file not found at {excel_file}")
+                return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
 
         df = pd.read_excel(excel_file)
 
