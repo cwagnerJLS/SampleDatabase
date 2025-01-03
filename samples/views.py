@@ -65,7 +65,7 @@ def create_sample(request):
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
             # Copy DocumentationTemplate.xlsm into the new directory and rename it
-            template_file = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+            template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
             logger.debug(f"Looking for template file at: {template_file}")
 
             if os.path.exists(template_file):
@@ -136,7 +136,7 @@ def create_sample(request):
         opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
 
         # Path to the DocumentationTemplate.xlsm file
-        template_file = os.path.join(settings.BASE_DIR, 'DocumentationTemplate.xlsm')
+        template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
         if not os.path.exists(template_file):
             logger.error(f"Documentation template not found at: {template_file}")
 
