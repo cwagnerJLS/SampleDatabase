@@ -93,7 +93,7 @@ def create_sample(request):
                 return JsonResponse({'status': 'error', 'error': 'Invalid data format'})
 
             location = "Choose a location"
-            logger.debug(f"Received data: customer={customer}, rsm={rsm}, opportunity_number={opportunity_number}, "
+            logger.debug(f"Received data: customer={customer}, rsm={rsm_full_name}, opportunity_number={opportunity_number}, "
                          f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
 
             # Create sample entries
@@ -102,7 +102,7 @@ def create_sample(request):
                 sample = Sample.objects.create(
                     date_received=date_received,
                     customer=customer,
-                    rsm=rsm,
+                    rsm=rsm_full_name,
                     opportunity_number=opportunity_number,
                     description=description,
                     storage_location=location,
