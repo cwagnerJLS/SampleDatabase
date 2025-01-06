@@ -6,6 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Nicknames mapping
+NICKNAMES = {
+    'Peter DeSuno': 'Pete',
+    # Add other mappings as needed
+}
+
 # Load credentials from environment variables
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID

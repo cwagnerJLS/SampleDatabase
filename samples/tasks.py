@@ -2,7 +2,7 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 import os
 from .models import SampleImage, get_image_upload_path
-from .email_utils import send_email, get_rsm_email  # Import the functions
+from .email_utils import send_email, get_rsm_email, NICKNAMES  # Import NICKNAMES
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,11 +51,15 @@ def test_task():
 @shared_task
 def send_sample_received_email(rsm_full_name, date_received, opportunity_number, customer, quantity):
     try:
-        subject = f'{opportunity_number} ({customer}) Samples Received'
+        # Extract the first name from the full name
+        first_name = rsm_full_name.strip().split()[0]
+
+        # Determine the greeting name (use nickname if available)
+        greeting_name = NICKNAMES.get(rsm_full_name, first_name)
         body = f"""
         <html>
             <body>
-                <p>Hello {rsm_full_name},</p>
+                <p>Hello {greeting_name},</p>
                 <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on Sharepoint shortly. Thanks,</p>
                 <p>-Test Lab</p>
             </body>
