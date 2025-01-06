@@ -110,8 +110,9 @@ def send_email(subject, body, recipient_email, cc_emails=None):
 
     # Check if TEST_MODE is enabled
     if getattr(settings, 'TEST_MODE', False):
-        logger.info(f"TEST_MODE is enabled. Overriding recipient email to cwagner@jlsautomation.com.")
+        logger.info("TEST_MODE is enabled. Overriding recipient email to cwagner@jlsautomation.com.")
         recipient_email = 'cwagner@jlsautomation.com'
+        cc_emails = None  # Do not CC Test Lab group in TEST_MODE
 
     # Define the endpoint for sending mail
     endpoint = f"https://graph.microsoft.com/v1.0/users/{USERNAME}/sendMail"
