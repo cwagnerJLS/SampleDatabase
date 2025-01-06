@@ -1,11 +1,14 @@
 import os
 import requests
 from msal import PublicClientApplication, SerializableTokenCache
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Load credentials from environment variables
-CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
-TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID
-USERNAME = "service_account@jlsautomation.com"             # Your Service Account Email
+CLIENT_ID = os.environ.get('AZURE_CLIENT_ID')
+TENANT_ID = os.environ.get('AZURE_TENANT_ID')
+USERNAME = os.environ.get('AZURE_USERNAME')
 
 TOKEN_CACHE_FILE = "token_cache.json"
 
@@ -131,9 +134,40 @@ def send_email(subject, body, recipient_email):
     else:
         print(f"Failed to send email: {response.status_code}, {response.text}")
 
-def get_rsm_email(rsm):
-    rsm_email_mapping = {
-        'Jeremy': 'jeremy@example.com',
-        # Add other RSMs here
-    }
-    return rsm_email_mapping.get(rsm, 'default@example.com')  # Provide a default email if needed
+def generate_email(full_name):
+    # List of common suffixes to ignore
+    suffixes = ["Jr.", "Sr.", "III", "IV", "V"]
+
+    parts = full_name.strip().split()
+
+    # If the last chunk is a known suffix, remove it
+    if parts and parts[-1] in suffixes:
+        parts = parts[:-1]
+
+    if len(parts) < 2:
+        logger.error(f"Invalid full name provided: '{full_name}'. Cannot generate email.")
+        return None  # Or handle this appropriately
+
+    # First name is the first element
+    first_name = parts[0]
+    # Last name is the last element
+    last_name = parts[-1]
+
+    # Construct the email address
+    email = f"{first_name[0].lower()}{last_name.lower()}@jlsautomation.com"
+    return email
+
+def get_rsm_email(rsm_full_name):
+    """
+    Constructs the RSM's email address based on their full name.
+    Args:
+        rsm_full_name (str): The full name of the RSM.
+    Returns:
+        str or None: The constructed email address or None if invalid name.
+    """
+    email = generate_email(rsm_full_name)
+    if email:
+        return email
+    else:
+        # Return a default email or handle the error as needed
+        return 'default@example.com'

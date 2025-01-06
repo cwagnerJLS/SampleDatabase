@@ -55,7 +55,7 @@ def create_sample(request):
 
             # Retrieve data from POST request
             customer = request.POST.get('customer')
-            rsm = request.POST.get('rsm')
+            rsm_full_name = request.POST.get('rsm')
             opportunity_number = request.POST.get('opportunity_number')
             description = request.POST.get('description')
             date_received = request.POST.get('date_received')
@@ -119,7 +119,7 @@ def create_sample(request):
 
                 # Call the email sending task
                 send_sample_received_email.delay(
-                    rsm,
+                    rsm_full_name,
                     date_received.strftime('%Y-%m-%d'),
                     opportunity_number,
                     customer,

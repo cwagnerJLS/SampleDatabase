@@ -49,7 +49,7 @@ def test_task():
     return "Success"
 
 @shared_task
-def send_sample_received_email(rsm, date_received, opportunity_number, customer, quantity):
+def send_sample_received_email(rsm_full_name, date_received, opportunity_number, customer, quantity):
     try:
         subject = f'{opportunity_number} ({customer}) Samples Received'
         body = f"""
@@ -61,9 +61,11 @@ def send_sample_received_email(rsm, date_received, opportunity_number, customer,
             </body>
         </html>
         """
-        recipient_email = get_rsm_email(rsm)
-
-        send_email(subject, body, recipient_email)
-        logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
+        recipient_email = get_rsm_email(rsm_full_name)
+        if recipient_email:
+            send_email(subject, body, recipient_email)
+            logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
+        else:
+            logger.error(f"Failed to generate email address for RSM '{rsm_full_name}'. Email not sent.")
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
