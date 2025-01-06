@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 # Nicknames mapping
 NICKNAMES = {
     'Peter DeSuno': 'Pete',
+    'Michael R. Newcome': 'Mike',
     # Add other mappings as needed
 }
 
