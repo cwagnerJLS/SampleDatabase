@@ -3,9 +3,9 @@ import requests
 from msal import PublicClientApplication, SerializableTokenCache
 
 # Load credentials from environment variables
-CLIENT_ID = os.environ.get('AZURE_CLIENT_ID')         # Your Azure AD App Client ID
-TENANT_ID = os.environ.get('AZURE_TENANT_ID')         # Your Azure AD Tenant ID
-USERNAME = os.environ.get('AZURE_USERNAME')           # Your Service Account Email
+CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
+TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID
+USERNAME = "service_account@jlsautomation.com"             # Your Service Account Email
 
 TOKEN_CACHE_FILE = "token_cache.json"
 
