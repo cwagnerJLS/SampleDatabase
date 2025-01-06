@@ -1,6 +1,7 @@
 import os
 import requests
 from msal import PublicClientApplication, SerializableTokenCache
+from django.conf import settings  # Import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,11 @@ def send_email(subject, body, recipient_email):
         recipient_email (str): Recipient's email address.
     """
     access_token = get_access_token()
+
+    # Check if TEST_MODE is enabled
+    if getattr(settings, 'TEST_MODE', False):
+        logger.info(f"TEST_MODE is enabled. Overriding recipient email to cwagner@jlsautomation.com.")
+        recipient_email = 'cwagner@jlsautomation.com'
 
     # Define the endpoint for sending mail
     endpoint = f"https://graph.microsoft.com/v1.0/users/{USERNAME}/sendMail"
