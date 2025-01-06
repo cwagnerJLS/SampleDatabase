@@ -2,6 +2,7 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 import os
 from .models import SampleImage, get_image_upload_path
+from .email_utils import send_email, get_rsm_email  # Import the functions
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,3 +47,23 @@ def save_full_size_image(sample_image_id, temp_file_path):
 def test_task():
     logger.info("Test task executed successfully.")
     return "Success"
+
+@shared_task
+def send_sample_received_email(rsm, date_received, opportunity_number, customer, quantity):
+    try:
+        subject = f'{opportunity_number} ({customer}) Samples Received'
+        body = f"""
+        <html>
+            <body>
+                <p>Hello {rsm},</p>
+                <p>{quantity} samples for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on Sharepoint shortly. Thanks,</p>
+                <p>-Test Lab</p>
+            </body>
+        </html>
+        """
+        recipient_email = get_rsm_email(rsm)
+
+        send_email(subject, body, recipient_email)
+        logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")

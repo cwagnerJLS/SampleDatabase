@@ -5,6 +5,7 @@ import json
 import csv
 import subprocess
 import shutil
+from .tasks import send_sample_received_email  # Add this import at the top
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
@@ -110,6 +111,20 @@ def create_sample(request):
                 created_samples.append(sample)
 
             logger.debug(f"Created samples: {created_samples}")
+
+            # After the samples are successfully created
+            if created_samples:
+                # Calculate the total quantity
+                total_quantity = sum(sample.quantity for sample in created_samples)
+
+                # Call the email sending task
+                send_sample_received_email.delay(
+                    rsm,
+                    date_received.strftime('%Y-%m-%d'),
+                    opportunity_number,
+                    customer,
+                    total_quantity  # Use the total quantity of samples created
+                )
             return JsonResponse({
                 'status': 'success',
                 'created_samples': [
