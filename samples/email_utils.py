@@ -13,7 +13,14 @@ NICKNAMES = {
     # Add other mappings as needed
 }
 
-# Load credentials from environment variables
+# Test Lab Group emails
+TEST_LAB_GROUP = [
+    "cwagner@jlsautomation.com",
+    "ndekker@jlsautomation.com",
+    "cwentz@jlsautomation.com",
+    "mmooney@jlsautomation.com",
+    # Add other emails as needed in the future
+]
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"             # Your Service Account Email
@@ -91,7 +98,7 @@ def get_access_token():
         error_description = result.get("error_description")
         raise Exception(f"Could not obtain access token: {error} - {error_description}")
 
-def send_email(subject, body, recipient_email):
+def send_email(subject, body, recipient_email, cc_emails=None):
     """
     Sends an email using the Microsoft Graph API.
     Args:
@@ -130,6 +137,13 @@ def send_email(subject, body, recipient_email):
                     }
                 }
             ],
+            "ccRecipients": [
+                {
+                    "emailAddress": {
+                        "address": email
+                    }
+                } for email in cc_emails
+            ] if cc_emails else [],
             "from": {  # Specify the 'from' address
                 "emailAddress": {
                     "address": "test-engineering@JLSAutomation.com"  # Shared Mailbox Address

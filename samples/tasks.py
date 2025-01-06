@@ -2,7 +2,7 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 import os
 from .models import SampleImage, get_image_upload_path
-from .email_utils import send_email, get_rsm_email, NICKNAMES  # Import NICKNAMES
+from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP  # Import TEST_LAB_GROUP
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         """
         recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
-            send_email(subject, body, recipient_email)
+            send_email(subject, body, recipient_email, cc_emails=TEST_LAB_GROUP)
             logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
         else:
             logger.error(f"Failed to generate email address for RSM '{rsm_full_name}'. Email not sent.")
