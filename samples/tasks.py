@@ -56,7 +56,8 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
 
         # Determine the greeting name (use nickname if available)
         greeting_name = NICKNAMES.get(rsm_full_name, first_name)
-        body = f"""
+        subject = f'{opportunity_number} ({customer}) Samples Received'
+        
         <html>
             <body>
                 <p>Hello {greeting_name},</p>
