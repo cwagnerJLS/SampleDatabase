@@ -56,7 +56,7 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         <html>
             <body>
                 <p>Hello {rsm_full_name},</p>
-                <p>{quantity} samples for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on Sharepoint shortly. Thanks,</p>
+                <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on Sharepoint shortly. Thanks,</p>
                 <p>-Test Lab</p>
             </body>
         </html>
