@@ -170,4 +170,4 @@ def get_rsm_email(rsm_full_name):
         return email
     else:
         # Return a default email or handle the error as needed
-        return 'default@example.com'
+        return 'cwagner@jlsautomation.com'
