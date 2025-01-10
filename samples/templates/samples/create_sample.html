@@ -27,18 +27,12 @@
         }
 
         @media (max-width: 600px) {
-            table#samplesTable .col-description {
+            #samplesTable th:nth-child(6),
+            #samplesTable td:nth-child(6) {
                 display: none;
             }
-            .col-select,
-            .col-opportunity,
-            .col-customer,
-            .col-rsm,
-            .col-date,
-            .col-id,
-            .col-location,
-            .col-pictures,
-            .col-documentation {
+            #samplesTable th,
+            #samplesTable td {
                 width: auto;
             }
         }
@@ -800,8 +794,8 @@
                 <th class="col-description">Description</th>
                 <th class="col-id">ID</th>
                 <th class="col-location">Location</th>
-                <th class="col-pictures" rowspan="2">Pictures</th>
-                <th class="col-documentation" rowspan="2">Documentation</th>
+                <th class="col-pictures">Pictures</th>
+                <th class="col-documentation">Documentation</th>
             </tr>
             <tr>
                 <th class="col-select">
@@ -814,6 +808,8 @@
                 <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
                 <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
+                <th class="col-pictures"></th>
+                <th class="col-documentation"></th>
             </tr>
         </thead>
         <tbody>
