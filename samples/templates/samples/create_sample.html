@@ -26,6 +26,28 @@
             width: 100%;
         }
 
+        @media (max-width: 600px) {
+            .col-description {
+                display: none;
+            }
+            .col-select,
+            .col-opportunity,
+            .col-customer,
+            .col-rsm,
+            .col-date,
+            .col-id,
+            .col-location,
+            .col-pictures,
+            .col-documentation {
+                width: auto;
+            }
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
         .thumbnail-wrapper .delete-button {
             position: absolute;
             top: 5px;
@@ -766,7 +788,8 @@
     </form>
 
     <!-- The Table for displaying samples -->
-    <table id="samplesTable" border="1">
+    <div class="table-responsive">
+        <table id="samplesTable" border="1">
         <thead>
             <tr>
                 <th class="col-select">Select</th>
@@ -796,7 +819,8 @@
         <tbody>
             <!-- Existing samples will be loaded via JavaScript -->
         </tbody>
-    </table>
+        </table>
+    </div>
 
     <!-- The Modal for Adding Samples -->
     <div id="addSampleModal" class="modal add-sample-modal">
