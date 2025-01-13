@@ -27,10 +27,18 @@
         }
 
         @media (max-width: 600px) {
+            /* Hide the 'Description' column */
             #samplesTable th.col-description,
             #samplesTable td.col-description {
-                display: none;
+                display: none !important;  /* Add !important */
             }
+
+            /* Allow the table to adjust its layout */
+            #samplesTable {
+                table-layout: auto;  /* Add this line */
+            }
+
+            /* Adjust other columns to use available space */
             #samplesTable th,
             #samplesTable td {
                 width: auto;
@@ -495,7 +503,7 @@
             margin-top: 20px;
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
+            /* table-layout: fixed; */  /* This line is now commented out or removed */
         }
         #samplesTable th, #samplesTable td {
             border: 1px solid #DDD; /* Subtle border */
