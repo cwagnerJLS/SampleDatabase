@@ -45,24 +45,71 @@ def get_existing_ids_from_workbook(access_token, library_id, file_id, worksheet_
         print(f"Failed to get existing IDs: {response.status_code}, {response.text}")
     return existing_ids
 
+import re
+
 def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, start_cell, rows):
+    """
+    Update a specific range in an Excel worksheet with the provided rows.
+    """
+    # Calculate the end cell based on the number of rows and columns
+    num_rows = len(rows)
+    num_cols = len(rows[0]) if rows else 0
+    if num_cols == 0:
+        logger.error("No columns to append.")
+        return
+
+    # Get start cell row and column
+    match = re.match(r"([A-Z]+)(\d+)", start_cell)
+    if not match:
+        logger.error(f"Invalid start cell address: {start_cell}")
+        return
+    start_col_letters, start_row_number = match.groups()
+    start_row_number = int(start_row_number)
+
+    # Compute end row number
+    end_row_number = start_row_number + num_rows - 1
+
+    # Compute end column letter(s)
+    def col_num_to_letters(n):
+        result = ''
+        while n > 0:
+            n, remainder = divmod(n - 1, 26)
+            result = chr(65 + remainder) + result
+        return result
+
+    # Convert start column letters to number
+    start_col_num = sum(
+        [(ord(char) - ord('A') + 1) * (26 ** idx)
+         for idx, char in enumerate(reversed(start_col_letters))]
+    )
+    end_col_num = start_col_num + num_cols - 1
+    end_col_letters = col_num_to_letters(end_col_num)
+
+    # Build the range address
+    range_address = f"{start_col_letters}{start_row_number}:{end_col_letters}{end_row_number}"
+    logger.debug(f"Calculated range address: {range_address}")
+
     endpoint = (
         f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
-        f"/workbook/worksheets/{worksheet_name}/range(address='{start_cell}')/insert"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
     )
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
+
     data = {
-        "shift": "Down",
         "values": rows
     }
-    response = requests.post(endpoint, headers=headers, json=data)
+
+    response = requests.patch(endpoint, headers=headers, json=data)
+
     if response.status_code == 200:
-        print(f"Rows appended successfully.")
+        logger.info(f"Rows appended successfully to range {range_address}.")
     else:
-        print(f"Failed to append rows: {response.status_code}, {response.text}")
+        logger.error(f"Failed to append rows: {response.status_code}, {response.text}")
+        logger.debug(f"Response content: {response.content}")
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
