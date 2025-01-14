@@ -3,6 +3,62 @@ from msal import PublicClientApplication
 import os
 
 # Configuration
+
+def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_address):
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{cell_address}')"
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(endpoint, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        values = data.get('values', [[]])
+        if values and values[0]:
+            return values[0][0]
+    else:
+        print(f"Failed to get cell value: {response.status_code}, {response.text}")
+    return None
+
+def get_existing_ids_from_workbook(access_token, library_id, file_id, worksheet_name, start_row=8):
+    range_address = f"A{start_row}:B5000"
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(endpoint, headers=headers)
+
+    existing_ids = set()
+    if response.status_code == 200:
+        data = response.json()
+        values = data.get('values', [])
+        for row in values:
+            if row and len(row) > 0:
+                existing_ids.add(str(row[0]))
+    else:
+        print(f"Failed to get existing IDs: {response.status_code}, {response.text}")
+    return existing_ids
+
+def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, start_cell, rows):
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{start_cell}')/insert"
+    )
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "shift": "Down",
+        "values": rows
+    }
+    response = requests.post(endpoint, headers=headers, json=data)
+    if response.status_code == 200:
+        print(f"Rows appended successfully.")
+    else:
+        print(f"Failed to append rows: {response.status_code}, {response.text}")
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"             # Service Account Email

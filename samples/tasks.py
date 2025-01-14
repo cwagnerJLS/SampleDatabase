@@ -1,11 +1,82 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
 import os
-from .models import SampleImage, get_image_upload_path
-from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP  # Import TEST_LAB_GROUP
+from .models import SampleImage, get_image_upload_path, Sample
+from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
+from .EditExcelSharepoint import (
+    get_access_token,
+    find_excel_file,
+    get_cell_value,
+    update_cell_value,
+    get_existing_ids_from_workbook,
+    append_rows_to_workbook
+)
 
 logger = logging.getLogger(__name__)
+
+@shared_task
+def update_documentation_excels():
+    try:
+        token = get_access_token()
+        if not token:
+            logger.error("Failed to acquire access token.")
+            return
+
+        library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
+        opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
+
+        for opportunity_number in opportunity_numbers:
+            logger.info(f"Processing opportunity number: {opportunity_number}")
+
+            excel_file_id = find_excel_file(token, library_id, opportunity_number)
+            if not excel_file_id:
+                logger.info(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
+                continue
+
+            worksheet_name = 'Sheet1'
+
+            cells_to_check = {
+                'B1': 'customer',
+                'B2': 'rsm',
+                'B3': 'opportunity_number',
+                'B4': 'description',
+            }
+
+            sample = Sample.objects.filter(opportunity_number=opportunity_number).first()
+            if not sample:
+                logger.warning(f"No samples found for opportunity number {opportunity_number}.")
+                continue
+
+            for cell_address, model_field in cells_to_check.items():
+                cell_value = get_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address)
+                if not cell_value:
+                    value_to_write = getattr(sample, model_field)
+                    update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
+                    logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
+                else:
+                    logger.info(f"Cell {cell_address} already has value '{cell_value}'. Skipping.")
+
+            existing_ids = get_existing_ids_from_workbook(token, library_id, excel_file_id, worksheet_name, start_row=8)
+            samples = Sample.objects.filter(opportunity_number=opportunity_number)
+            rows_to_append = []
+
+            for s in samples:
+                if str(s.unique_id) not in existing_ids:
+                    row = [s.unique_id, s.date_received.strftime('%Y-%m-%d')]
+                    rows_to_append.append(row)
+                    logger.info(f"Prepared to append row: {row}")
+
+            if rows_to_append:
+                start_row = 8 + len(existing_ids)
+                start_cell = f"A{start_row}"
+                append_rows_to_workbook(token, library_id, excel_file_id, worksheet_name, start_cell, rows_to_append)
+                logger.info(f"Appended {len(rows_to_append)} rows to the workbook.")
+            else:
+                logger.info("No new rows to append.")
+
+    except Exception as e:
+        logger.error(f"An error occurred in update_documentation_excels task: {e}")
 
 @shared_task
 def save_full_size_image(sample_image_id, temp_file_path):

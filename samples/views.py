@@ -5,7 +5,7 @@ import json
 import csv
 import subprocess
 import shutil
-from .tasks import send_sample_received_email  # Add this import at the top
+from .tasks import send_sample_received_email, update_documentation_excels
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
@@ -125,6 +125,9 @@ def create_sample(request):
                     customer,
                     total_quantity  # Use the total quantity of samples created
                 )
+            # Trigger the documentation update task
+            update_documentation_excels.delay()
+
             return JsonResponse({
                 'status': 'success',
                 'created_samples': [
