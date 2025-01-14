@@ -15,7 +15,6 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)
 
-    logger.debug(f"Updating cell {cell_address} with value '{value}' in worksheet '{worksheet_name}'")
     if response.status_code == 200:
         logger.info(f"Cell {cell_address} updated successfully.")
         data = response.json()

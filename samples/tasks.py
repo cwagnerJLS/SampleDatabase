@@ -62,8 +62,6 @@ def update_documentation_excels():
                     value_to_write = getattr(sample, model_field)
                     update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
                     logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
-                else:
-                    logger.info(f"Cell {cell_address} already has value '{cell_value}'. Skipping.")
                     value_to_write = getattr(sample, model_field)
                     update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
                     logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
