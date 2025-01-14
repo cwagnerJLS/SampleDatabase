@@ -105,7 +105,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Test mode setting
-TEST_MODE = False  # Set to False in production
+TEST_MODE = True  # Set to False in production
 
 # Logging configuration
 
