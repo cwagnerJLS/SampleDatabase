@@ -21,3 +21,6 @@ db.sqlite3
 
 .aider*
 .env
+
+# Ignore specific file
+Apps_Database.xlsx
