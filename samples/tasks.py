@@ -83,7 +83,12 @@ def update_documentation_excels():
                     logger.info(f"Sample ID {s.unique_id} already exists in worksheet. Skipping.")
 
             if rows_to_append:
-                start_row = 8 + len(existing_ids)
+                if existing_ids:
+                    # Find the maximum existing row number
+                    max_existing_row = len(existing_ids) + 8 - 1  # Subtract 1 because rows start counting from 8
+                    start_row = max_existing_row + 1
+                else:
+                    start_row = 8
                 start_cell = f"A{start_row}"
                 append_rows_to_workbook(token, library_id, excel_file_id, worksheet_name, start_cell, rows_to_append)
                 logger.info(f"Appended {len(rows_to_append)} rows to the workbook.")

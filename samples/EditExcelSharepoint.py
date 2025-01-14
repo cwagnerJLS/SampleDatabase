@@ -39,7 +39,7 @@ def get_existing_ids_from_workbook(access_token, library_id, file_id, worksheet_
         data = response.json()
         values = data.get('values', [])
         for row in values:
-            if row and len(row) > 0:
+            if row and len(row) > 0 and row[0]:  # Check if the cell is not empty or None
                 existing_ids.add(str(row[0]))
     else:
         print(f"Failed to get existing IDs: {response.status_code}, {response.text}")
