@@ -75,22 +75,55 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    }
+]
+
+# Logging configuration
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
     },
-    'celery': {
-        'handlers': ['celery_file'],  # Use the celery_file handler
-        'level': 'DEBUG',
-        'propagate': True,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+        'celery_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'celery.log'),  # Logs will be saved in celery.log
+            'formatter': 'verbose',
+        },
     },
-    'samples.tasks': {
-        'handlers': ['celery_file'],
-        'level': 'DEBUG',
-        'propagate': False,  # Prevent duplication of logs
-    },
-    'celery_file': {
-        'level': 'DEBUG',
-        'class': 'logging.FileHandler',
-        'filename': os.path.join(BASE_DIR, 'celery.log'),  # Logs will be saved in celery.log
-        'formatter': 'verbose',
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'samples': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'celery': {
+            'handlers': ['celery_file'],  # Use the celery_file handler
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'samples.tasks': {
+            'handlers': ['celery_file'],
+            'level': 'DEBUG',
+            'propagate': False,  # Prevent duplication of logs
+        },
     },
     # You can add more validators here if needed
 ]
