@@ -150,6 +150,9 @@ def create_sample(request):
     logger.debug("Rendering create_sample page")
 
     try:
+        # Call the Celery task
+        update_documentation_excels.delay()
+
         # Retrieve all unique opportunity numbers from the Sample objects in the database
         opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
 
