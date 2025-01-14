@@ -53,27 +53,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-        },
-        # Add this handler for Celery logs
-        'celery_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'celery.log'),  # Logs will be saved in celery.log
-            'formatter': 'verbose',
-        },
-        # Add this logger for Celery
-        'celery': {
-            'handlers': ['celery_file'],  # Use the celery_file handler
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        # Also, ensure that logs from your tasks module use the celery logger
-        'samples.tasks': {
-            'handlers': ['celery_file'],
-            'level': 'DEBUG',
-            'propagate': False,  # Prevent duplication of logs
-        },
-    },
+        }
+    }
 ]
 
 WSGI_APPLICATION = 'inventory_system.wsgi.application'
@@ -94,6 +75,22 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    'celery': {
+        'handlers': ['celery_file'],  # Use the celery_file handler
+        'level': 'DEBUG',
+        'propagate': True,
+    },
+    'samples.tasks': {
+        'handlers': ['celery_file'],
+        'level': 'DEBUG',
+        'propagate': False,  # Prevent duplication of logs
+    },
+    'celery_file': {
+        'level': 'DEBUG',
+        'class': 'logging.FileHandler',
+        'filename': os.path.join(BASE_DIR, 'celery.log'),  # Logs will be saved in celery.log
+        'formatter': 'verbose',
     },
     # You can add more validators here if needed
 ]
