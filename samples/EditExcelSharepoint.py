@@ -159,32 +159,6 @@ def find_excel_file(access_token, library_id, opportunity_number):
 
     return None
 
-def list_worksheets(access_token, library_id, file_id):
-    """
-    List worksheets in an Excel file to confirm it's recognized by the Microsoft Graph Excel API.
-
-    Args:
-        access_token (str): Access token from Microsoft Graph.
-        library_id (str): The ID (drive ID) of the Test Engineering library.
-        file_id (str): The item ID of the Excel file within that drive.
-
-    Returns:
-        list or None: List of worksheets (dicts with 'id' and 'name') if successful, else None.
-    """
-    endpoint = f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}/workbook/worksheets"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(endpoint, headers=headers)
-
-    if response.status_code == 200:
-        data = response.json()
-        worksheets = data.get("value", [])
-        print("Worksheets found:")
-        for ws in worksheets:
-            print(f"- {ws['name']} (ID: {ws['id']})")
-        return worksheets
-    else:
-        print(f"Failed to list worksheets: {response.status_code}, {response.text}")
-        return None
 
 def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_address, value):
     """
@@ -217,41 +191,3 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
     else:
         print(f"Failed to update cell {cell_address}: {response.status_code}, {response.text}")
 
-if __name__ == "__main__":
-    try:
-        # 1. Acquire an access token
-        token = get_access_token()
-
-        # 2. Specify the library (drive) ID for "Test Engineering"
-        library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
-
-        # 3. Define the opportunity number
-        opportunity_number = "7124"
-
-        # 4. Locate the Excel file (item ID)
-        excel_file_id = find_excel_file(token, library_id, opportunity_number)
-        if not excel_file_id:
-            print("Excel file not found. Cannot proceed.")
-            exit()
-
-        # 5. List worksheets to confirm the file is recognized as an Excel workbook
-        worksheets = list_worksheets(token, library_id, excel_file_id)
-        if not worksheets:
-            print("No worksheets found or file not recognized by the Excel API.")
-            exit()
-
-        # For demonstration, we assume "Sheet1" is the correct worksheet name
-        worksheet_name = "Sheet1"
-
-        # 6. Update cell A8 to "5678"
-        update_cell_value(
-            access_token=token,
-            library_id=library_id,
-            file_id=excel_file_id,
-            worksheet_name=worksheet_name,
-            cell_address="A8",
-            value="5678"
-        )
-
-    except Exception as e:
-        print(f"Error: {e}")
