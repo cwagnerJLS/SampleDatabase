@@ -78,6 +78,9 @@ AUTH_PASSWORD_VALIDATORS = [
     }
 ]
 
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+
 # Logging configuration
 
 LOGGING = {
