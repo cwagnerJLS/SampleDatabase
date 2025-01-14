@@ -1,6 +1,9 @@
 import requests
 from msal import PublicClientApplication
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Configuration
 
@@ -12,7 +15,9 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)
 
+    logger.debug(f"Updating cell {cell_address} with value '{value}' in worksheet '{worksheet_name}'")
     if response.status_code == 200:
+        logger.info(f"Cell {cell_address} updated successfully.")
         data = response.json()
         values = data.get('values', [[]])
         if values and values[0]:
@@ -87,6 +92,7 @@ def get_access_token():
     """
     Acquire an access token using MSAL with a token cache and device code flow.
     """
+    logger.debug("Attempting to acquire access token.")
     cache = load_token_cache()
 
     app = PublicClientApplication(
@@ -116,6 +122,7 @@ def get_access_token():
 
     if "access_token" in result:
         save_token_cache(app.token_cache)
+        logger.debug("Access token acquired successfully.")
         return result["access_token"]
 
     raise Exception("Authentication failed.")
@@ -134,6 +141,7 @@ def find_excel_file(access_token, library_id, opportunity_number):
     Returns:
         str or None: The item ID of the Excel file if found, else None.
     """
+    logger.debug(f"Finding Excel file for opportunity_number: {opportunity_number}")
     folder_path = opportunity_number
     endpoint = f"https://graph.microsoft.com/v1.0/drives/{library_id}/root:/{folder_path}:/children"
     headers = {"Authorization": f"Bearer {access_token}"}

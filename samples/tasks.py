@@ -17,20 +17,27 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def update_documentation_excels():
+    logger.info("Starting update_documentation_excels task.")
     try:
         token = get_access_token()
+        logger.debug(f"Access token acquired: {token}")
         if not token:
             logger.error("Failed to acquire access token.")
             return
 
         library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
+        logger.debug(f"Using library_id: {library_id}")
+
         opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
+        logger.info(f"Found opportunity_numbers: {list(opportunity_numbers)}")
 
         for opportunity_number in opportunity_numbers:
             logger.info(f"Processing opportunity number: {opportunity_number}")
 
             excel_file_id = find_excel_file(token, library_id, opportunity_number)
+            logger.debug(f"Excel file ID for {opportunity_number}: {excel_file_id}")
             if not excel_file_id:
+                logger.warning(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
                 logger.info(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
                 continue
 
@@ -50,7 +57,13 @@ def update_documentation_excels():
 
             for cell_address, model_field in cells_to_check.items():
                 cell_value = get_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address)
+                logger.debug(f"Cell {cell_address} current value: {cell_value}")
                 if not cell_value:
+                    value_to_write = getattr(sample, model_field)
+                    update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
+                    logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
+                else:
+                    logger.info(f"Cell {cell_address} already has value '{cell_value}'. Skipping.")
                     value_to_write = getattr(sample, model_field)
                     update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
                     logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
@@ -58,6 +71,8 @@ def update_documentation_excels():
                     logger.info(f"Cell {cell_address} already has value '{cell_value}'. Skipping.")
 
             existing_ids = get_existing_ids_from_workbook(token, library_id, excel_file_id, worksheet_name, start_row=8)
+            logger.debug(f"Existing IDs in worksheet: {existing_ids}")
+
             samples = Sample.objects.filter(opportunity_number=opportunity_number)
             rows_to_append = []
 
@@ -66,6 +81,8 @@ def update_documentation_excels():
                     row = [s.unique_id, s.date_received.strftime('%Y-%m-%d')]
                     rows_to_append.append(row)
                     logger.info(f"Prepared to append row: {row}")
+                else:
+                    logger.info(f"Sample ID {s.unique_id} already exists in worksheet. Skipping.")
 
             if rows_to_append:
                 start_row = 8 + len(existing_ids)
