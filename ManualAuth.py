@@ -77,3 +77,6 @@ if __name__ == "__main__":
         print("Access token:", token)
     except Exception as e:
         print(f"Error: {e}")
+
+    # Wait for user input before closing
+    input("Press Enter to exit...")
