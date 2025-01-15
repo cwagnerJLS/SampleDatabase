@@ -13,6 +13,10 @@ SYNC_DELAY=2  # Delay in seconds to debounce multiple changes
 # CSV file where we track the 4-digit folder name (OpportunityNumber) and hyperlink
 OPPORTUNITY_CSV="/home/jls/Desktop/SampleDatabase/Hyperlinks.csv"
 
+# Folders on the remote to permanently ignore (will not sync or delete)
+# These should match the folder names (or subpaths) as they appear on REMOTE.
+IGNORED_REMOTE_FOLDERS=("_Archive" "_Backups" "_Templates")
+
 ###############################################################################
 #                              INITIALIZATION
 ###############################################################################
@@ -49,6 +53,17 @@ trap cleanup SIGINT SIGTERM EXIT
 add_placeholder_files_for_empty_directories() {
     echo "$(date): Checking for empty folders and adding .keep files..."
     find "$WATCH_DIR" -type d -empty -exec sh -c 'touch "$1/.keep"' _ {} \;
+}
+
+# Function to build --exclude flags for folders we want to ignore on the remote
+build_ignored_folders_excludes() {
+    local excludes=()
+    for folder in "${IGNORED_REMOTE_FOLDERS[@]}"; do
+        # Each of these --exclude statements ensures that folder (and its contents)
+        # is skipped in both directions.
+        excludes+=( "--exclude" "${folder}/**" )
+    done
+    echo "${excludes[@]}"
 }
 
 # Function to update CSV with current 4-digit folders
@@ -96,6 +111,15 @@ update_csv() {
 ###############################################################################
 #                               SYNC LOGIC
 ###############################################################################
+#
+# Requirements/Logic:
+#   1) Non-Excel files:
+#       - Sync (local → remote) to keep them in step, including deletions on remote.
+#   2) Excel files:
+#       - Local → Remote ONLY IF the file doesn't exist on remote already.
+#         (Once it's on remote, do not overwrite it.)
+#   3) Ignore the 3 special remote folders. Never delete or modify them.
+#
 
 sync_main() {
     echo "$(date): ===== SYNC START ====="
@@ -103,11 +127,17 @@ sync_main() {
     # Keep empty directories from vanishing
     add_placeholder_files_for_empty_directories
 
+    # Build the array of --exclude statements for the ignored folders
+    IGNORE_EXCLUDES=( $(build_ignored_folders_excludes) )
+
+    ###########################################################################
     # 1) Local → Remote for NON-Excel files
+    ###########################################################################
     echo "$(date): Syncing NON-Excel files from local to remote..."
     rclone sync "$WATCH_DIR" "$REMOTE" \
         --exclude "*.xls*" \
-        --exclude "*.osts*" \
+        --exclude "*.xlsx*" \
+        "${IGNORE_EXCLUDES[@]}" \
         --progress \
         --log-file="$LOG_FILE" \
         --checkers 4 \
@@ -116,37 +146,31 @@ sync_main() {
         --ignore-checksum \
         --create-empty-src-dirs \
         -vv \
-    || echo "$(date): Error pushing NON-Excel files to SharePoint."
+    || echo "$(date): Error pushing NON-Excel files to remote."
 
-    # 2) Local → Remote for Excel files
-    echo "$(date): Syncing Excel files from local to remote..."
-    rclone sync "$WATCH_DIR" "$REMOTE" \
+    ###########################################################################
+    # 2) Local → Remote for Excel files, but do NOT overwrite existing ones
+    #
+    #    - Use rclone "copy" (not "sync") with "--ignore-existing"
+    #    - This ensures new Excel files get uploaded,
+    #      but files already on the remote are NOT overwritten.
+    ###########################################################################
+    echo "$(date): Copying new Excel files from local to remote..."
+    rclone copy "$WATCH_DIR" "$REMOTE" \
         --include "*.xls*" \
+        --include "*.xlsx*" \
         --exclude "*" \
+        "${IGNORE_EXCLUDES[@]}" \
+        --ignore-existing \
+        --ignore-size \
+        --ignore-checksum \
         --progress \
         --log-file="$LOG_FILE" \
         --checkers 4 \
         --transfers 4 \
-        --ignore-size \
-        --ignore-checksum \
         --create-empty-src-dirs \
         -vv \
-    || echo "$(date): Error pushing Excel files to SharePoint."
-
-    # 3) Remote → Local for Excel files
-    echo "$(date): Pulling Excel files from remote to local..."
-    rclone sync "$REMOTE" "$WATCH_DIR" \
-        --include "*.xls*" \
-        --exclude "*" \
-        --progress \
-        --log-file="$LOG_FILE" \
-        --checkers 4 \
-        --transfers 4 \
-        --ignore-size \
-        --ignore-checksum \
-        --create-empty-src-dirs \
-        -vv \
-    || echo "$(date): Error pulling Excel files from SharePoint."
+    || echo "$(date): Error copying new Excel files to remote."
 
     echo "$(date): ===== SYNC END ====="
 
