@@ -1,7 +1,8 @@
 import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
 import requests
+from django.conf import settings
 from msal import PublicClientApplication, SerializableTokenCache
-from django.conf import settings  # Import settings
 import logging
 
 logger = logging.getLogger(__name__)
