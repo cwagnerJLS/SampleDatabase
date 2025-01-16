@@ -12,6 +12,16 @@ from django.db import models
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
+class Opportunity(models.Model):
+    opportunity_number = models.CharField(max_length=255, unique=True)
+    new = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.opportunity_number
+
+    def get_sample_ids(self):
+        return list(Sample.objects.filter(opportunity_number=self.opportunity_number).values_list('unique_id', flat=True))
+
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
     def get_valid_name(self, name):

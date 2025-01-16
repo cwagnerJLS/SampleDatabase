@@ -19,7 +19,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import os
-from .models import Sample, SampleImage
+from .models import Sample, SampleImage, Opportunity
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
 import qrcode
@@ -111,6 +111,12 @@ def create_sample(request):
                 )
                 created_samples.append(sample)
 
+                # Ensure the opportunity exists in the Opportunity table
+                Opportunity.objects.get_or_create(
+                    opportunity_number=sample.opportunity_number,
+                    defaults={'new': False}
+                )
+
             logger.debug(f"Created samples: {created_samples}")
 
             # After the samples are successfully created
@@ -156,6 +162,18 @@ def create_sample(request):
 
         # Retrieve all unique opportunity numbers from the Sample objects in the database
         opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
+
+        # Update the Opportunity table
+        for opp_num in opportunity_numbers:
+            # Create the opportunity if it doesn't exist
+            opportunity, created = Opportunity.objects.get_or_create(
+                opportunity_number=opp_num,
+                defaults={'new': False}
+            )
+            # If it already exists and 'new' is None, set 'new' to False
+            if not created and opportunity.new is None:
+                opportunity.new = False
+                opportunity.save()
 
         # Path to the DocumentationTemplate.xlsm file
         template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
