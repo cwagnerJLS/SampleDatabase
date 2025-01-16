@@ -41,7 +41,7 @@ from io import BytesIO
 import qrcode
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('samples')
 
 def create_sample(request):
     logger.debug("Entered create_sample view")
@@ -387,11 +387,16 @@ def delete_samples(request):
 
             # Check if any samples remain with the same opportunity numbers
             for opp_num in opportunity_numbers:
+                remaining_samples = Sample.objects.filter(opportunity_number=opp_num).exists()
+                logger.debug(f"Remaining samples for opportunity number {opp_num}: {remaining_samples}")
                 if not Sample.objects.filter(opportunity_number=opp_num).exists():
                     # Delete the Excel file from SharePoint using rclone
                     remote_file_path = f"your_remote_name:{opp_num}/Documentation_{opp_num}.xlsm"
                     # Log the remote file path
                     logger.debug(f"Attempting to delete remote file at: {remote_file_path}")
+
+                    command = ['rclone', 'delete', remote_file_path]
+                    logger.debug(f"Running command: {' '.join(command)}")
 
                     try:
                         # Capture stdout and stderr
