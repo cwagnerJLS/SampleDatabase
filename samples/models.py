@@ -15,7 +15,7 @@ from django.conf import settings
 class Opportunity(models.Model):
     opportunity_number = models.CharField(max_length=255, unique=True)
     new = models.BooleanField(default=False)
-    sample_ids = models.TextField(blank=True)
+    sample_ids = models.TextField(blank=True)  # Do not set null=True
 
     def __str__(self):
         return self.opportunity_number
@@ -75,21 +75,30 @@ class Sample(models.Model):
                     break
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
+        is_new = self.pk is None  # Check if the sample is new
+        if not self.unique_id:
+            for _ in range(100):
+                self.unique_id = generate_unique_id()
+                if not Sample.objects.filter(unique_id=self.unique_id).exists():
+                    break
+            else:
+                raise ValueError("Could not generate a unique ID after 100 attempts.")
         super().save(*args, **kwargs)
 
-        # Update Opportunity's sample_ids field
-        opportunity, _ = Opportunity.objects.get_or_create(
-            opportunity_number=self.opportunity_number,
-            defaults={'new': False}
+        # Update Opportunity's sample_ids field after the sample has been saved
+        opportunity, created = Opportunity.objects.get_or_create(
+            opportunity_number=self.opportunity_number
         )
 
-        # Retrieve all unique IDs associated with this opportunity
-        sample_ids = Sample.objects.filter(
-            opportunity_number=self.opportunity_number
-        ).values_list('unique_id', flat=True)
-
-        # Update the sample_ids field in Opportunity
-        opportunity.sample_ids = ','.join(map(str, sample_ids))
+        if created:
+            opportunity.new = False  # Set 'new' to False
+            opportunity.sample_ids = str(self.unique_id)
+        else:
+            # Append the new sample's unique_id to sample_ids
+            sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+            if str(self.unique_id) not in sample_ids:
+                sample_ids.append(str(self.unique_id))
+                opportunity.sample_ids = ','.join(sample_ids)
         opportunity.save()
         super().save(*args, **kwargs)
 

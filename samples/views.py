@@ -112,10 +112,21 @@ def create_sample(request):
                 created_samples.append(sample)
 
                 # Ensure the opportunity exists in the Opportunity table
-                Opportunity.objects.get_or_create(
-                    opportunity_number=sample.opportunity_number,
-                    defaults={'new': False}
+                opportunity, created = Opportunity.objects.get_or_create(
+                    opportunity_number=sample.opportunity_number
                 )
+
+                # If the Opportunity was newly created, initialize sample_ids with the current sample's unique_id
+                if created:
+                    opportunity.new = False  # Set 'new' to False
+                    opportunity.sample_ids = str(sample.unique_id)
+                    opportunity.save()
+                else:
+                    # If the Opportunity already exists, append the new sample's unique_id
+                    sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+                    sample_ids.append(str(sample.unique_id))
+                    opportunity.sample_ids = ','.join(sample_ids)
+                    opportunity.save()
 
             logger.debug(f"Created samples: {created_samples}")
 
@@ -174,14 +185,22 @@ def create_sample(request):
 
         # Update the Opportunity table
         for opp_num in opportunity_numbers:
-            # Create the opportunity if it doesn't exist
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opp_num
+            ).values_list('unique_id', flat=True)
+            sample_ids_str = ','.join(map(str, sample_ids))
+
+            # Create the opportunity if it doesn't exist, and initialize sample_ids
             opportunity, created = Opportunity.objects.get_or_create(
                 opportunity_number=opp_num,
-                defaults={'new': False}
+                defaults={'new': False, 'sample_ids': sample_ids_str}
             )
-            # If it already exists and 'new' is None, set 'new' to False
-            if not created and opportunity.new is None:
-                opportunity.new = False
+            # If it already exists and 'new' is None, update 'sample_ids'
+            if not created:
+                if opportunity.new is None:
+                    opportunity.new = False
+                opportunity.sample_ids = sample_ids_str
                 opportunity.save()
 
         # Update sample_ids field in the Opportunity table
