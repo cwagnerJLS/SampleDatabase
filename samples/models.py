@@ -100,22 +100,26 @@ class Sample(models.Model):
                 sample_ids.append(str(self.unique_id))
                 opportunity.sample_ids = ','.join(sample_ids)
         opportunity.save()
-        super().save(*args, **kwargs)
+        opportunity_number = self.opportunity_number
+        super().delete(*args, **kwargs)
 
         # Update Opportunity's sample_ids field
-        opportunity, created = Opportunity.objects.get_or_create(
-            opportunity_number=self.opportunity_number,
-            defaults={'new': False}
-        )
+        try:
+            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opportunity_number
+            ).values_list('unique_id', flat=True)
 
-        # Retrieve all unique IDs associated with this opportunity
-        sample_ids = Sample.objects.filter(
-            opportunity_number=self.opportunity_number
-        ).values_list('unique_id', flat=True)
-
-        # Update the sample_ids field in Opportunity
-        opportunity.sample_ids = ','.join(map(str, sample_ids))
-        opportunity.save()
+            if sample_ids:
+                # Update the sample_ids field
+                opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.save()
+            else:
+                # If no samples remain, delete the Opportunity entry
+                opportunity.delete()
+        except Opportunity.DoesNotExist:
+            pass  # Opportunity might have been deleted already
 
     def delete(self, *args, **kwargs):
         opportunity_number = self.opportunity_number
