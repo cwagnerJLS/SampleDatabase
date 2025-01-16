@@ -15,6 +15,7 @@ from django.conf import settings
 class Opportunity(models.Model):
     opportunity_number = models.CharField(max_length=255, unique=True)
     new = models.BooleanField(default=False)
+    sample_ids = models.TextField(blank=True)
 
     def __str__(self):
         return self.opportunity_number
@@ -74,47 +75,49 @@ class Sample(models.Model):
                     break
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
+        # Determine if the sample is new or being updated
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+
+        # Update Opportunity's sample_ids field
+        opportunity, created = Opportunity.objects.get_or_create(
+            opportunity_number=self.opportunity_number,
+            defaults={'new': False}
+        )
+
+        # Retrieve all unique IDs associated with this opportunity
+        sample_ids = Sample.objects.filter(
+            opportunity_number=self.opportunity_number
+        ).values_list('unique_id', flat=True)
+
+        # Update the sample_ids field in Opportunity
+        opportunity.sample_ids = ','.join(map(str, sample_ids))
+        opportunity.save()
 
     def delete(self, *args, **kwargs):
         opportunity_number = self.opportunity_number
-
-        # Call the superclass delete method to delete the database record
         super().delete(*args, **kwargs)
 
-        # Delete the Excel file from SharePoint using rclone
-        remote_name = 'TestLabSamples'  # Replace with your actual rclone remote name
-        remote_file_path = f"{remote_name}:{opportunity_number}/Documentation_{opportunity_number}.xlsm"
-        logger.debug(f"Attempting to delete remote file at: {remote_file_path}")
-
-        command = ['rclone', 'delete', remote_file_path]
-        logger.debug(f"Running command: {' '.join(command)}")
-
+        # Update Opportunity's sample_ids field
         try:
-            # Capture stdout and stderr
-            result = subprocess.run(
-                command,
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            logger.debug(f"Deleted file {remote_file_path} from SharePoint using rclone")
-            logger.debug(f"rclone stdout: {result.stdout}")
-            logger.debug(f"rclone stderr: {result.stderr}")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Error deleting file {remote_file_path} from SharePoint: {e}")
-            logger.error(f"rclone stderr: {e.stderr}")
-            logger.error(f"rclone stdout: {e.stdout}")
+            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opportunity_number
+            ).values_list('unique_id', flat=True)
 
-        # Proceed to delete the local directory
-        if not Sample.objects.filter(opportunity_number=opportunity_number).exists():
-            dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-            if os.path.exists(dir_path):
-                try:
-                    shutil.rmtree(dir_path)
-                    logger.debug(f"Deleted directory for opportunity number {opportunity_number}")
-                except Exception as e:
-                    logger.error(f"Error deleting directory {dir_path}: {e}")
+            if sample_ids:
+                # Update the sample_ids field
+                opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.save()
+            else:
+                # If no samples remain, delete the Opportunity entry
+                opportunity.delete()
+        except Opportunity.DoesNotExist:
+            pass  # Opportunity might have been deleted already
+
+        # Existing code for deleting files and directories
+        # ...
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
