@@ -379,47 +379,10 @@ def delete_samples(request):
             ids = json.loads(request.POST.get('ids', '[]'))
             # Retrieve the samples to be deleted
             samples_to_delete = Sample.objects.filter(unique_id__in=ids)
-            # Get the list of opportunity numbers
-            opportunity_numbers = samples_to_delete.values_list('opportunity_number', flat=True).distinct()
             for sample in samples_to_delete:
                 sample.delete()  # Calls the delete method on each instance
             logger.debug(f"Deleted samples with IDs: {ids}")
 
-            # Check if any samples remain with the same opportunity numbers
-            for opp_num in opportunity_numbers:
-                remaining_samples = Sample.objects.filter(opportunity_number=opp_num).exists()
-                logger.debug(f"Remaining samples for opportunity number {opp_num}: {remaining_samples}")
-                if not Sample.objects.filter(opportunity_number=opp_num).exists():
-                    # Delete the Excel file from SharePoint using rclone
-                    remote_name = 'TestLabSamples'
-                    remote_file_path = f"{remote_name}:{opp_num}/Documentation_{opp_num}.xlsm"
-                    # Log the remote file path
-                    logger.debug(f"Attempting to delete remote file at: {remote_file_path}")
-
-                    command = ['rclone', 'delete', remote_file_path]
-                    logger.debug(f"Running command: {' '.join(command)}")
-
-                    try:
-                        # Capture stdout and stderr
-                        result = subprocess.run(
-                            ['rclone', 'delete', remote_file_path],
-                            check=True,
-                            capture_output=True,
-                            text=True
-                        )
-                        logger.debug(f"Deleted file {remote_file_path} from SharePoint using rclone")
-                        logger.debug(f"rclone stdout: {result.stdout}")
-                        logger.debug(f"rclone stderr: {result.stderr}")
-                    except subprocess.CalledProcessError as e:
-                        logger.error(f"Error deleting file {remote_file_path} from SharePoint: {e}")
-                        logger.error(f"rclone stderr: {e.stderr}")
-                        logger.error(f"rclone stdout: {e.stdout}")
-                if not Sample.objects.filter(opportunity_number=opp_num).exists():
-                    # Delete the directory
-                    dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opp_num)
-                    if os.path.exists(dir_path):
-                        shutil.rmtree(dir_path)
-                        logger.debug(f"Deleted directory for opportunity number {opp_num}")
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON data: {e}")

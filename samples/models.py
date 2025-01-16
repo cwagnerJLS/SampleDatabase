@@ -3,6 +3,7 @@ import re
 import random
 import shutil
 import logging
+import subprocess
 from django.utils.deconstruct import deconstructible
 
 # Configure logging
@@ -71,7 +72,31 @@ class Sample(models.Model):
         # Call the superclass delete method to delete the database record
         super().delete(*args, **kwargs)
 
-        # Check if any samples remain with the same opportunity number
+        # Delete the Excel file from SharePoint using rclone
+        remote_name = 'TestLabSamples'  # Replace with your actual rclone remote name
+        remote_file_path = f"{remote_name}:{opportunity_number}/Documentation_{opportunity_number}.xlsm"
+        logger.debug(f"Attempting to delete remote file at: {remote_file_path}")
+
+        command = ['rclone', 'delete', remote_file_path]
+        logger.debug(f"Running command: {' '.join(command)}")
+
+        try:
+            # Capture stdout and stderr
+            result = subprocess.run(
+                command,
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            logger.debug(f"Deleted file {remote_file_path} from SharePoint using rclone")
+            logger.debug(f"rclone stdout: {result.stdout}")
+            logger.debug(f"rclone stderr: {result.stderr}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error deleting file {remote_file_path} from SharePoint: {e}")
+            logger.error(f"rclone stderr: {e.stderr}")
+            logger.error(f"rclone stdout: {e.stdout}")
+
+        # Proceed to delete the local directory
         if not Sample.objects.filter(opportunity_number=opportunity_number).exists():
             dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
             if os.path.exists(dir_path):
