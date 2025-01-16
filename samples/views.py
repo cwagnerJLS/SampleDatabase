@@ -119,6 +119,15 @@ def create_sample(request):
 
             logger.debug(f"Created samples: {created_samples}")
 
+            # Update sample_ids field for the Opportunity
+            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opportunity_number
+            ).values_list('unique_id', flat=True)
+            opportunity.sample_ids = ','.join(map(str, sample_ids))
+            opportunity.save()
+
             # After the samples are successfully created
             if created_samples:
                 # Calculate the total quantity
@@ -174,6 +183,17 @@ def create_sample(request):
             if not created and opportunity.new is None:
                 opportunity.new = False
                 opportunity.save()
+
+        # Update sample_ids field in the Opportunity table
+        for opportunity in Opportunity.objects.all():
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opportunity.opportunity_number
+            ).values_list('unique_id', flat=True)
+
+            # Update the sample_ids field
+            opportunity.sample_ids = ','.join(map(str, sample_ids))
+            opportunity.save()
 
         # Path to the DocumentationTemplate.xlsm file
         template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
@@ -400,6 +420,27 @@ def delete_samples(request):
             for sample in samples_to_delete:
                 sample.delete()  # Calls the delete method on each instance
             logger.debug(f"Deleted samples with IDs: {ids}")
+
+            # After deleting samples, update the sample_ids field in Opportunity
+            opportunity_numbers = set(sample.opportunity_number for sample in samples_to_delete)
+
+            for opp_num in opportunity_numbers:
+                try:
+                    opportunity = Opportunity.objects.get(opportunity_number=opp_num)
+                    # Retrieve all unique IDs associated with this opportunity
+                    sample_ids = Sample.objects.filter(
+                        opportunity_number=opp_num
+                    ).values_list('unique_id', flat=True)
+
+                    if sample_ids:
+                        # Update the sample_ids field
+                        opportunity.sample_ids = ','.join(map(str, sample_ids))
+                        opportunity.save()
+                    else:
+                        # If no samples remain, delete the Opportunity entry
+                        opportunity.delete()
+                except Opportunity.DoesNotExist:
+                    pass  # Opportunity might have been deleted already
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:

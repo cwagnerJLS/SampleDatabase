@@ -75,8 +75,22 @@ class Sample(models.Model):
                     break
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
-        # Determine if the sample is new or being updated
-        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        # Update Opportunity's sample_ids field
+        opportunity, _ = Opportunity.objects.get_or_create(
+            opportunity_number=self.opportunity_number,
+            defaults={'new': False}
+        )
+
+        # Retrieve all unique IDs associated with this opportunity
+        sample_ids = Sample.objects.filter(
+            opportunity_number=self.opportunity_number
+        ).values_list('unique_id', flat=True)
+
+        # Update the sample_ids field in Opportunity
+        opportunity.sample_ids = ','.join(map(str, sample_ids))
+        opportunity.save()
         super().save(*args, **kwargs)
 
         # Update Opportunity's sample_ids field
@@ -116,8 +130,23 @@ class Sample(models.Model):
         except Opportunity.DoesNotExist:
             pass  # Opportunity might have been deleted already
 
-        # Existing code for deleting files and directories
-        # ...
+        # Update Opportunity's sample_ids field
+        try:
+            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            # Retrieve all unique IDs associated with this opportunity
+            sample_ids = Sample.objects.filter(
+                opportunity_number=opportunity_number
+            ).values_list('unique_id', flat=True)
+
+            if sample_ids:
+                # Update the sample_ids field
+                opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.save()
+            else:
+                # If no samples remain, delete the Opportunity entry
+                opportunity.delete()
+        except Opportunity.DoesNotExist:
+            pass  # Opportunity might have been deleted already
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
