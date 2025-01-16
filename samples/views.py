@@ -390,11 +390,24 @@ def delete_samples(request):
                 if not Sample.objects.filter(opportunity_number=opp_num).exists():
                     # Delete the Excel file from SharePoint using rclone
                     remote_file_path = f"your_remote_name:{opp_num}/Documentation_{opp_num}.xlsm"
+                    # Log the remote file path
+                    logger.debug(f"Attempting to delete remote file at: {remote_file_path}")
+
                     try:
-                        subprocess.run(['rclone', 'delete', remote_file_path], check=True)
+                        # Capture stdout and stderr
+                        result = subprocess.run(
+                            ['rclone', 'delete', remote_file_path],
+                            check=True,
+                            capture_output=True,
+                            text=True
+                        )
                         logger.debug(f"Deleted file {remote_file_path} from SharePoint using rclone")
+                        logger.debug(f"rclone stdout: {result.stdout}")
+                        logger.debug(f"rclone stderr: {result.stderr}")
                     except subprocess.CalledProcessError as e:
                         logger.error(f"Error deleting file {remote_file_path} from SharePoint: {e}")
+                        logger.error(f"rclone stderr: {e.stderr}")
+                        logger.error(f"rclone stdout: {e.stdout}")
                 if not Sample.objects.filter(opportunity_number=opp_num).exists():
                     # Delete the directory
                     dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opp_num)
