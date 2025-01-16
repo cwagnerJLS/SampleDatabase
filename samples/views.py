@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 import os
 import logging
 import json
@@ -386,6 +387,14 @@ def delete_samples(request):
 
             # Check if any samples remain with the same opportunity numbers
             for opp_num in opportunity_numbers:
+                if not Sample.objects.filter(opportunity_number=opp_num).exists():
+                    # Delete the Excel file from SharePoint using rclone
+                    remote_file_path = f"your_remote_name:{opp_num}/Documentation_{opp_num}.xlsm"
+                    try:
+                        subprocess.run(['rclone', 'delete', remote_file_path], check=True)
+                        logger.debug(f"Deleted file {remote_file_path} from SharePoint using rclone")
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f"Error deleting file {remote_file_path} from SharePoint: {e}")
                 if not Sample.objects.filter(opportunity_number=opp_num).exists():
                     # Delete the directory
                     dir_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opp_num)
