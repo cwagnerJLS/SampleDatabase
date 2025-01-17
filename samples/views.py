@@ -200,7 +200,6 @@ def create_sample(request):
                 defaults={'new': True, 'sample_ids': sample_ids_str}
             )
             if not created:
-                opportunity.new = False  # Ensure 'new' is False for existing opportunities
                 opportunity.sample_ids = sample_ids_str
                 opportunity.save()
 
