@@ -78,32 +78,6 @@ def update_documentation_excels():
                 logger.info(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
                 continue
 
-            worksheet_name = 'Sheet1'
-
-            cells_to_check = {
-                'B1': 'customer',
-                'B2': 'rsm',
-                'B3': 'opportunity_number',
-                'B4': 'description',
-            }
-
-            sample = Sample.objects.filter(opportunity_number=opportunity_number).first()
-            if not sample:
-                logger.warning(f"No samples found for opportunity number {opportunity_number}.")
-                continue
-
-            for cell_address, model_field in cells_to_check.items():
-                cell_value = get_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address)
-                logger.debug(f"Cell {cell_address} current value: {cell_value}")
-                if not cell_value:
-                    value_to_write = getattr(sample, model_field)
-                    update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
-                    logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
-                    value_to_write = getattr(sample, model_field)
-                    update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
-                    logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
-                else:
-                    logger.info(f"Cell {cell_address} already has value '{cell_value}'. Skipping.")
 
             existing_ids = get_existing_ids_from_workbook(token, library_id, excel_file_id, worksheet_name, start_row=8)
             logger.debug(f"Existing IDs in worksheet: {existing_ids}")
