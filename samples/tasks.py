@@ -11,7 +11,8 @@ from .EditExcelSharepoint import (
     update_cell_value,
     append_rows_to_workbook,
     get_existing_ids_with_rows,
-    delete_rows_in_workbook,
+    clear_range_in_workbook,
+    update_range_in_workbook,
     update_row_in_workbook
 )
 
