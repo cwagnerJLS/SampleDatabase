@@ -34,12 +34,21 @@ def update_documentation_excels():
         for opportunity_number in opportunity_numbers:
             logger.info(f"Processing opportunity number: {opportunity_number}")
 
+            excel_file_id = find_excel_file(token, library_id, opportunity_number)
+            logger.debug(f"Excel file ID for {opportunity_number}: {excel_file_id}")
+            if not excel_file_id:
+                logger.warning(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
+                continue
+
             # Fetch the Opportunity object
             try:
                 opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
             except Opportunity.DoesNotExist:
                 logger.warning(f"Opportunity with number {opportunity_number} not found. Skipping.")
                 continue
+
+            # Define worksheet_name
+            worksheet_name = 'Sheet1'
 
             # Check if opportunity.new is True
             if opportunity.new:
