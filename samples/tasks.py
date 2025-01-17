@@ -13,7 +13,8 @@ from .EditExcelSharepoint import (
     get_existing_ids_with_rows,
     clear_range_in_workbook,
     update_range_in_workbook,
-    update_row_in_workbook
+    update_row_in_workbook,
+    delete_rows_in_workbook
 )
 
 logger = logging.getLogger(__name__)

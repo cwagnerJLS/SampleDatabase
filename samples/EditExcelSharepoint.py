@@ -265,7 +265,7 @@ def clear_range_in_workbook(access_token, library_id, file_id, worksheet_name, r
     else:
         logger.error(f"Failed to clear range {range_address}: {response.status_code}, {response.text}")
 
-def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, start_row, values):
+def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, start_row, values, row_numbers=None):
     num_rows = len(values)
     num_cols = len(values[0]) if values else 0
     if num_cols == 0:
@@ -302,8 +302,8 @@ def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, 
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
-    # Assuming row_numbers is passed as an argument to the function
-    # If not, ensure to define or pass it correctly
+    if row_numbers is None:
+        row_numbers = []
     for row_num in sorted(row_numbers, reverse=True):  # Process rows in reverse order
         range_address = f"A{row_num}:B{row_num}"
         endpoint = (
