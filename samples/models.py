@@ -74,6 +74,7 @@ class Sample(models.Model):
                 self.unique_id = generate_unique_id()
                 if not Sample.objects.filter(unique_id=self.unique_id).exists():
                     break
+                opportunity.update = True  # Set 'update' to True
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
         is_new = self.pk is None  # Check if the sample is new
@@ -100,6 +101,9 @@ class Sample(models.Model):
             if str(self.unique_id) not in sample_ids:
                 sample_ids.append(str(self.unique_id))
                 opportunity.sample_ids = ','.join(sample_ids)
+        opportunity.update = True  # Set the 'update' field to True
+        opportunity.update = True  # Set 'update' to True
+        opportunity.update = True  # Set 'update' to True
         opportunity.save()
 
     def delete(self, *args, **kwargs):
@@ -121,7 +125,10 @@ class Sample(models.Model):
             else:
                 # If no samples remain, delete the Opportunity entry
                 opportunity.delete()
+                opportunity = None  # Set opportunity to None since it's deleted
         except Opportunity.DoesNotExist:
+            pass  # Opportunity might have been deleted already
+            opportunity = None  # Opportunity might have been deleted already
             pass  # Opportunity might have been deleted already
 
         # Update Opportunity's sample_ids field
