@@ -225,7 +225,7 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
         file_id (str): The ID of the Excel file (item ID within that drive).
         worksheet_name (str): The name of the worksheet to edit (e.g., "Sheet1").
         cell_address (str): The address of the cell to edit (e.g., "A8").
-        value (str): The value to write to the cell.
+        value (ystr): The value to write to the cell.
     """
     endpoint = (
         f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}/workbook/"
