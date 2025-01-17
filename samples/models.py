@@ -92,7 +92,7 @@ class Sample(models.Model):
         )
 
         if created:
-            opportunity.new = False  # Set 'new' to False
+            opportunity.new = True  # Set 'new' to True
             opportunity.sample_ids = str(self.unique_id)
         else:
             # Append the new sample's unique_id to sample_ids
