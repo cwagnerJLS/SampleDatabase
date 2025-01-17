@@ -415,32 +415,15 @@ def delete_samples(request):
     if request.method == 'POST':
         try:
             ids = json.loads(request.POST.get('ids', '[]'))
+            ids = json.loads(request.POST.get('ids', '[]'))
+
             # Retrieve the samples to be deleted
             samples_to_delete = Sample.objects.filter(unique_id__in=ids)
+
             for sample in samples_to_delete:
                 sample.delete()  # Calls the delete method on each instance
+
             logger.debug(f"Deleted samples with IDs: {ids}")
-
-            # After deleting samples, update the sample_ids field in Opportunity
-            opportunity_numbers = set(sample.opportunity_number for sample in samples_to_delete)
-
-            for opp_num in opportunity_numbers:
-                try:
-                    opportunity = Opportunity.objects.get(opportunity_number=opp_num)
-                    # Retrieve all unique IDs associated with this opportunity
-                    sample_ids = Sample.objects.filter(
-                        opportunity_number=opp_num
-                    ).values_list('unique_id', flat=True)
-
-                    if sample_ids:
-                        # Update the sample_ids field
-                        opportunity.sample_ids = ','.join(map(str, sample_ids))
-                        opportunity.save()
-                    else:
-                        # If no samples remain, delete the Opportunity entry
-                        opportunity.delete()
-                except Opportunity.DoesNotExist:
-                    pass  # Opportunity might have been deleted already
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:

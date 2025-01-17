@@ -107,10 +107,10 @@ class Sample(models.Model):
         opportunity_number = self.opportunity_number
         super().delete(*args, **kwargs)
 
-        # Update Opportunity's sample_ids field
         try:
             opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
-            # Retrieve all unique IDs associated with this opportunity
+
+            # Retrieve all unique IDs associated with this opportunity after deletion
             sample_ids = Sample.objects.filter(
                 opportunity_number=opportunity_number
             ).values_list('unique_id', flat=True)
@@ -121,32 +121,15 @@ class Sample(models.Model):
                 opportunity.update = True  # Set the 'update' field to True
                 opportunity.save()
             else:
-                # If no samples remain, delete the Opportunity entry
-                opportunity.delete()
-                opportunity = None  # Set opportunity to None since it's deleted
-        except Opportunity.DoesNotExist:
-            pass  # Opportunity might have been deleted already
-            opportunity = None  # Opportunity might have been deleted already
-            pass  # Opportunity might have been deleted already
-
-        # Update Opportunity's sample_ids field
-        try:
-            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
-            # Retrieve all unique IDs associated with this opportunity
-            sample_ids = Sample.objects.filter(
-                opportunity_number=opportunity_number
-            ).values_list('unique_id', flat=True)
-
-            if sample_ids:
-                # Update the sample_ids field
-                opportunity.sample_ids = ','.join(map(str, sample_ids))
+                # Set 'update' to True before deleting the Opportunity
                 opportunity.update = True
                 opportunity.save()
-            else:
+
                 # If no samples remain, delete the Opportunity entry
                 opportunity.delete()
+                opportunity = None
         except Opportunity.DoesNotExist:
-            pass  # Opportunity might have been deleted already
+            opportunity = None  # Opportunity might have been deleted already
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
