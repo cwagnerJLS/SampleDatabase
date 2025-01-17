@@ -10,7 +10,10 @@ from .EditExcelSharepoint import (
     get_cell_value,
     update_cell_value,
     get_existing_ids_from_workbook,
-    append_rows_to_workbook
+    append_rows_to_workbook,
+    get_existing_ids_with_rows,
+    delete_rows_in_workbook,
+    update_row_in_workbook
 )
 
 logger = logging.getLogger(__name__)
