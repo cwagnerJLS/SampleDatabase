@@ -78,42 +78,71 @@ def update_documentation_excels():
                 logger.info(f"Set opportunity.new to False for {opportunity_number}.")
             else:
                 logger.info(f"Opportunity {opportunity_number}'s 'new' flag is False. Skipping updating cells B1-B4.")
-            logger.info(f"Processing opportunity number: {opportunity_number}")
+            if opportunity.update:
+                logger.info(f"Opportunity {opportunity_number} 'update' flag is True. Updating cells A8 onward.")
 
-            excel_file_id = find_excel_file(token, library_id, opportunity_number)
-            logger.debug(f"Excel file ID for {opportunity_number}: {excel_file_id}")
-            if not excel_file_id:
-                logger.warning(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
-                logger.info(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
-                continue
+                excel_file_id = find_excel_file(token, library_id, opportunity_number)
+                logger.debug(f"Excel file ID for {opportunity_number}: {excel_file_id}")
+                if not excel_file_id:
+                    logger.warning(f"No Excel file found for opportunity number {opportunity_number}. Skipping.")
+                    continue
 
+                worksheet_name = 'Sheet1'
 
-            existing_ids = get_existing_ids_from_workbook(token, library_id, excel_file_id, worksheet_name, start_row=8)
-            logger.debug(f"Existing IDs in worksheet: {existing_ids}")
+                # Get existing IDs from Excel starting from row 8, along with their row numbers
+                existing_ids = get_existing_ids_with_rows(token, library_id, excel_file_id, worksheet_name, start_row=8)
+                logger.debug(f"Existing IDs in worksheet: {existing_ids}")
 
-            samples = Sample.objects.filter(opportunity_number=opportunity_number)
-            rows_to_append = []
+                # Get the list of sample IDs from opportunity.sample_ids
+                sample_ids = set(opportunity.sample_ids.split(',')) if opportunity.sample_ids else set()
+                logger.debug(f"Sample IDs from opportunity.sample_ids: {sample_ids}")
 
-            for s in samples:
-                if str(s.unique_id) not in existing_ids:
-                    row = [s.unique_id, s.date_received.strftime('%Y-%m-%d')]
-                    rows_to_append.append(row)
-                    logger.info(f"Prepared to append row: {row}")
+                # Determine IDs to add and IDs to remove
+                ids_in_excel = set(existing_ids.keys())
+                ids_to_add = sample_ids - ids_in_excel
+                ids_to_remove = ids_in_excel - sample_ids
+
+                logger.info(f"IDs to add: {ids_to_add}")
+                logger.info(f"IDs to remove: {ids_to_remove}")
+
+                # Remove IDs from Excel sheet
+                if ids_to_remove:
+                    rows_to_delete = [existing_ids[id_to_remove] for id_to_remove in ids_to_remove]
+                    delete_rows_in_workbook(token, library_id, excel_file_id, worksheet_name, rows_to_delete)
+                    logger.info(f"Removed IDs from rows: {rows_to_delete}")
+
+                # Add new IDs to Excel sheet
+                if ids_to_add:
+                    # Find the next empty row in column A starting from row 8
+                    existing_row_numbers = existing_ids.values()
+                    if existing_row_numbers:
+                        next_row = max(existing_row_numbers) + 1
+                    else:
+                        next_row = 8
+                    for id_to_add in ids_to_add:
+                        try:
+                            sample = Sample.objects.get(unique_id=id_to_add)
+                            date_received = sample.date_received.strftime('%Y-%m-%d')
+                        except Sample.DoesNotExist:
+                            logger.warning(f"Sample with unique_id {id_to_add} does not exist. Skipping.")
+                            continue
+                        # Prepare row data
+                        row_data = [id_to_add, date_received]
+                        # Append the row to the worksheet
+                        start_cell = f"A{next_row}"
+                        update_row_in_workbook(token, library_id, excel_file_id, worksheet_name, start_cell, row_data)
+                        logger.info(f"Appended row starting at {start_cell}: {row_data}")
+                        next_row += 1
                 else:
-                    logger.info(f"Sample ID {s.unique_id} already exists in worksheet. Skipping.")
+                    logger.info("No new IDs to add.")
 
-            if rows_to_append:
-                if existing_ids:
-                    # Find the maximum existing row number
-                    max_existing_row = len(existing_ids) + 8 - 1  # Subtract 1 because rows start counting from 8
-                    start_row = max_existing_row + 1
-                else:
-                    start_row = 8
-                start_cell = f"A{start_row}"
-                append_rows_to_workbook(token, library_id, excel_file_id, worksheet_name, start_cell, rows_to_append)
-                logger.info(f"Appended {len(rows_to_append)} rows to the workbook.")
+                # After updating, set opportunity.update = False
+                opportunity.update = False
+                opportunity.save()
+                logger.info(f"Set opportunity.update to False for {opportunity_number}.")
+
             else:
-                logger.info("No new rows to append.")
+                logger.info(f"Opportunity {opportunity_number} 'update' flag is False. Skipping update for cells A8 onward.")
 
     except Exception as e:
         logger.error(f"An error occurred in update_documentation_excels task: {e}")

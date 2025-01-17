@@ -25,7 +25,7 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
         print(f"Failed to get cell value: {response.status_code}, {response.text}")
     return None
 
-def get_existing_ids_from_workbook(access_token, library_id, file_id, worksheet_name, start_row=8):
+def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name, start_row=8):
     range_address = f"A{start_row}:B5000"
     endpoint = (
         f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
@@ -38,9 +38,10 @@ def get_existing_ids_from_workbook(access_token, library_id, file_id, worksheet_
     if response.status_code == 200:
         data = response.json()
         values = data.get('values', [])
-        for row in values:
+        for idx, row in enumerate(values):
+            current_row_number = start_row + idx
             if row and len(row) > 0 and row[0]:  # Check if the cell is not empty or None
-                existing_ids.add(str(row[0]))
+                existing_ids[str(row[0])] = current_row_number
     else:
         print(f"Failed to get existing IDs: {response.status_code}, {response.text}")
     return existing_ids
@@ -245,3 +246,49 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
     else:
         print(f"Failed to update cell {cell_address}: {response.status_code}, {response.text}")
 
+def delete_rows_in_workbook(access_token, library_id, file_id, worksheet_name, row_numbers):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    for row_num in sorted(row_numbers, reverse=True):  # Process rows in reverse order
+        range_address = f"A{row_num}:B{row_num}"
+        endpoint = (
+            f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+            f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
+        )
+        data = {
+            "applyTo": "contents"
+        }
+        response = requests.post(endpoint, headers=headers, json=data)
+        if response.status_code == 200:
+            logger.info(f"Cleared cells in range {range_address}.")
+        else:
+            logger.error(f"Failed to clear range {range_address}: {response.status_code}, {response.text}")
+def update_row_in_workbook(access_token, library_id, file_id, worksheet_name, start_cell, row_data):
+    num_cols = len(row_data)
+    end_col_letter = chr(ord('A') + num_cols - 1)  # Assuming columns start at 'A'
+    row_number = re.findall(r'\d+', start_cell)[0]
+
+    range_address = f"A{row_number}:{end_col_letter}{row_number}"
+    logger.debug(f"Updating row at range: {range_address}")
+
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    data = {
+        "values": [row_data]
+    }
+
+    response = requests.patch(endpoint, headers=headers, json=data)
+    if response.status_code == 200:
+        logger.info(f"Row updated successfully at range {range_address}.")
+    else:
+        logger.error(f"Failed to update row at range {range_address}: {response.status_code}, {response.text}")
