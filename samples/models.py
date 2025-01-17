@@ -74,7 +74,6 @@ class Sample(models.Model):
                 self.unique_id = generate_unique_id()
                 if not Sample.objects.filter(unique_id=self.unique_id).exists():
                     break
-                opportunity.update = True  # Set 'update' to True
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
         is_new = self.pk is None  # Check if the sample is new
