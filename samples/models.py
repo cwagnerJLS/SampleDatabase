@@ -101,8 +101,6 @@ class Sample(models.Model):
                 sample_ids.append(str(self.unique_id))
                 opportunity.sample_ids = ','.join(sample_ids)
         opportunity.update = True  # Set the 'update' field to True
-        opportunity.update = True  # Set 'update' to True
-        opportunity.update = True  # Set 'update' to True
         opportunity.save()
 
     def delete(self, *args, **kwargs):
@@ -120,6 +118,7 @@ class Sample(models.Model):
             if sample_ids:
                 # Update the sample_ids field
                 opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.update = True  # Set the 'update' field to True
                 opportunity.save()
             else:
                 # If no samples remain, delete the Opportunity entry
