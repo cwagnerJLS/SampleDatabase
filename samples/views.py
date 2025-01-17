@@ -197,12 +197,10 @@ def create_sample(request):
             # Create the opportunity if it doesn't exist, and initialize sample_ids
             opportunity, created = Opportunity.objects.get_or_create(
                 opportunity_number=opp_num,
-                defaults={'new': False, 'sample_ids': sample_ids_str}
+                defaults={'new': True, 'sample_ids': sample_ids_str}
             )
-            # If it already exists and 'new' is None, update 'sample_ids'
             if not created:
-                if opportunity.new is None:
-                    opportunity.new = False
+                opportunity.new = False  # Ensure 'new' is False for existing opportunities
                 opportunity.sample_ids = sample_ids_str
                 opportunity.save()
 
