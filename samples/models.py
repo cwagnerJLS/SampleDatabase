@@ -4,7 +4,43 @@ import random
 import shutil
 import logging
 import subprocess
+import subprocess
+import shutil
 from django.utils.deconstruct import deconstructible
+
+def delete_documentation_from_sharepoint(opportunity_number):
+    import subprocess
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Construct the path to the documentation file on SharePoint
+    # Remote name is 'TestLabSamples', folders are named after the opportunity number
+    remote_file_path = f"TestLabSamples:{opportunity_number}/Documentation_{opportunity_number}.xlsm"
+
+    # Command to delete the file using rclone
+    try:
+        subprocess.run(['rclone', 'deletefile', remote_file_path], check=True)
+        logger.info(f"Deleted documentation file from SharePoint: {remote_file_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to delete documentation file from SharePoint: {e}")
+
+def delete_local_opportunity_folder(opportunity_number):
+    import shutil
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Path to the local opportunity folder
+    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+
+    # Delete the folder if it exists
+    if os.path.exists(folder_path):
+        try:
+            shutil.rmtree(folder_path)
+            logger.info(f"Deleted local opportunity folder: {folder_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete local opportunity folder: {e}")
+    else:
+        logger.warning(f"Local opportunity folder does not exist: {folder_path}")
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -128,6 +164,10 @@ class Sample(models.Model):
                 # If no samples remain, delete the Opportunity entry
                 opportunity.delete()
                 opportunity = None
+
+                # Add these lines to delete files and folders
+                delete_documentation_from_sharepoint(opportunity_number)
+                delete_local_opportunity_folder(opportunity_number)
         except Opportunity.DoesNotExist:
             opportunity = None  # Opportunity might have been deleted already
 
