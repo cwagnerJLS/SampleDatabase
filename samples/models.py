@@ -140,6 +140,7 @@ class Sample(models.Model):
             if sample_ids:
                 # Update the sample_ids field
                 opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.update = True
                 opportunity.save()
             else:
                 # If no samples remain, delete the Opportunity entry
