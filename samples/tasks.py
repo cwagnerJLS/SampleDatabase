@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
 import os
-from .models import SampleImage, get_image_upload_path, Sample
+from .models import SampleImage, get_image_upload_path, Sample, Opportunity
 from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
 from .EditExcelSharepoint import (
@@ -32,6 +32,43 @@ def update_documentation_excels():
         logger.info(f"Found opportunity_numbers: {list(opportunity_numbers)}")
 
         for opportunity_number in opportunity_numbers:
+            logger.info(f"Processing opportunity number: {opportunity_number}")
+
+            # Fetch the Opportunity object
+            try:
+                opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            except Opportunity.DoesNotExist:
+                logger.warning(f"Opportunity with number {opportunity_number} not found. Skipping.")
+                continue
+
+            # Check if opportunity.new is True
+            if opportunity.new:
+                logger.info(f"Opportunity {opportunity_number} is new. Updating cells B1-B4.")
+
+                # Fetch a sample associated with this opportunity
+                sample = Sample.objects.filter(opportunity_number=opportunity_number).first()
+                if not sample:
+                    logger.warning(f"No samples found for opportunity number {opportunity_number}.")
+                    continue
+
+                # Update cells B1-B4 with sample data
+                cells_to_update = {
+                    'B1': sample.customer,
+                    'B2': sample.rsm,
+                    'B3': sample.opportunity_number,
+                    'B4': sample.description,
+                }
+
+                for cell_address, value_to_write in cells_to_update.items():
+                    update_cell_value(token, library_id, excel_file_id, worksheet_name, cell_address, value_to_write)
+                    logger.info(f"Updated cell {cell_address} with value '{value_to_write}'.")
+
+                # After updating, set opportunity.new = False and save
+                opportunity.new = False
+                opportunity.save()
+                logger.info(f"Set opportunity.new to False for {opportunity_number}.")
+            else:
+                logger.info(f"Opportunity {opportunity_number}'s 'new' flag is False. Skipping updating cells B1-B4.")
             logger.info(f"Processing opportunity number: {opportunity_number}")
 
             excel_file_id = find_excel_file(token, library_id, opportunity_number)
