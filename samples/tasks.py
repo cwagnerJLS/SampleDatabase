@@ -96,7 +96,7 @@ def update_documentation_excels():
                 logger.debug(f"Existing IDs in worksheet: {existing_ids}")
 
                 # Get the list of sample IDs from opportunity.sample_ids
-                sample_ids = set(opportunity.sample_ids.split(',')) if opportunity.sample_ids else set()
+                sample_ids = set(filter(None, [s.strip() for s in opportunity.sample_ids.split(',')])) if opportunity.sample_ids else set()
                 logger.debug(f"Sample IDs from opportunity.sample_ids: {sample_ids}")
 
                 # Determine IDs to add and IDs to remove
@@ -117,26 +117,31 @@ def update_documentation_excels():
                 if ids_to_add:
                     # Find the next empty row in column A starting from row 8
                     existing_row_numbers = existing_ids.values()
-                    if existing_row_numbers:
-                        next_row = max(existing_row_numbers) + 1
-                    else:
-                        next_row = 8
-                    for id_to_add in ids_to_add:
+                    # Build the list of rows to write to Excel sheet
+                    rows_to_write = []
+                    for sample_id in sorted(sample_ids):
                         try:
-                            sample = Sample.objects.get(unique_id=id_to_add)
+                            sample = Sample.objects.get(unique_id=sample_id)
                             date_received = sample.date_received.strftime('%Y-%m-%d')
                         except Sample.DoesNotExist:
-                            logger.warning(f"Sample with unique_id {id_to_add} does not exist. Skipping.")
+                            logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
                             continue
-                        # Prepare row data
-                        row_data = [id_to_add, date_received]
-                        # Append the row to the worksheet
-                        start_cell = f"A{next_row}"
-                        update_row_in_workbook(token, library_id, excel_file_id, worksheet_name, start_cell, row_data)
-                        logger.info(f"Appended row starting at {start_cell}: {row_data}")
-                        next_row += 1
-                else:
-                    logger.info("No new IDs to add.")
+                        row = [sample_id, date_received]
+                        rows_to_write.append(row)
+
+                    # Clear existing data from Excel
+                    start_row = 8
+                    end_row = start_row + max(len(existing_ids), len(rows_to_write)) + 100  # Clear extra rows to be safe
+                    range_to_clear = f"A{start_row}:B{end_row}"
+                    clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
+                    logger.info(f"Cleared existing data in range {range_to_clear}")
+
+                    # Write the new data to Excel
+                    if rows_to_write:
+                        update_range_in_workbook(token, library_id, excel_file_id, worksheet_name, start_row, rows_to_write)
+                        logger.info(f"Updated Excel sheet with new data starting from row {start_row}")
+                    else:
+                        logger.info("No data to write to Excel.")
 
                 # After updating, set opportunity.update = False
                 opportunity.update = False

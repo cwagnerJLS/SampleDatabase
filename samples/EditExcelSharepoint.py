@@ -34,7 +34,7 @@ def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)
 
-    existing_ids = set()
+    existing_ids = {}
     if response.status_code == 200:
         data = response.json()
         values = data.get('values', [])
@@ -246,7 +246,58 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
     else:
         print(f"Failed to update cell {cell_address}: {response.status_code}, {response.text}")
 
-def delete_rows_in_workbook(access_token, library_id, file_id, worksheet_name, row_numbers):
+def clear_range_in_workbook(access_token, library_id, file_id, worksheet_name, range_address):
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
+    )
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    data = {
+        "applyTo": "contents"
+    }
+    response = requests.post(endpoint, headers=headers, json=data)
+
+    if response.status_code == 200:
+        logger.info(f"Cleared range {range_address} successfully.")
+    else:
+        logger.error(f"Failed to clear range {range_address}: {response.status_code}, {response.text}")
+
+def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, start_row, values):
+    num_rows = len(values)
+    num_cols = len(values[0]) if values else 0
+    if num_cols == 0:
+        logger.error("No columns to update.")
+        return
+
+    end_row = start_row + num_rows - 1
+    end_col_letter = chr(ord('A') + num_cols - 1)  # Assuming columns A-Z
+
+    range_address = f"A{start_row}:{end_col_letter}{end_row}"
+    logger.debug(f"Calculated range address for update: {range_address}")
+
+    endpoint = (
+        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    data = {
+        "values": values
+    }
+
+    response = requests.patch(endpoint, headers=headers, json=data)
+
+    if response.status_code == 200:
+        logger.info(f"Range {range_address} updated successfully.")
+    else:
+        logger.error(f"Failed to update range {range_address}: {response.status_code}, {response.text}")
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
