@@ -16,6 +16,7 @@ class Opportunity(models.Model):
     opportunity_number = models.CharField(max_length=255, unique=True)
     new = models.BooleanField(default=False)
     sample_ids = models.TextField(blank=True)  # Do not set null=True
+    update = models.BooleanField(default=True)
 
     def __str__(self):
         return self.opportunity_number
