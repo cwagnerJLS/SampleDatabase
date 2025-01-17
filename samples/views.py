@@ -111,25 +111,6 @@ def create_sample(request):
                 )
                 created_samples.append(sample)
 
-                # Ensure the opportunity exists in the Opportunity table
-                opportunity, created = Opportunity.objects.get_or_create(
-                    opportunity_number=sample.opportunity_number
-                )
-
-                # If the Opportunity was newly created, initialize sample_ids with the current sample's unique_id
-                if created:
-                    opportunity.new = True  # Set 'new' to True
-                    opportunity.sample_ids = str(sample.unique_id)
-                    opportunity.save()
-                else:
-                    # If the Opportunity already exists, ensure 'new' is False
-                    opportunity.new = False
-                    # Append the new sample's unique_id
-                    sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
-                    if str(sample.unique_id) not in sample_ids:
-                        sample_ids.append(str(sample.unique_id))
-                        opportunity.sample_ids = ','.join(sample_ids)
-                    opportunity.save()
 
             logger.debug(f"Created samples: {created_samples}")
 
