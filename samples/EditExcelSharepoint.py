@@ -48,6 +48,26 @@ def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name
 
 import re
 
+def delete_rows_in_workbook(access_token, library_id, file_id, worksheet_name, row_numbers):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    for row_num in sorted(row_numbers, reverse=True):  # Process rows in reverse order
+        range_address = f"A{row_num}:B{row_num}"
+        endpoint = (
+            f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+            f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
+        )
+        data = {
+            "applyTo": "contents"
+        }
+        response = requests.post(endpoint, headers=headers, json=data)
+        if response.status_code == 200:
+            logger.info(f"Cleared cells in range {range_address}.")
+        else:
+            logger.error(f"Failed to clear range {range_address}: {response.status_code}, {response.text}")
+
 def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, start_cell, rows):
     """
     Update a specific range in an Excel worksheet with the provided rows.
