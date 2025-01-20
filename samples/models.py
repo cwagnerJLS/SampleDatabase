@@ -53,6 +53,12 @@ class Opportunity(models.Model):
     new = models.BooleanField(default=False)
     sample_ids = models.TextField(blank=True)  # Do not set null=True
     update = models.BooleanField(default=True)
+    
+    # Add these fields:
+    customer = models.CharField(max_length=255, blank=True, null=True)
+    rsm = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    date_received = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return self.opportunity_number
