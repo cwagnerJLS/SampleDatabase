@@ -9,12 +9,11 @@ logging.basicConfig(level=logging.INFO)
 # ====== Constants ======
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"  # Service Account Email
+USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
 TOKEN_CACHE_FILE = "token_cache.json"
 
 # This is the Drive (document library) ID, e.g. "b!X3Eb6X7EmkGXMLnZD4..."
 LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
-
 
 # ====== Token Cache Utility Functions ======
 def load_token_cache():
@@ -27,7 +26,6 @@ def load_token_cache():
             cache.deserialize(f.read())
     return cache
 
-
 def save_token_cache(cache):
     """
     Save the token cache to token_cache.json if it has changed.
@@ -35,7 +33,6 @@ def save_token_cache(cache):
     if cache.has_state_changed:
         with open(TOKEN_CACHE_FILE, "w") as f:
             f.write(cache.serialize())
-
 
 # ====== Authentication ======
 def get_access_token():
@@ -75,8 +72,7 @@ def get_access_token():
 
     raise Exception("Authentication failed.")
 
-
-# ====== 1. Find the Folder by Name ======
+# ====== 1. Search for the Folder by Name ======
 def search_folder(access_token, library_id, folder_name):
     """
     Search for a folder named `folder_name` in the drive (library) using
@@ -89,6 +85,7 @@ def search_folder(access_token, library_id, folder_name):
     if response.status_code == 200:
         items = response.json().get("value", [])
         for item in items:
+            # Confirm exact name match and that the item is a folder
             if item.get("name", "").lower() == folder_name.lower() and "folder" in item:
                 return item["id"]
         logger.info(f"No exact folder match for '{folder_name}'.")
@@ -97,105 +94,61 @@ def search_folder(access_token, library_id, folder_name):
 
     return None
 
-
-# ====== 2. Retrieve Folder's Fields (listItem) ======
-def list_folder_fields(access_token, library_id, folder_id):
+# ====== 2. Update the Folder Fields ======
+def update_folder_fields(access_token, library_id, folder_id, customer_value, rsm_value, description_value):
     """
-    Retrieves and prints the folder's associated list item fields.
-    Shows the actual fields that have values set (or have defaults).
+    Updates the custom fields (Customer, RSM, and _ExtendedDescription) for a folder item
+    in the given library by PATCHing the 'listItem/fields' endpoint.
     """
-    # Expand the listItem with its fields
-    url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{folder_id}/listItem?$expand=fields"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{folder_id}/listItem/fields"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
 
-    response = requests.get(url, headers=headers)
+    # Use the correct internal names based on your column inspection:
+    data = {
+        "Customer": customer_value,
+        "RSM": rsm_value,
+        "_ExtendedDescription": description_value
+    }
+
+    response = requests.patch(url, headers=headers, json=data)
     if response.status_code == 200:
-        list_item = response.json()
-        fields = list_item.get("fields", {})
-
-        print("=== Fields currently set on this folder's list item ===")
-        for key, value in fields.items():
-            print(f"{key}: {value}")
+        print("Folder fields updated successfully.")
     else:
-        logger.error(f"Failed to retrieve folder fields: {response.status_code}, {response.text}")
-
-
-# ====== 3. Discover the Underlying List (and site) for the Library ======
-def get_site_and_list_id(access_token, drive_id):
-    """
-    Expands the `list` property of the drive to get:
-      - The list ID
-      - The site ID (from parentReference)
-    so we can then list all columns in the library.
-    """
-    url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}?$expand=list"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-        data = response.json()
-        list_data = data.get("list", {})
-        list_id = list_data.get("id")  # The library's list ID
-
-        parent_reference = list_data.get("parentReference", {})
-        site_id = parent_reference.get("siteId")  # e.g. "contoso.sharepoint.com,GUID,GUID"
-        return site_id, list_id
-    else:
-        logger.error(f"Error expanding drive to find list: {response.status_code}, {response.text}")
-        return None, None
-
-
-# ====== 4. List All Columns in the Library (Including Blank) ======
-def list_all_columns(access_token, site_id, list_id):
-    """
-    List all columns (fields) in the library, including their internal and display names.
-    This is where you can see columns that might be blank/not set for your folder.
-    """
-    if not site_id or not list_id:
-        logger.error("Site ID or List ID is missing. Cannot list columns.")
-        return
-
-    url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/columns"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(url, headers=headers)
-
-    if response.status_code == 200:
-        columns = response.json().get("value", [])
-        print("=== All columns defined on this library ===")
-        for col in columns:
-            internal_name = col.get("name")
-            display_name = col.get("displayName")
-            print(f"Internal Name: {internal_name}, Display Name: {display_name}")
-    else:
-        logger.error(f"Error listing columns: {response.status_code}, {response.text}")
-
+        logger.error(f"Failed to update folder fields: {response.status_code}, {response.text}")
 
 # ====== Main Logic ======
 def main():
-    folder_name = "Test"  # The folder name you're looking for
+    folder_name = "Test"  # The folder name to find
+    # Set the new values you'd like
+    new_customer = "Contoso"
+    new_rsm = "Jane Doe"
+    new_description = "Updated description for the Test folder."
 
     try:
         access_token = get_access_token()
 
-        # 1. Search for the folder
+        # 1. Find the folder by name
         folder_id = search_folder(access_token, LIBRARY_ID, folder_name)
-        if folder_id:
-            logger.info(f"Found folder '{folder_name}' with ID: {folder_id}")
+        if not folder_id:
+            print(f"Folder '{folder_name}' not found in library.")
+            return
 
-            # 2. List the folder's fields that are already set
-            list_folder_fields(access_token, LIBRARY_ID, folder_id)
-        else:
-            logger.info(f"Folder '{folder_name}' not found in library.")
+        logger.info(f"Found folder '{folder_name}' with ID: {folder_id}")
 
-        # 3. Get the site ID + list ID behind the library
-        site_id, list_id = get_site_and_list_id(access_token, LIBRARY_ID)
-        if site_id and list_id:
-            # 4. List all columns in that library (including ones that might be blank)
-            list_all_columns(access_token, site_id, list_id)
-
+        # 2. Update the fields
+        update_folder_fields(
+            access_token=access_token,
+            library_id=LIBRARY_ID,
+            folder_id=folder_id,
+            customer_value=new_customer,
+            rsm_value=new_rsm,
+            description_value=new_description
+        )
     except Exception as e:
         logger.error(f"An error occurred: {e}")
-
 
 if __name__ == "__main__":
     main()
