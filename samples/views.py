@@ -1,6 +1,3 @@
-import shutil
-import subprocess
-import os
 import logging
 import json
 import csv
@@ -13,27 +10,19 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
-from django.views.decorators.http import require_POST
 from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
 import os
 from .models import Sample, SampleImage, Opportunity
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
-import qrcode
 import xlwings as xw
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import base64
-from io import BytesIO
 from PIL import Image
 import tempfile
 from django.http import HttpResponse, Http404
-from reportlab.lib.pagesizes import inch
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
