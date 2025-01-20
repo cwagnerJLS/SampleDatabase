@@ -1,63 +1,72 @@
-import json
 import requests
 from msal import PublicClientApplication
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Constants
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"  # Service Account Email
-TOKEN_CACHE_FILE = "token_cache.json"  # Token cache file
-GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
+USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
+TOKEN_CACHE_FILE = "token_cache.json"
 LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
 
+# Token management functions
+def load_token_cache():
+    from msal import SerializableTokenCache
+    cache = SerializableTokenCache()
+    if os.path.exists(TOKEN_CACHE_FILE):
+        with open(TOKEN_CACHE_FILE, "r") as f:
+            cache.deserialize(f.read())
+    return cache
 
-# Function to authenticate and get an access token
+def save_token_cache(cache):
+    if cache.has_state_changed:
+        with open(TOKEN_CACHE_FILE, "w") as f:
+            f.write(cache.serialize())
+
 def get_access_token():
+    cache = load_token_cache()
     app = PublicClientApplication(
-        client_id=CLIENT_ID,
+        CLIENT_ID,
         authority=f"https://login.microsoftonline.com/{TENANT_ID}",
-        token_cache=TOKEN_CACHE_FILE
+        token_cache=cache
     )
-
-    accounts = app.get_accounts()
-    result = None
-
+    scopes = ["Sites.ReadWrite.All"]
+    accounts = app.get_accounts(username=USERNAME)
     if accounts:
-        # Use the existing cached account
-        result = app.acquire_token_silent(["https://graph.microsoft.com/.default"], account=accounts[0])
+        result = app.acquire_token_silent(scopes, account=accounts[0])
+        if result and "access_token" in result:
+            save_token_cache(app.token_cache)
+            return result["access_token"]
+    flow = app.initiate_device_flow(scopes=scopes)
+    if "user_code" not in flow:
+        raise Exception("Device flow initiation failed.")
+    print(flow["message"])
+    result = app.acquire_token_by_device_flow(flow)
+    if "access_token" in result:
+        save_token_cache(app.token_cache)
+        return result["access_token"]
+    raise Exception("Authentication failed.")
 
-    if not result:
-        print("Please authenticate with Microsoft")
-        flow = app.initiate_device_flow(scopes=["https://graph.microsoft.com/.default"])
-        print(flow["message"])
-        result = app.acquire_token_by_device_flow(flow)
-
-    if "access_token" not in result:
-        raise Exception("Authentication failed")
-
-    return result["access_token"]
-
-
-# Function to find a folder in the document library
-def find_folder(folder_name, access_token):
-    url = f"{GRAPH_API_BASE}/drives/{LIBRARY_ID}/root/children"
+# Find a folder by name in the document library
+def find_folder(access_token, library_id, folder_name):
+    url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/root/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(url, headers=headers)
-
     if response.status_code == 200:
         items = response.json().get("value", [])
         for item in items:
             if item["name"].lower() == folder_name.lower() and "folder" in item:
-                return item["id"]  # Return the folder ID
+                return item["id"]
     else:
-        print(f"Error finding folder: {response.status_code} {response.text}")
-
+        logger.error(f"Failed to find folder: {response.status_code}, {response.text}")
     return None
 
-
-# Function to update custom fields for a folder
-def update_folder_fields(folder_id, access_token, customer, rsm, description):
-    url = f"{GRAPH_API_BASE}/sites/root/drives/{LIBRARY_ID}/items/{folder_id}/fields"
+# Update custom fields for a folder
+def update_folder_fields(access_token, library_id, folder_id, customer, rsm, description):
+    url = f"https://graph.microsoft.com/v1.0/sites/root/drives/{library_id}/items/{folder_id}/fields"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -68,35 +77,28 @@ def update_folder_fields(folder_id, access_token, customer, rsm, description):
         "Description": description
     }
     response = requests.patch(url, headers=headers, json=data)
-
     if response.status_code == 200:
         print("Folder fields updated successfully.")
     else:
-        print(f"Error updating folder fields: {response.status_code} {response.text}")
+        logger.error(f"Failed to update folder fields: {response.status_code}, {response.text}")
 
-
-# Main function
+# Main logic
 def main():
-    folder_name = "Test"  # Replace with the name of the folder you want to update
-    customer = "Customer Name"
-    rsm = "RSM Name"
+    folder_name = "Test"  # Replace with the folder name
+    customer = "Updated Customer"
+    rsm = "Updated RSM"
     description = "Updated Description"
 
     try:
-        # Get access token
         access_token = get_access_token()
-
-        # Find the folder
-        folder_id = find_folder(folder_name, access_token)
+        folder_id = find_folder(access_token, LIBRARY_ID, folder_name)
         if folder_id:
-            print(f"Folder found: {folder_id}")
-            # Update the custom fields
-            update_folder_fields(folder_id, access_token, customer, rsm, description)
+            logger.info(f"Found folder: {folder_id}")
+            update_folder_fields(access_token, LIBRARY_ID, folder_id, customer, rsm, description)
         else:
-            print("Folder not found.")
+            print(f"Folder '{folder_name}' not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
-
+        logger.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
