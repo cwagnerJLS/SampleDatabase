@@ -11,6 +11,8 @@ CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"  # Service Account Email
 TOKEN_CACHE_FILE = "token_cache.json"
+
+# The Drive (document library) ID. For example:
 LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
 
 
@@ -96,17 +98,19 @@ def search_folder(access_token, library_id, folder_name):
     return None
 
 
-# ====== Update Folder Fields ======
+# ====== Update Folder Fields (Correct Endpoint) ======
 def update_folder_fields(access_token, library_id, folder_id, customer, rsm, description):
     """
     Updates the custom fields (Customer, RSM, Description) for a folder item
-    in the given library.
+    in the given library by PATCHing the 'listItem/fields' endpoint.
     """
-    url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{folder_id}/fields"
+    # NOTE the correct endpoint: /listItem/fields (not /fields)
+    url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{folder_id}/listItem/fields"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
+    # Use your actual internal column names here. Display names might differ.
     data = {
         "Customer": customer,
         "RSM": rsm,
