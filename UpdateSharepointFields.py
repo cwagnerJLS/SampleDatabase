@@ -94,7 +94,7 @@ def main():
 
     try:
         access_token = get_access_token()
-        folder_id = find_folder(access_token, LIBRARY_ID, folder_name)
+        folder_id = find_folder(access_token, LIBRARY_ID)
         if folder_id:
             logger.info(f"Found folder: {folder_id}")
             update_folder_fields(access_token, LIBRARY_ID, folder_id, customer, rsm, description)
