@@ -39,6 +39,7 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 import qrcode
+from .CreateOppFolderSharepoint import create_sharepoint_folder
 
 # Configure logging
 logger = logging.getLogger('samples')
@@ -61,6 +62,14 @@ def create_sample(request):
             description = request.POST.get('description')
             date_received = request.POST.get('date_received')
             quantity = request.POST.get('quantity')
+
+            # -- Ensure folder exists on SharePoint --
+            create_sharepoint_folder(
+                opportunity_number=opportunity_number,
+                customer=customer,
+                rsm=rsm_full_name,
+                description=description
+            )
 
             # Create directory in OneDrive_Sync named after the opportunity number
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
