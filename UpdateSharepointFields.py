@@ -51,18 +51,21 @@ def get_access_token():
     raise Exception("Authentication failed.")
 
 # Find a folder by name in the document library
-def find_folder(access_token, library_id, folder_name):
+def find_folder(access_token, library_id):
     url = f"https://graph.microsoft.com/v1.0/drives/{library_id}/root/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         items = response.json().get("value", [])
+        print("Items in library:")
         for item in items:
-            if item["name"].lower() == folder_name.lower() and "folder" in item:
+            print(f"Name: {item['name']}, ID: {item['id']}")
+            if "folder" in item:
                 return item["id"]
     else:
-        logger.error(f"Failed to find folder: {response.status_code}, {response.text}")
+        print(f"Error: {response.status_code}, {response.text}")
     return None
+
 
 # Update custom fields for a folder
 def update_folder_fields(access_token, library_id, folder_id, customer, rsm, description):
