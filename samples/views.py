@@ -8,11 +8,6 @@ from .tasks import (
     create_sharepoint_folder_task,
     create_documentation_on_sharepoint_task
 )
-    send_sample_received_email,
-    update_documentation_excels,
-    create_sharepoint_folder_task,
-    create_documentation_on_sharepoint_task
-)
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
