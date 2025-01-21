@@ -231,16 +231,20 @@ def create_sample(request):
         for opportunity_number in opportunity_numbers:
             # Define the directory path for this opportunity number
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-            # Define the expected documentation file path
+
+            # Define the 'Samples' subdirectory path
+            samples_dir = os.path.join(directory_path, 'Samples')
+
+            # Define the expected documentation file path in the 'Samples' subdirectory
             new_filename = f"Documentation_{opportunity_number}.xlsm"
-            destination_file = os.path.join(directory_path, new_filename)
+            destination_file = os.path.join(samples_dir, new_filename)
 
             # Check if the documentation file already exists
             if not os.path.exists(destination_file):
                 logger.debug(f"Documentation file does not exist for opportunity {opportunity_number}, creating it.")
-                # Ensure the directory exists
-                os.makedirs(directory_path, exist_ok=True)
-                # Copy the template file to the destination
+                # Ensure the 'Samples' subdirectory exists
+                os.makedirs(samples_dir, exist_ok=True)
+                # Copy the template file to the destination in the 'Samples' subdirectory
                 try:
                     shutil.copy(template_file, destination_file)
                     logger.debug(f"Copied template file to: {destination_file}")
