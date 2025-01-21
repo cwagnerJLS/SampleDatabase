@@ -575,6 +575,11 @@ def handle_print_request(request):
         try:
             data = json.loads(request.body)
             ids_to_print = data.get('ids', [])
+            if not ids_to_print:
+                return JsonResponse({'status': 'error', 'error': 'No sample IDs provided'}, status=400)
+
+            # Use the first sample_id to determine the labels directory
+            sample = Sample.objects.get(unique_id=ids_to_print[0])
             labels_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', sample.opportunity_number, 'Samples', 'Labels')
             os.makedirs(labels_dir, exist_ok=True)
 
