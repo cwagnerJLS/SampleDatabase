@@ -2,6 +2,7 @@ import logging
 import json
 import csv
 import subprocess
+from celery import chain
 from .tasks import (
     send_sample_received_email,
     update_documentation_excels,
@@ -58,15 +59,16 @@ def create_sample(request):
             quantity = request.POST.get('quantity')
 
             # -- Ensure folder exists on SharePoint --
-            # Enqueue background tasks to handle SharePoint operations
-            create_sharepoint_folder_task.delay(
+            # Chain the tasks to ensure sequential execution
+            chain(
+                create_sharepoint_folder_task.s(
                 opportunity_number=opportunity_number,
                 customer=customer,
                 rsm=rsm_full_name,
                 description=description
-            )
-
-            create_documentation_on_sharepoint_task.delay(opportunity_number)
+                ),
+                create_documentation_on_sharepoint_task.s(opportunity_number)
+            ).delay()
 
             try:
                 quantity = int(quantity)
