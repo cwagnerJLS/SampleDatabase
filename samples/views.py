@@ -151,15 +151,24 @@ def create_sample(request):
             else:
                 total_quantity = 0
 
-            # Uncomment the following code if you want to send an email regardless of quantity
-            # send_sample_received_email.delay(
-            #     rsm_full_name,
-            #     date_received.strftime('%Y-%m-%d'),
-            #     opportunity_number,
-            #     customer,
-            #     total_quantity  # This will be zero if no samples were created
-            # )
-            # logger.debug(f"Email sent to {rsm_full_name} regarding opportunity {opportunity_number}")
+            # Calculate the total quantity
+            if created_samples:
+                total_quantity = sum(sample.quantity for sample in created_samples)
+            else:
+                total_quantity = 0
+
+            # Send email only if total_quantity > 0
+            if total_quantity > 0:
+                send_sample_received_email.delay(
+                    rsm_full_name,
+                    date_received.strftime('%Y-%m-%d'),
+                    opportunity_number,
+                    customer,
+                    total_quantity
+                )
+                logger.debug(f"Email sent to {rsm_full_name} regarding opportunity {opportunity_number}")
+            else:
+                logger.debug("Quantity is zero; email not sent.")
 
             # Trigger the documentation update task
             update_documentation_excels.delay()
