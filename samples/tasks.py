@@ -4,6 +4,8 @@ import os
 from .models import SampleImage, get_image_upload_path, Sample, Opportunity
 from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
+from .CreateOppFolderSharepoint import create_sharepoint_folder
+from .utils import create_documentation_on_sharepoint
 from .EditExcelSharepoint import (
     get_access_token,
     find_excel_file,
@@ -20,6 +22,27 @@ from .EditExcelSharepoint import (
 logger = logging.getLogger(__name__)
 
 @shared_task
+def create_sharepoint_folder_task(opportunity_number, customer, rsm, description):
+    logger.info(f"Starting create_sharepoint_folder_task for opportunity {opportunity_number}")
+    try:
+        create_sharepoint_folder(
+            opportunity_number=opportunity_number,
+            customer=customer,
+            rsm=rsm,
+            description=description
+        )
+        logger.info(f"Successfully created SharePoint folder for opportunity {opportunity_number}")
+    except Exception as e:
+        logger.error(f"Error creating SharePoint folder for opportunity {opportunity_number}: {e}")
+
+@shared_task
+def create_documentation_on_sharepoint_task(opportunity_number):
+    logger.info(f"Starting create_documentation_on_sharepoint_task for opportunity {opportunity_number}")
+    try:
+        create_documentation_on_sharepoint(opportunity_number)
+        logger.info(f"Successfully copied documentation template to SharePoint for opportunity {opportunity_number}")
+    except Exception as e:
+        logger.error(f"Error copying documentation template to SharePoint for opportunity {opportunity_number}: {e}")
 def update_documentation_excels():
     logger.info("Starting update_documentation_excels task.")
     try:

@@ -2,7 +2,12 @@ import logging
 import json
 import csv
 import subprocess
-from .tasks import send_sample_received_email, update_documentation_excels
+from .tasks import (
+    send_sample_received_email,
+    update_documentation_excels,
+    create_sharepoint_folder_task,
+    create_documentation_on_sharepoint_task
+)
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
@@ -53,31 +58,15 @@ def create_sample(request):
             quantity = request.POST.get('quantity')
 
             # -- Ensure folder exists on SharePoint --
-            try:
-                create_sharepoint_folder(
-                    opportunity_number=opportunity_number,
-                    customer=customer,
-                    rsm=rsm_full_name,
-                    description=description
-                )
-            except Exception as e:
-                logger.error(f"Error creating SharePoint folder: {e}")
-                return JsonResponse({'status': 'error', 'error': f'Failed to create SharePoint folder: {e}'}, status=500)
+            # Enqueue background tasks to handle SharePoint operations
+            create_sharepoint_folder_task.delay(
+                opportunity_number=opportunity_number,
+                customer=customer,
+                rsm=rsm_full_name,
+                description=description
+            )
 
-            # Create directory in OneDrive_Sync named after the opportunity number
-            directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-            if not os.path.exists(directory_path):
-                os.makedirs(directory_path)
-
-            samples_dir = os.path.join(directory_path, 'Samples')
-            if not os.path.exists(samples_dir):
-                os.makedirs(samples_dir)
-            # Copy DocumentationTemplate.xlsm directly on SharePoint
-            try:
-                create_documentation_on_sharepoint(opportunity_number)
-            except Exception as e:
-                logger.error(f"Error copying documentation template to SharePoint: {e}")
-                return JsonResponse({'status': 'error', 'error': f'Failed to copy documentation template: {e}'}, status=500)
+            create_documentation_on_sharepoint_task.delay(opportunity_number)
 
             try:
                 quantity = int(quantity)
