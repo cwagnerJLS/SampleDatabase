@@ -32,8 +32,8 @@ def update_documentation_excels():
         library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
         logger.debug(f"Using library_id: {library_id}")
 
-        opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
-        logger.info(f"Found opportunity_numbers: {list(opportunity_numbers)}")
+        opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
+        logger.info(f"Found opportunity_numbers from Opportunity model: {list(opportunity_numbers)}")
 
         for opportunity_number in opportunity_numbers:
             logger.info(f"Processing opportunity number: {opportunity_number}")
@@ -66,18 +66,12 @@ def update_documentation_excels():
             if opportunity.new:
                 logger.info(f"Opportunity {opportunity_number} is new. Updating cells B1-B4.")
 
-                # Fetch a sample associated with this opportunity
-                sample = Sample.objects.filter(opportunity_number=opportunity_number).first()
-                if not sample:
-                    logger.warning(f"No samples found for opportunity number {opportunity_number}.")
-                    continue
-
-                # Update cells B1-B4 with sample data
+                # Use Opportunity data to update cells B1-B4
                 cells_to_update = {
-                    'B1': sample.customer,
-                    'B2': sample.rsm,
-                    'B3': sample.opportunity_number,
-                    'B4': sample.description,
+                    'B1': opportunity.customer or '',
+                    'B2': opportunity.rsm or '',
+                    'B3': opportunity.opportunity_number,
+                    'B4': opportunity.description or '',
                 }
 
                 for cell_address, value_to_write in cells_to_update.items():
@@ -152,6 +146,14 @@ def update_documentation_excels():
                         logger.info(f"Updated Excel sheet with new data starting from row {start_row}")
                     else:
                         logger.info("No data to write to Excel.")
+
+                # Clear existing data if no sample IDs
+                if not sample_ids:
+                    start_row = 8
+                    end_row = start_row + max(len(existing_ids), 100)  # Adjust the number as needed
+                    range_to_clear = f"A{start_row}:B{end_row}"
+                    clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
+                    logger.info(f"Cleared existing data in range {range_to_clear} because there are no sample IDs.")
 
                 # After updating, set opportunity.update = False
                 opportunity.update = False
