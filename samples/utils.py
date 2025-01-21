@@ -12,7 +12,13 @@ def create_documentation_on_sharepoint(opportunity_number):
     # Command to copy the template file to the new location using rclone
     try:
         subprocess.run(
-            ['rclone', 'copyto', template_file_path, remote_file_path],
+            [
+                'rclone', 'copyto',
+                template_file_path,
+                remote_file_path,
+                '--ignore-size',
+                '--ignore-checksum'
+            ],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
