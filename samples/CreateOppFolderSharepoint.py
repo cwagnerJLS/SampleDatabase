@@ -178,7 +178,15 @@ def create_subfolder(access_token, parent_folder_id, subfolder_name):
     resp = requests.post(url, headers=headers, json=data)
     if resp.status_code in (200, 201):
         logger.info(f"Subfolder '{subfolder_name}' created successfully.")
-    else:
-        error_message = f"Error creating subfolder '{subfolder_name}': {resp.status_code}, {resp.text}"
-        logger.error(error_message)
-        raise Exception(error_message)
+    elif resp.status_code == 409:
+        # Parse the error code and message
+        error_info = resp.json().get("error", {})
+        error_code = error_info.get("code")
+        error_message = error_info.get("message")
+        if error_code == "nameAlreadyExists":
+            logger.info(f"Subfolder '{subfolder_name}' already exists. Proceeding without error.")
+            # Do not raise an exception; treat as success
+        else:
+            # Handle other conflict errors
+            logger.error(f"Conflict error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
+            raise Exception(f"Error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
