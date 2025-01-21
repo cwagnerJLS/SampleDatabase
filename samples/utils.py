@@ -26,7 +26,7 @@ def create_documentation_on_sharepoint(opportunity_number):
     # Command to copy the template file to the new location using rclone
     # Command to copy the template file to the new location using rclone
     command = [
-        'rclone', 'copyto',
+        '/usr/bin/rclone', 'copyto',  # Use the full path to rclone
         template_file_path,
         remote_file_path,
         '--ignore-size',
