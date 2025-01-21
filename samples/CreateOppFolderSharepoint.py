@@ -157,6 +157,8 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
 
         # 4) Create the 'Samples' subfolder within the opportunity folder
         create_subfolder(access_token, parent_folder_id, 'Samples')
+        create_subfolder(access_token, parent_folder_id, 'Pics and Vids')
+        create_subfolder(access_token, parent_folder_id, 'Modeling')
 
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
