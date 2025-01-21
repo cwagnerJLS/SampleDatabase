@@ -575,7 +575,7 @@ def handle_print_request(request):
         try:
             data = json.loads(request.body)
             ids_to_print = data.get('ids', [])
-            labels_dir = os.path.join(settings.BASE_DIR, 'Labels')
+            labels_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', sample.opportunity_number, 'Samples', 'Labels')
             os.makedirs(labels_dir, exist_ok=True)
 
             if not ids_to_print:
