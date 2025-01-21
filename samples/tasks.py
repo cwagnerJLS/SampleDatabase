@@ -23,9 +23,6 @@ logger = logging.getLogger(__name__)
 def update_documentation_excels():
     logger.info("Starting update_documentation_excels task.")
     try:
-        if quantity <= 0:
-            logger.debug(f"Quantity is zero or negative ({quantity}); email not sent.")
-            return  # Exit the function without sending an email
         token = get_access_token()
         logger.debug(f"Access token acquired: {token}")
         if not token:
