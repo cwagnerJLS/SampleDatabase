@@ -100,7 +100,11 @@ def create_sample(request):
                     'update': True,
                 }
             )
-            if not created:
+            if created:
+                # Create local directory structure under 'OneDrive_Sync'
+                opportunity_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+                samples_folder = os.path.join(opportunity_folder, 'Samples')
+                os.makedirs(samples_folder, exist_ok=True)
                 # Update existing Opportunity fields
                 opportunity.customer = customer
                 opportunity.rsm = rsm_full_name
