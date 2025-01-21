@@ -95,45 +95,72 @@ def create_sample(request):
             logger.debug(f"Received data: customer={customer}, rsm={rsm_full_name}, opportunity_number={opportunity_number}, "
                          f"description={description}, date_received={date_received}, quantity={quantity}, location={location}")
 
-            # Create sample entries
+            # Create or update the Opportunity
+            opportunity, created = Opportunity.objects.get_or_create(
+                opportunity_number=opportunity_number,
+                defaults={
+                    'new': True,
+                    'customer': customer,
+                    'rsm': rsm_full_name,
+                    'description': description,
+                    'date_received': date_received,
+                    'update': True,
+                }
+            )
+            if not created:
+                # Update existing Opportunity fields
+                opportunity.customer = customer
+                opportunity.rsm = rsm_full_name
+                opportunity.description = description
+                opportunity.date_received = date_received
+                opportunity.new = True
+                opportunity.update = True
+                opportunity.save()
+
             created_samples = []
-            for i in range(quantity):
-                sample = Sample.objects.create(
-                    date_received=date_received,
-                    customer=customer,
-                    rsm=rsm_full_name,
-                    opportunity_number=opportunity_number,
-                    description=description,
-                    storage_location=location,
-                    quantity=1  # Each entry represents a single unit
-                )
-                created_samples.append(sample)
 
+            if quantity > 0:
+                for i in range(quantity):
+                    sample = Sample.objects.create(
+                        date_received=date_received,
+                        customer=customer,
+                        rsm=rsm_full_name,
+                        opportunity_number=opportunity_number,
+                        description=description,
+                        storage_location=location,
+                        quantity=1  # Each entry represents a single unit
+                    )
+                    created_samples.append(sample)
+                logger.debug(f"Created samples: {created_samples}")
 
-            logger.debug(f"Created samples: {created_samples}")
+                # Update sample_ids field for the Opportunity
+                sample_ids = Sample.objects.filter(
+                    opportunity_number=opportunity_number
+                ).values_list('unique_id', flat=True)
+                opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.save()
+            else:
+                logger.debug("Quantity is zero; no samples created.")
+                # Clear sample_ids for the Opportunity
+                opportunity.sample_ids = ''
+                opportunity.save()
 
-            # Update sample_ids field for the Opportunity
-            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
-            # Retrieve all unique IDs associated with this opportunity
-            sample_ids = Sample.objects.filter(
-                opportunity_number=opportunity_number
-            ).values_list('unique_id', flat=True)
-            opportunity.sample_ids = ','.join(map(str, sample_ids))
-            opportunity.save()
-
-            # After the samples are successfully created
+            # Calculate the total quantity
             if created_samples:
-                # Calculate the total quantity
                 total_quantity = sum(sample.quantity for sample in created_samples)
+            else:
+                total_quantity = 0
 
-                # Call the email sending task
-                send_sample_received_email.delay(
-                    rsm_full_name,
-                    date_received.strftime('%Y-%m-%d'),
-                    opportunity_number,
-                    customer,
-                    total_quantity  # Use the total quantity of samples created
-                )
+            # Uncomment the following code if you want to send an email regardless of quantity
+            # send_sample_received_email.delay(
+            #     rsm_full_name,
+            #     date_received.strftime('%Y-%m-%d'),
+            #     opportunity_number,
+            #     customer,
+            #     total_quantity  # This will be zero if no samples were created
+            # )
+            # logger.debug(f"Email sent to {rsm_full_name} regarding opportunity {opportunity_number}")
+
             # Trigger the documentation update task
             update_documentation_excels.delay()
 
