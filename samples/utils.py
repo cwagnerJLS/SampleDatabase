@@ -23,7 +23,3 @@ def read_excel_data(file_path):
 def get_unique_values(data, key):
     return list({record[key] for record in data})
 
-# Example usage
-file_path = r"/Sample Inventory.xlsx"
-excel_data = read_excel_data(file_path)
-unique_customers = get_unique_values(excel_data, 'Customer')
