@@ -19,7 +19,13 @@ from django.core.files.base import ContentFile
 import os
 from .models import Sample, SampleImage, Opportunity
 from .utils import create_documentation_on_sharepoint
-from .tasks import save_full_size_image  # Import the Celery task
+from .tasks import (
+    send_sample_received_email,
+    update_documentation_excels,
+    create_sharepoint_folder_task,
+    create_documentation_on_sharepoint_task,
+    save_full_size_image
+)
 import pandas as pd
 import xlwings as xw
 from django.views.decorators.http import require_POST
@@ -59,7 +65,7 @@ def create_sample(request):
             quantity = request.POST.get('quantity')
 
             # -- Ensure folder exists on SharePoint --
-            # Chain the tasks to ensure sequential execution
+            # Chain the tasks to ensure sequential execution, including update_documentation_excels
             chain(
                 create_sharepoint_folder_task.s(
                 opportunity_number=opportunity_number,
@@ -67,7 +73,8 @@ def create_sample(request):
                 rsm=rsm_full_name,
                 description=description
                 ),
-                create_documentation_on_sharepoint_task.si(opportunity_number)
+                create_documentation_on_sharepoint_task.si(opportunity_number),
+                update_documentation_excels.si()
             ).delay()
 
             try:
@@ -156,8 +163,7 @@ def create_sample(request):
             else:
                 logger.debug("Quantity is zero; email not sent.")
 
-            # Trigger the documentation update task
-            update_documentation_excels.delay()
+            # Removed separate call to update_documentation_excels
 
             return JsonResponse({
                 'status': 'success',
