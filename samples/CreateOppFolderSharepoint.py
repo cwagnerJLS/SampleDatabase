@@ -135,26 +135,29 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
 
 def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     """
-    High-level function to ensure a folder named opportunity_number exists in
-    the SharePoint library. If it doesn't, we create it and set fields.
-    If it does exist, we do nothing by default.
+    Ensures a folder named opportunity_number exists in the SharePoint library.
+    If it doesn't, creates it and sets fields. Then creates a 'Samples' subfolder within it.
     """
     try:
         access_token = get_access_token()
         # 1) Check if the folder exists
         existing_folder_id = search_folder(access_token, opportunity_number)
         if existing_folder_id:
-            logger.info(f"Folder '{opportunity_number}' already exists on SharePoint. Doing nothing.")
-            return
-        # Determine the parent folder ID
-        parent_folder_id = new_folder_id or existing_folder_id
+            logger.info(f"Folder '{opportunity_number}' already exists on SharePoint.")
+            parent_folder_id = existing_folder_id
+        else:
+            # 2) Create the opportunity folder
+            parent_folder_id = create_folder(access_token, opportunity_number)
+            if parent_folder_id:
+                # 3) Update the custom fields
+                update_folder_fields(access_token, parent_folder_id, customer, rsm, description)
+            else:
+                logger.error(f"Failed to create opportunity folder '{opportunity_number}'.")
+                return
 
-        # Create the 'Samples' subfolder
+        # 4) Create the 'Samples' subfolder within the opportunity folder
         create_subfolder(access_token, parent_folder_id, 'Samples')
-        new_folder_id = create_folder(access_token, opportunity_number)
-        if new_folder_id:
-            # 3) Update the custom fields
-            update_folder_fields(access_token, new_folder_id, customer, rsm, description)
+
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
 def create_subfolder(access_token, parent_folder_id, subfolder_name):
