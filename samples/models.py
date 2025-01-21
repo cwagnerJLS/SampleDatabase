@@ -29,10 +29,10 @@ def delete_local_opportunity_folder(opportunity_number):
     import logging
     logger = logging.getLogger(__name__)
 
-    # Path to the local opportunity folder
-    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number, 'Samples')
+    # Path to the entire local opportunity folder
+    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
 
-    # Delete the folder if it exists
+    # Delete the opportunity folder if it exists
     if os.path.exists(folder_path):
         try:
             shutil.rmtree(folder_path)
