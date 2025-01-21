@@ -43,6 +43,7 @@ def create_documentation_on_sharepoint_task(opportunity_number):
         logger.info(f"Successfully copied documentation template to SharePoint for opportunity {opportunity_number}")
     except Exception as e:
         logger.error(f"Error copying documentation template to SharePoint for opportunity {opportunity_number}: {e}")
+@shared_task
 def update_documentation_excels():
     logger.info("Starting update_documentation_excels task.")
     try:
