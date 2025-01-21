@@ -15,6 +15,7 @@ def create_documentation_on_sharepoint(opportunity_number):
         logger.info(f"Copied documentation template to SharePoint: {remote_file_path}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to copy documentation template to SharePoint: {e}")
+        raise Exception(f"Failed to copy documentation template: {e}")
 
 def read_excel_data(file_path):
     df = pd.read_excel(file_path)

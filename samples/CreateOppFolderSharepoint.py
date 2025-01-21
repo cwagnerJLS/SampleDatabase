@@ -110,8 +110,9 @@ def create_folder(access_token, folder_name):
         folder_item = resp.json()
         return folder_item["id"]
     else:
-        logger.error(f"Error creating folder '{folder_name}': {resp.status_code}, {resp.text}")
-        return None
+        error_message = f"Error creating folder '{folder_name}': {resp.status_code}, {resp.text}"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 def update_folder_fields(access_token, folder_id, customer, rsm, description):
     """
@@ -153,7 +154,7 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
                 update_folder_fields(access_token, parent_folder_id, customer, rsm, description)
             else:
                 logger.error(f"Failed to create opportunity folder '{opportunity_number}'.")
-                return
+                raise Exception(f"Failed to create opportunity folder '{opportunity_number}'.")
 
         # 4) Create the 'Samples' subfolder within the opportunity folder
         create_subfolder(access_token, parent_folder_id, 'Samples')
@@ -162,6 +163,7 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
 
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
+        raise
 def create_subfolder(access_token, parent_folder_id, subfolder_name):
     url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
     headers = {
@@ -177,4 +179,6 @@ def create_subfolder(access_token, parent_folder_id, subfolder_name):
     if resp.status_code in (200, 201):
         logger.info(f"Subfolder '{subfolder_name}' created successfully.")
     else:
-        logger.error(f"Error creating subfolder '{subfolder_name}': {resp.status_code}, {resp.text}")
+        error_message = f"Error creating subfolder '{subfolder_name}': {resp.status_code}, {resp.text}"
+        logger.error(error_message)
+        raise Exception(error_message)

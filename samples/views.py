@@ -53,12 +53,16 @@ def create_sample(request):
             quantity = request.POST.get('quantity')
 
             # -- Ensure folder exists on SharePoint --
-            create_sharepoint_folder(
-                opportunity_number=opportunity_number,
-                customer=customer,
-                rsm=rsm_full_name,
-                description=description
-            )
+            try:
+                create_sharepoint_folder(
+                    opportunity_number=opportunity_number,
+                    customer=customer,
+                    rsm=rsm_full_name,
+                    description=description
+                )
+            except Exception as e:
+                logger.error(f"Error creating SharePoint folder: {e}")
+                return JsonResponse({'status': 'error', 'error': f'Failed to create SharePoint folder: {e}'}, status=500)
 
             # Create directory in OneDrive_Sync named after the opportunity number
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
@@ -69,7 +73,11 @@ def create_sample(request):
             if not os.path.exists(samples_dir):
                 os.makedirs(samples_dir)
             # Copy DocumentationTemplate.xlsm directly on SharePoint
-            create_documentation_on_sharepoint(opportunity_number)
+            try:
+                create_documentation_on_sharepoint(opportunity_number)
+            except Exception as e:
+                logger.error(f"Error copying documentation template to SharePoint: {e}")
+                return JsonResponse({'status': 'error', 'error': f'Failed to copy documentation template: {e}'}, status=500)
 
             try:
                 quantity = int(quantity)
