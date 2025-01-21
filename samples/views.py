@@ -162,25 +162,8 @@ def create_sample(request):
         # Call the Celery task
         update_documentation_excels.delay()
 
-        # Retrieve all unique opportunity numbers from the Sample objects in the database
-        opportunity_numbers = Sample.objects.values_list('opportunity_number', flat=True).distinct()
-
-        # Update the Opportunity table
-        for opp_num in opportunity_numbers:
-            # Retrieve all unique IDs associated with this opportunity
-            sample_ids = Sample.objects.filter(
-                opportunity_number=opp_num
-            ).values_list('unique_id', flat=True)
-            sample_ids_str = ','.join(map(str, sample_ids))
-
-            # Create the opportunity if it doesn't exist, and initialize sample_ids
-            opportunity, created = Opportunity.objects.get_or_create(
-                opportunity_number=opp_num,
-                defaults={'new': True, 'sample_ids': sample_ids_str}
-            )
-            if not created:
-                opportunity.sample_ids = sample_ids_str
-                opportunity.save()
+        # Retrieve all opportunity numbers from the Opportunity model
+        opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
 
         # Update sample_ids field in the Opportunity table
         for opportunity in Opportunity.objects.all():
