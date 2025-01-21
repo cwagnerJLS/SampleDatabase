@@ -67,7 +67,7 @@ def create_sample(request):
                 rsm=rsm_full_name,
                 description=description
                 ),
-                create_documentation_on_sharepoint_task.s(opportunity_number)
+                create_documentation_on_sharepoint_task.si(opportunity_number)
             ).delay()
 
             try:
