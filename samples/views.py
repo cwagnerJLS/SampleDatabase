@@ -13,6 +13,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.files.base import ContentFile
 import os
 from .models import Sample, SampleImage, Opportunity
+from .utils import create_documentation_on_sharepoint
 from .tasks import save_full_size_image  # Import the Celery task
 import pandas as pd
 import xlwings as xw
@@ -68,25 +69,8 @@ def create_sample(request):
             samples_dir = os.path.join(directory_path, 'Samples')
             if not os.path.exists(samples_dir):
                 os.makedirs(samples_dir)
-            # Copy DocumentationTemplate.xlsm into the new directory and rename it
-            template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
-            logger.debug(f"Looking for template file at: {template_file}")
-
-            if os.path.exists(template_file):
-                logger.debug("Template file exists.")
-                new_filename = f"Documentation_{opportunity_number}.xlsm"
-                destination_file = os.path.join(samples_dir, new_filename)
-                try:
-                    shutil.copy(template_file, destination_file)
-                    logger.debug(f"Copied template file to: {destination_file}")
-                except PermissionError as e:
-                    logger.error(f"Permission error while copying template file: {e}")
-                    return JsonResponse({'status': 'error', 'error': 'Permission denied when copying template file'}, status=500)
-            else:
-                base_dir_contents = os.listdir(settings.BASE_DIR)
-                logger.debug(f"Contents of BASE_DIR ({settings.BASE_DIR}): {base_dir_contents}")
-                logger.error(f"Documentation template not found at: {template_file}")
-                return JsonResponse({'status': 'error', 'error': f'Documentation template not found at {template_file}'}, status=500)
+            # Copy DocumentationTemplate.xlsm directly on SharePoint
+            create_documentation_on_sharepoint(opportunity_number)
 
             try:
                 quantity = int(quantity)
