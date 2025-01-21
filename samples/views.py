@@ -64,6 +64,10 @@ def create_sample(request):
             directory_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
+
+            samples_dir = os.path.join(directory_path, 'Samples')
+            if not os.path.exists(samples_dir):
+                os.makedirs(samples_dir)
             # Copy DocumentationTemplate.xlsm into the new directory and rename it
             template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
             logger.debug(f"Looking for template file at: {template_file}")
@@ -71,7 +75,7 @@ def create_sample(request):
             if os.path.exists(template_file):
                 logger.debug("Template file exists.")
                 new_filename = f"Documentation_{opportunity_number}.xlsm"
-                destination_file = os.path.join(directory_path, new_filename)
+                destination_file = os.path.join(samples_dir, new_filename)
                 try:
                     shutil.copy(template_file, destination_file)
                     logger.debug(f"Copied template file to: {destination_file}")
@@ -698,7 +702,7 @@ def download_documentation(request, sample_id):
         raise Http404("Sample not found")
 
     # Define the output directory and filename
-    output_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', 'Documentation', sample.opportunity_number)
+    output_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', sample.opportunity_number, 'Samples')
     output_filename = f"Documentation_{sample.opportunity_number}_{sample.date_received.strftime('%Y%m%d')}.xlsm"
     output_path = os.path.join(output_dir, output_filename)
 

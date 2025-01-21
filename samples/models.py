@@ -15,7 +15,7 @@ def delete_documentation_from_sharepoint(opportunity_number):
 
     # Construct the path to the documentation file on SharePoint
     # Remote name is 'TestLabSamples', folders are named after the opportunity number
-    remote_file_path = f"TestLabSamples:{opportunity_number}/Documentation_{opportunity_number}.xlsm"
+    remote_file_path = f"TestLabSamples:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
 
     # Command to delete the file using rclone
     try:
@@ -30,7 +30,7 @@ def delete_local_opportunity_folder(opportunity_number):
     logger = logging.getLogger(__name__)
 
     # Path to the local opportunity folder
-    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number, 'Samples')
 
     # Delete the folder if it exists
     if os.path.exists(folder_path):
@@ -179,7 +179,7 @@ class Sample(models.Model):
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
-    return os.path.join(opportunity_number, filename)
+    return os.path.join(opportunity_number, 'Samples', filename)
 
 def get_full_size_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)

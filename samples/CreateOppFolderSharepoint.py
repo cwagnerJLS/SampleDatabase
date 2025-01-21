@@ -146,10 +146,30 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
         if existing_folder_id:
             logger.info(f"Folder '{opportunity_number}' already exists on SharePoint. Doing nothing.")
             return
-        # 2) Create new folder
+        # Determine the parent folder ID
+        parent_folder_id = new_folder_id or existing_folder_id
+
+        # Create the 'Samples' subfolder
+        create_subfolder(access_token, parent_folder_id, 'Samples')
         new_folder_id = create_folder(access_token, opportunity_number)
         if new_folder_id:
             # 3) Update the custom fields
             update_folder_fields(access_token, new_folder_id, customer, rsm, description)
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
+def create_subfolder(access_token, parent_folder_id, subfolder_name):
+    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "name": subfolder_name,
+        "folder": {},
+        "@microsoft.graph.conflictBehavior": "fail"
+    }
+    resp = requests.post(url, headers=headers, json=data)
+    if resp.status_code in (200, 201):
+        logger.info(f"Subfolder '{subfolder_name}' created successfully.")
+    else:
+        logger.error(f"Error creating subfolder '{subfolder_name}': {resp.status_code}, {resp.text}")

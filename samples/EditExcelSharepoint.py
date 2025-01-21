@@ -209,7 +209,7 @@ def find_excel_file(access_token, library_id, opportunity_number):
         str or None: The item ID of the Excel file if found, else None.
     """
     logger.debug(f"Finding Excel file for opportunity_number: {opportunity_number}")
-    folder_path = opportunity_number
+    folder_path = f"{opportunity_number}/Samples"
     endpoint = f"https://graph.microsoft.com/v1.0/drives/{library_id}/root:/{folder_path}:/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)
