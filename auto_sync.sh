@@ -14,7 +14,6 @@ SYNC_DELAY=2  # Delay in seconds to debounce multiple changes
 OPPORTUNITY_CSV="/home/jls/Desktop/SampleDatabase/Hyperlinks.csv"
 
 # Folders on the remote to permanently ignore (will not sync or delete)
-# These should match the folder names (or subpaths) as they appear on REMOTE.
 IGNORED_REMOTE_FOLDERS=("_Archive" "_Backups" "_Templates")
 
 ###############################################################################
@@ -112,13 +111,7 @@ update_csv() {
 #                               SYNC LOGIC
 ###############################################################################
 #
-# Requirements/Logic:
-#   1) Non-Excel files:
-#       - Sync (local → remote) to keep them in step, including deletions on remote.
-#   2) Excel files:
-#       - Local → Remote ONLY IF the file doesn't exist on remote already.
-#         (Once it's on remote, do not overwrite it.)
-#   3) Ignore the 3 special remote folders. Never delete or modify them.
+# Only sync image files inside a folder named "Samples" (in any 4-digit folder).
 #
 
 sync_main() {
@@ -127,50 +120,38 @@ sync_main() {
     # Keep empty directories from vanishing
     add_placeholder_files_for_empty_directories
 
-    # Build the array of --exclude statements for the ignored folders
+    # Build the array of --exclude statements for ignored remote folders
     IGNORE_EXCLUDES=( $(build_ignored_folders_excludes) )
 
     ###########################################################################
-    # 1) Local → Remote for NON-Excel files
-    ###########################################################################
-    echo "$(date): Syncing NON-Excel files from local to remote..."
-    rclone sync "$WATCH_DIR" "$REMOTE" \
-        --exclude "*.xls*" \
-        --exclude "*.xlsx*" \
-        "${IGNORE_EXCLUDES[@]}" \
-        --progress \
-        --log-file="$LOG_FILE" \
-        --checkers 4 \
-        --transfers 4 \
-        --ignore-size \
-        --ignore-checksum \
-        --create-empty-src-dirs \
-        -vv \
-    || echo "$(date): Error pushing NON-Excel files to remote."
-
-    ###########################################################################
-    # 2) Local → Remote for Excel files, but do NOT overwrite existing ones
+    # Sync only image files in "Samples" subfolders
     #
-    #    - Use rclone "copy" (not "sync") with "--ignore-existing"
-    #    - This ensures new Excel files get uploaded,
-    #      but files already on the remote are NOT overwritten.
+    #    --include "*/Samples/**/*.jpg"
+    #    --include "*/Samples/**/*.jpeg"
+    #    ...
+    #    --exclude "*"
+    #
+    # This ensures we ONLY upload image files in any directory named "Samples",
+    # ignoring all other files/folders.
     ###########################################################################
-    echo "$(date): Copying new Excel files from local to remote..."
-    rclone copy "$WATCH_DIR" "$REMOTE" \
-        --include "*.xls*" \
-        --include "*.xlsx*" \
+    echo "$(date): Syncing only image files within 'Samples' folders..."
+    rclone sync "$WATCH_DIR" "$REMOTE" \
+        --include "*/Samples/**/*.jpg" \
+        --include "*/Samples/**/*.jpeg" \
+        --include "*/Samples/**/*.png" \
+        --include "*/Samples/**/*.gif" \
+        --include "*/Samples/**/*.tif" \
+        --include "*/Samples/**/*.tiff" \
+        --include "*/Samples/**/*.bmp" \
         --exclude "*" \
         "${IGNORE_EXCLUDES[@]}" \
-        --ignore-existing \
-        --ignore-size \
-        --ignore-checksum \
         --progress \
         --log-file="$LOG_FILE" \
         --checkers 4 \
         --transfers 4 \
         --create-empty-src-dirs \
         -vv \
-    || echo "$(date): Error copying new Excel files to remote."
+    || echo "$(date): Error syncing image files in 'Samples' subfolders to remote."
 
     echo "$(date): ===== SYNC END ====="
 
