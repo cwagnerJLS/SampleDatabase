@@ -139,6 +139,7 @@ def create_sample(request):
                     opportunity_number=opportunity_number
                 ).values_list('unique_id', flat=True)
                 opportunity.sample_ids = ','.join(map(str, sample_ids))
+                opportunity.update = True
                 opportunity.save()
             else:
                 logger.debug("Quantity is zero; no samples created.")
