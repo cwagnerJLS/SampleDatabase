@@ -13,16 +13,16 @@ def delete_documentation_from_sharepoint(opportunity_number):
     import logging
     logger = logging.getLogger(__name__)
 
-    # Construct the path to the documentation file on SharePoint
+    # Construct the path to the opportunity directory on SharePoint
     # Remote name is 'TestLabSamples', folders are named after the opportunity number
-    remote_file_path = f"TestLabSamples:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
+    remote_folder_path = f"TestLabSamples:{opportunity_number}"
 
     # Command to delete the file using rclone
     try:
-        subprocess.run(['rclone', 'deletefile', remote_file_path], check=True)
-        logger.info(f"Deleted documentation file from SharePoint: {remote_file_path}")
+        subprocess.run(['rclone', 'purge', remote_folder_path], check=True)
+        logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to delete documentation file from SharePoint: {e}")
+        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
 
 def delete_local_opportunity_folder(opportunity_number):
     import shutil
