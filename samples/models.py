@@ -69,15 +69,15 @@ class Opportunity(models.Model):
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        location = settings.MEDIA_ROOT  # Use MEDIA_ROOT for storage location
-        base_url = settings.MEDIA_URL   # Use MEDIA_URL for base URL
-        super().__init__(location=location, base_url=base_url, *args, **kwargs)
+        kwargs['location'] = settings.MEDIA_ROOT
+        kwargs['base_url'] = settings.MEDIA_URL
+        super().__init__(*args, **kwargs)
 
 class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
-        location = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
-        base_url = '/onedrive_media/'
-        super().__init__(location=location, base_url=base_url, *args, **kwargs)
+        kwargs['location'] = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
+        kwargs['base_url'] = '/onedrive_media/'
+        super().__init__(*args, **kwargs)
 
 def generate_unique_id():
     return random.randint(1000, 9999)
