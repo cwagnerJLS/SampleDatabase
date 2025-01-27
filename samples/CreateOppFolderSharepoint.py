@@ -1,7 +1,11 @@
 import os
+import csv
 import requests
 import logging
 from msal import PublicClientApplication, SerializableTokenCache
+
+# Define the path to Hyperlinks.csv (adjust the path as needed)
+HYPERLINKS_CSV_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'Hyperlinks.csv')
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +160,19 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
                 logger.error(f"Failed to create opportunity folder '{opportunity_number}'.")
                 raise Exception(f"Failed to create opportunity folder '{opportunity_number}'.")
 
-        # 4) Create the 'Samples' subfolder within the opportunity folder
+        # 4) Retrieve the web URL and update Hyperlinks.csv
+        folder_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        resp = requests.get(folder_url, headers=headers)
+        if resp.status_code == 200:
+            folder_info = resp.json()
+            web_url = folder_info.get('webUrl')
+            if web_url:
+                update_hyperlinks_csv(opportunity_number, web_url)
+            else:
+                logger.error(f"Failed to retrieve webUrl for folder '{opportunity_number}'.")
+        else:
+            logger.error(f"Failed to retrieve folder info for '{opportunity_number}': {resp.status_code}, {resp.text}")
         create_subfolder(access_token, parent_folder_id, 'Samples')
         create_subfolder(access_token, parent_folder_id, 'Pics and Vids')
         create_subfolder(access_token, parent_folder_id, 'Modeling')
