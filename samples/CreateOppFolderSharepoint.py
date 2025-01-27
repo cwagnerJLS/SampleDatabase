@@ -18,7 +18,25 @@ if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
     django.setup()
 # 1) CONFIGURATION CONSTANTS
-# ------------------------------------------------------------
+def create_subfolder(access_token, parent_folder_id, subfolder_name):
+    """
+    Creates a subfolder within the specified parent folder.
+    """
+    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "name": subfolder_name,
+        "folder": {},
+        "@microsoft.graph.conflictBehavior": "fail"
+    }
+    resp = requests.post(url, headers=headers, json=data)
+    if resp.status_code in (200, 201):
+        logger.info(f"Created subfolder '{subfolder_name}' in folder ID {parent_folder_id}")
+    else:
+        logger.error(f"Error creating subfolder '{subfolder_name}' in folder ID {parent_folder_id}: {resp.status_code}, {resp.text}")
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"      # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"      # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"                 # Service Account Email
