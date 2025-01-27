@@ -72,14 +72,6 @@ class CustomFileSystemStorage(FileSystemStorage):
         location = settings.MEDIA_ROOT  # Use MEDIA_ROOT for storage location
         base_url = settings.MEDIA_URL   # Use MEDIA_URL for base URL
         super().__init__(location=location, base_url=base_url, *args, **kwargs)
-        import os  # Add this import at the top if not already present
-        # Split the path into directory and filename
-        dir_name, base_name = os.path.split(name)
-        # Sanitize the base filename
-        s = str(base_name).strip().replace(' ', '_')
-        base_name = re.sub(r'(?u)[^-\w.()]+', '', s)
-        # Reconstruct the full path
-        return os.path.join(dir_name, base_name)
 
 class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
