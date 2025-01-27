@@ -180,7 +180,35 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
         raise
-def update_hyperlinks_csv(opportunity_number, web_url):
+def create_subfolder(access_token, parent_folder_id, subfolder_name):
+    """
+    Creates a subfolder within the specified parent folder on SharePoint.
+    """
+    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "name": subfolder_name,
+        "folder": {},
+        "@microsoft.graph.conflictBehavior": "fail"
+    }
+    resp = requests.post(url, headers=headers, json=data)
+    if resp.status_code in (200, 201):
+        logger.info(f"Subfolder '{subfolder_name}' created successfully.")
+    elif resp.status_code == 409:
+        # Parse the error code and message
+        error_info = resp.json().get("error", {})
+        error_code = error_info.get("code")
+        error_message = error_info.get("message")
+        if error_code == "nameAlreadyExists":
+            logger.info(f"Subfolder '{subfolder_name}' already exists. Proceeding without error.")
+            # Do not raise an exception; treat as success
+        else:
+            # Handle other conflict errors
+            logger.error(f"Conflict error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
+            raise Exception(f"Error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
     """
     Updates the Hyperlinks.csv file with the opportunity number and web URL.
     If the opportunity number already exists, it updates the URL.
