@@ -179,7 +179,7 @@ class Sample(models.Model):
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
-    return os.path.join('media', opportunity_number, 'Samples', filename)
+    return os.path.join(opportunity_number, 'Samples', filename)
 
 def get_full_size_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
