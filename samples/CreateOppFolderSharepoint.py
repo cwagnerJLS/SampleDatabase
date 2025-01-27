@@ -138,6 +138,45 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
     else:
         logger.error(f"Error updating folder fields ID {folder_id}: {resp.status_code}, {resp.text}")
 
+def update_hyperlinks_csv(opportunity_number, web_url):
+    """
+    Updates the Hyperlinks.csv file with the opportunity number and web URL.
+    If the opportunity number already exists, it updates the URL.
+    """
+    try:
+        # Ensure the CSV file exists. If not, create it with headers.
+        if not os.path.exists(HYPERLINKS_CSV_FILE):
+            with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['OpportunityNumber', 'Hyperlink'])
+
+        # Read existing entries
+        rows = []
+        exists = False
+        with open(HYPERLINKS_CSV_FILE, 'r', newline='', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if row and row[0] == opportunity_number:
+                    # Update the URL if the opportunity number exists
+                    rows.append([opportunity_number, web_url])
+                    exists = True
+                else:
+                    rows.append(row)
+
+        if not exists:
+            # Add new entry
+            rows.append([opportunity_number, web_url])
+
+        # Write back to CSV
+        with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(rows)
+
+        logger.info(f"Updated Hyperlinks.csv with opportunity '{opportunity_number}' and link '{web_url}'")
+
+    except Exception as e:
+        logger.error(f"Failed to update Hyperlinks.csv: {e}")
+
 def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     """
     Ensures a folder named opportunity_number exists in the SharePoint library.
@@ -180,35 +219,6 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
         raise
-def create_subfolder(access_token, parent_folder_id, subfolder_name):
-    """
-    Creates a subfolder within the specified parent folder on SharePoint.
-    """
-    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "name": subfolder_name,
-        "folder": {},
-        "@microsoft.graph.conflictBehavior": "fail"
-    }
-    resp = requests.post(url, headers=headers, json=data)
-    if resp.status_code in (200, 201):
-        logger.info(f"Subfolder '{subfolder_name}' created successfully.")
-    elif resp.status_code == 409:
-        # Parse the error code and message
-        error_info = resp.json().get("error", {})
-        error_code = error_info.get("code")
-        error_message = error_info.get("message")
-        if error_code == "nameAlreadyExists":
-            logger.info(f"Subfolder '{subfolder_name}' already exists. Proceeding without error.")
-            # Do not raise an exception; treat as success
-        else:
-            # Handle other conflict errors
-            logger.error(f"Conflict error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
-            raise Exception(f"Error creating subfolder '{subfolder_name}': {error_code}, {error_message}")
     """
     Updates the Hyperlinks.csv file with the opportunity number and web URL.
     If the opportunity number already exists, it updates the URL.
