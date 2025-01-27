@@ -11,7 +11,8 @@ LOG_FILE="$LOG_DIR/rclone_sync.log"
 SYNC_DELAY=2  # Delay in seconds to debounce multiple changes
 
 # CSV file where we track the 4-digit folder name (OpportunityNumber) and hyperlink
-OPPORTUNITY_CSV="/home/jls/Desktop/SampleDatabase/Hyperlinks.csv"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OPPORTUNITY_CSV="${SCRIPT_DIR}/Hyperlinks.csv"
 
 # Folders on the remote to permanently ignore (will not sync or delete)
 IGNORED_REMOTE_FOLDERS=("_Archive" "_Backups" "_Templates")

@@ -3,13 +3,20 @@ import csv
 import requests
 import logging
 from msal import PublicClientApplication, SerializableTokenCache
+from django.conf import settings
 
-# Define the path to Hyperlinks.csv (adjust the path as needed)
-HYPERLINKS_CSV_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'Hyperlinks.csv')
+# Define the path to Hyperlinks.csv using BASE_DIR
+HYPERLINKS_CSV_FILE = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
 
 logger = logging.getLogger(__name__)
 
-# ------------------------------------------------------------
+import os
+import django
+from django.conf import settings
+
+if not settings.configured:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
+    django.setup()
 # 1) CONFIGURATION CONSTANTS
 # ------------------------------------------------------------
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"      # Azure AD App Client ID
