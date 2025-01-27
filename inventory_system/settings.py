@@ -79,6 +79,10 @@ AUTH_PASSWORD_VALIDATORS = [
     }
 ]
 
+# Media files (Uploaded images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 

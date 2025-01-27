@@ -68,7 +68,10 @@ class Opportunity(models.Model):
 
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
-    def get_valid_name(self, name):
+    def __init__(self, *args, **kwargs):
+        location = settings.MEDIA_ROOT  # Use MEDIA_ROOT for storage location
+        base_url = settings.MEDIA_URL   # Use MEDIA_URL for base URL
+        super().__init__(location=location, base_url=base_url, *args, **kwargs)
         import os  # Add this import at the top if not already present
         # Split the path into directory and filename
         dir_name, base_name = os.path.split(name)
