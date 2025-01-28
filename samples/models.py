@@ -69,8 +69,8 @@ class Opportunity(models.Model):
 @deconstructible
 class CustomFileSystemStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        kwargs['location'] = settings.MEDIA_ROOT
-        kwargs['base_url'] = settings.MEDIA_URL
+        kwargs.setdefault('location', settings.MEDIA_ROOT)
+        kwargs.setdefault('base_url', settings.MEDIA_URL)
         super().__init__(*args, **kwargs)
 
 class FullSizeImageStorage(CustomFileSystemStorage):
