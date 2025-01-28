@@ -73,6 +73,13 @@ class CustomFileSystemStorage(FileSystemStorage):
         kwargs.setdefault('base_url', settings.MEDIA_URL)
         super().__init__(*args, **kwargs)
 
+    def get_valid_name(self, name):
+        import os
+        dir_name, base_name = os.path.split(name)
+        s = str(base_name).strip().replace(' ', '_')
+        base_name = re.sub(r'(?u)[^-\w.()]+', '', s)
+        return os.path.join(dir_name, base_name)
+
 class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
         kwargs['location'] = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
