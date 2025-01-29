@@ -6,7 +6,6 @@ import logging
 import subprocess
 import subprocess
 import shutil
-from .tasks import delete_image_from_sharepoint
 from django.utils.deconstruct import deconstructible
 
 def delete_documentation_from_sharepoint(opportunity_number):
@@ -235,6 +234,7 @@ class SampleImage(models.Model):
             self.full_size_image.delete(save=False)
 
         # Enqueue a Celery task to delete the image from SharePoint
+        from .tasks import delete_image_from_sharepoint  # Import inside the method
         if full_size_image_name:
             delete_image_from_sharepoint.delay(full_size_image_name)
             logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
