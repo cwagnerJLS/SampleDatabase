@@ -23,7 +23,8 @@ from .tasks import (
     update_documentation_excels,
     create_sharepoint_folder_task,
     create_documentation_on_sharepoint_task,
-    save_full_size_image
+    save_full_size_image,
+    upload_full_size_images_to_sharepoint
 )
 import pandas as pd
 import xlwings as xw

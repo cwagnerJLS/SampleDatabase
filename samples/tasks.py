@@ -6,6 +6,7 @@ from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils import create_documentation_on_sharepoint
+import subprocess
 from .EditExcelSharepoint import (
     get_access_token,
     find_excel_file,
