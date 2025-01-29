@@ -7,7 +7,6 @@ import subprocess
 import subprocess
 import shutil
 from django.utils.deconstruct import deconstructible
-from .tasks import delete_documentation_from_sharepoint_task, delete_local_opportunity_folder_task
 
 def delete_documentation_from_sharepoint(opportunity_number):
     import subprocess
@@ -188,6 +187,7 @@ class Sample(models.Model):
                 opportunity = None
 
                 # Offload cleanup operations to Celery tasks
+                from .tasks import delete_documentation_from_sharepoint_task, delete_local_opportunity_folder_task
                 delete_documentation_from_sharepoint_task.delay(opportunity_number)
                 delete_local_opportunity_folder_task.delay(opportunity_number)
         except Opportunity.DoesNotExist:
@@ -235,8 +235,8 @@ class SampleImage(models.Model):
             self.full_size_image.delete(save=False)
 
         # Enqueue a Celery task to delete the image from SharePoint
-        from .tasks import delete_image_from_sharepoint  # Import inside the method
         if full_size_image_name:
+            from .tasks import delete_image_from_sharepoint  # Import inside the condition
             delete_image_from_sharepoint.delay(full_size_image_name)
             logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
 
