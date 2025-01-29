@@ -241,11 +241,12 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         greeting_name = NICKNAMES.get(rsm_full_name, first_name)
         subject = f'{opportunity_number} ({customer}) Samples Received'
         
+        url = f"https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{opportunity_number}/Samples"
         body = f"""
         <html>
             <body>
                 <p>Hello {greeting_name},</p>
-                <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on Sharepoint shortly. Thanks,</p>
+                <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on SharePoint shortly. You can access the sample documentation <a href="{url}">here</a>.</p>
                 <p>-Test Lab</p>
             </body>
         </html>
