@@ -9,6 +9,7 @@ from .utils import create_documentation_on_sharepoint
 import subprocess
 import shutil
 import os
+from django.conf import settings
 
 from .models import SampleImage
 

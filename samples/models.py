@@ -7,6 +7,7 @@ import subprocess
 import subprocess
 import shutil
 from django.utils.deconstruct import deconstructible
+from .tasks import delete_documentation_from_sharepoint_task, delete_local_opportunity_folder_task
 
 def delete_documentation_from_sharepoint(opportunity_number):
     import subprocess
