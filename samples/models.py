@@ -217,33 +217,44 @@ class SampleImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def delete(self, *args, **kwargs):
-        # Get the directory paths for both images before deleting
+        # Capture the image names before deletion
+        image_name = self.image.name if self.image else None
+        full_size_image_name = self.full_size_image.name if self.full_size_image else None
+
+        # Get the directory paths before deleting
         thumbnail_dir = os.path.dirname(self.image.path) if self.image else None
         full_size_dir = os.path.dirname(self.full_size_image.path) if self.full_size_image else None
 
         # Delete the thumbnail image from storage
         if self.image and self.image.storage.exists(self.image.name):
             self.image.delete(save=False)
+
         # Delete the full-size image from storage
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
 
         # After deleting the full-size image locally, delete it from SharePoint
-        if self.full_size_image and self.full_size_image.name:
+        if full_size_image_name:
             try:
-                sharepoint_image_path = f"TestLabSamples:{self.full_size_image.name}"
+                sharepoint_image_path = f"TestLabSamples:{full_size_image_name}"
                 rclone_executable = '/usr/bin/rclone'  # Use the full path to rclone
                 logger.info(f"Using rclone executable at: {rclone_executable}")
-                subprocess.run(
+                result = subprocess.run(
                     [rclone_executable, 'delete', sharepoint_image_path],
                     check=True,
                     capture_output=True,
                     text=True,
                     env=os.environ
                 )
+                if result.stdout:
+                    logger.debug(f"rclone stdout: {result.stdout}")
+                if result.stderr:
+                    logger.error(f"rclone stderr: {result.stderr}")
                 logger.info(f"Deleted full-size image from SharePoint: {sharepoint_image_path}")
             except Exception as e:
                 logger.error(f"Failed to delete full-size image from SharePoint: {e}")
+                logger.exception(e)
+
         super().delete(*args, **kwargs)
 
         # Function to check and delete directory if empty
@@ -251,8 +262,10 @@ class SampleImage(models.Model):
             if directory and os.path.isdir(directory) and not os.listdir(directory):
                 try:
                     os.rmdir(directory)
-                except Exception:
-                    pass  # You might want to log this exception
+                    logger.info(f"Removed empty directory: {directory}")
+                except Exception as e:
+                    logger.error(f"Error removing directory {directory}: {e}")
+                    logger.exception(e)
 
         # Remove directories if they are empty
         remove_if_empty(thumbnail_dir)
