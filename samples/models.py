@@ -6,6 +6,7 @@ import logging
 import subprocess
 import subprocess
 import shutil
+from .tasks import delete_image_from_sharepoint
 from django.utils.deconstruct import deconstructible
 
 def delete_documentation_from_sharepoint(opportunity_number):
@@ -233,27 +234,10 @@ class SampleImage(models.Model):
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
 
-        # After deleting the full-size image locally, delete it from SharePoint
+        # Enqueue a Celery task to delete the image from SharePoint
         if full_size_image_name:
-            try:
-                sharepoint_image_path = f"TestLabSamples:{full_size_image_name}"
-                rclone_executable = '/usr/bin/rclone'  # Use the full path to rclone
-                logger.info(f"Using rclone executable at: {rclone_executable}")
-                result = subprocess.run(
-                    [rclone_executable, 'delete', sharepoint_image_path],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ
-                )
-                if result.stdout:
-                    logger.debug(f"rclone stdout: {result.stdout}")
-                if result.stderr:
-                    logger.error(f"rclone stderr: {result.stderr}")
-                logger.info(f"Deleted full-size image from SharePoint: {sharepoint_image_path}")
-            except Exception as e:
-                logger.error(f"Failed to delete full-size image from SharePoint: {e}")
-                logger.exception(e)
+            delete_image_from_sharepoint.delay(full_size_image_name)
+            logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
 
         super().delete(*args, **kwargs)
 

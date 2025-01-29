@@ -10,6 +10,8 @@ import subprocess
 import shutil
 import os
 
+from .models import SampleImage
+
 from .EditExcelSharepoint import (
     get_access_token,
     find_excel_file,
@@ -48,7 +50,30 @@ def create_documentation_on_sharepoint_task(opportunity_number):
     except Exception as e:
         logger.error(f"Error copying documentation template to SharePoint for opportunity {opportunity_number}: {e}")
 @shared_task
-def update_documentation_excels():
+def delete_image_from_sharepoint(full_size_image_name):
+    logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
+    if full_size_image_name:
+        try:
+            sharepoint_image_path = f"TestLabSamples:{full_size_image_name}"
+            rclone_executable = '/usr/bin/rclone'  # Use the full path to rclone
+            logger.info(f"Using rclone executable at: {rclone_executable}")
+            result = subprocess.run(
+                [rclone_executable, 'delete', sharepoint_image_path],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=os.environ
+            )
+            if result.stdout:
+                logger.debug(f"rclone stdout: {result.stdout}")
+            if result.stderr:
+                logger.error(f"rclone stderr: {result.stderr}")
+            logger.info(f"Deleted image from SharePoint: {sharepoint_image_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete image from SharePoint: {e}")
+            logger.exception(e)
+    else:
+        logger.error("No full_size_image_name provided to delete_image_from_sharepoint task")
     logger.info("Starting update_documentation_excels task.")
     try:
         token = get_access_token()
