@@ -196,10 +196,9 @@ def update_documentation_excels():
 
 @shared_task
 def save_full_size_image(sample_image_id, temp_file_path):
-    for sample_image_id in sample_image_ids:
-        try:
-            # Retrieve the SampleImage instance
-            sample_image = SampleImage.objects.get(id=sample_image_id)
+    try:
+        # Retrieve the SampleImage instance
+        sample_image = SampleImage.objects.get(id=sample_image_id)
         sample = sample_image.sample
 
         # Extract the base filename from the thumbnail image name
