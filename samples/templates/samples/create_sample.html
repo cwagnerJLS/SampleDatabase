@@ -1280,9 +1280,6 @@
                                     <td class="col-select">
                                         <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
                                     </td>
-                                    <td class="col-documentation">
-                                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
-                                    </td>
                                     <td class="col-opportunity">${sample.opportunity_number}</td>
                                     <td class="col-customer">${sample.customer}</td>
                                     <td class="col-rsm">${sample.rsm}</td>
@@ -1302,6 +1299,9 @@
                                     </td>
                                     <td class="col-pictures">
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
+                                    </td>
+                                    <td class="col-documentation">
+                                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
                                     </td>
                                     </td>
                                 `;
