@@ -338,13 +338,35 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 @shared_task
 def delete_documentation_from_sharepoint_task(opportunity_number):
     logger.info(f"Starting task to delete documentation from SharePoint for opportunity {opportunity_number}")
+
     # Construct the path to the opportunity directory on SharePoint
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
+
+    # Specify the full path to rclone
+    rclone_executable = '/usr/bin/rclone'  # Update if rclone is installed elsewhere
+    logger.info(f"Using rclone executable at: {rclone_executable}")
+
+    # Command to delete the folder using rclone
     try:
-        subprocess.run(['rclone', 'purge', remote_folder_path], check=True)
+        result = subprocess.run(
+            [rclone_executable, 'purge', remote_folder_path],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ
+        )
+        if result.stdout:
+            logger.debug(f"rclone stdout: {result.stdout}")
+        if result.stderr:
+            logger.error(f"rclone stderr: {result.stderr}")
         logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
+        if e.stdout:
+            logger.debug(f"rclone stdout: {e.stdout}")
+        if e.stderr:
+            logger.error(f"rclone stderr: {e.stderr}")
+        logger.exception(e)
 
 @shared_task
 def delete_local_opportunity_folder_task(opportunity_number):
