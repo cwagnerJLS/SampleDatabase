@@ -42,6 +42,19 @@ def delete_local_opportunity_folder(opportunity_number):
     else:
         logger.warning(f"Local opportunity folder does not exist: {folder_path}")
 
+    # Path to the entire local opportunity folder
+    media_folder_path = os.path.join(settings.BASE_DIR, 'media', opportunity_number)
+
+    # Delete the opportunity folder if it exists
+    if os.path.exists(media_folder_path):
+        try:
+            shutil.rmtree(media_folder_path)
+            logger.info(f"Deleted local thumbnail folder: {media_folder_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete local thumbnail folder: {e}")
+    else:
+        logger.warning(f"Local thumbnail folder does not exist: {media_folder_path}")
+
 # Configure logging
 logger = logging.getLogger(__name__)
 from django.db import models
