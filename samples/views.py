@@ -267,7 +267,6 @@ def create_sample(request):
             'unique_rsms': unique_rsms,
             'excel_data': json.dumps(excel_data, cls=DjangoJSONEncoder),
             'samples': json.dumps(samples, cls=DjangoJSONEncoder),
-            'opportunity_links': json.dumps(opportunity_links, cls=DjangoJSONEncoder),
         })
 
     except Exception as e:
