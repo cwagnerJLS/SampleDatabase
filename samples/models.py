@@ -232,7 +232,8 @@ class SampleImage(models.Model):
         if self.full_size_image and self.full_size_image.name:
             try:
                 sharepoint_image_path = f"TestLabSamples:{self.full_size_image.name}"
-                rclone_executable = '/usr/local/bin/rclone'  # Replace with the actual path to rclone
+                rclone_executable = '/usr/bin/rclone'  # Use the full path to rclone
+                logger.info(f"Using rclone executable at: {rclone_executable}")
                 subprocess.run(
                     [rclone_executable, 'delete', sharepoint_image_path],
                     check=True,

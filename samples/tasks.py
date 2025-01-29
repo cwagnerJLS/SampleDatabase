@@ -269,13 +269,9 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
     path_env = os.environ.get('PATH', '')
     logger.info(f"Celery worker PATH environment variable: {path_env}")
 
-    # Attempt to find rclone in PATH
-    rclone_path = shutil.which('rclone')
-    logger.info(f"rclone found at: {rclone_path}")
-    if not rclone_path:
-        logger.error("rclone executable not found in PATH.")
-
-    rclone_executable = rclone_path or '/usr/local/bin/rclone'  # Replace with the actual path to rclone
+    # Specify the full path to rclone
+    rclone_executable = '/usr/bin/rclone'
+    logger.info(f"Using rclone executable at: {rclone_executable}")
 
     # Add the for loop to iterate over sample_image_ids
     for sample_image_id in sample_image_ids:
