@@ -259,3 +259,22 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
             logger.error(f"Failed to generate email address for RSM '{rsm_full_name}'. Email not sent.")
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
+@shared_task
+def upload_full_size_images_to_sharepoint(sample_image_ids):
+    for sample_image_id in sample_image_ids:
+        try:
+            # Retrieve the SampleImage instance
+            sample_image = SampleImage.objects.get(id=sample_image_id)
+
+            # Define source and destination paths
+            source_path = sample_image.full_size_image.path
+            # Construct the destination path in SharePoint using the same relative path
+            # Assuming 'TestLabSamples' is the rclone remote name
+            destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
+
+            # Copy the full-size image to SharePoint
+            subprocess.run(['rclone', 'copy', source_path, destination_path], check=True)
+            logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to upload image {sample_image_id} to SharePoint: {e}")

@@ -312,22 +312,16 @@ def upload_files(request):
                 image_urls.append(sample_image.image.url)
                 image_ids.append(sample_image.id)  # Collect the image ID
 
-                # Save the uploaded file to a temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
-                    for chunk in file.chunks():
-                        temp_file.write(chunk)
-                    temp_file_path = temp_file.name
+                # Save the full-size image directly using the original file
+                sample_image.full_size_image.save(filename, file)
+                sample_image.save()
 
-                # Log the task invocation
-                logger.info(
-                    "Enqueuing save_full_size_image task for SampleImage ID %s with temp_file_path %s",
-                    sample_image.id,
-                    temp_file_path
-                )
+                # Collect the URL and ID to return to the client
+                image_urls.append(sample_image.image.url)
+                image_ids.append(sample_image.id)  # Collect the image ID
 
-                # Enqueue Celery task with the path to the temporary file
-                save_full_size_image.delay(sample_image.id, temp_file_path)
-                logger.debug("Task enqueued successfully for SampleImage ID %s", sample_image.id)
+            # After processing all images and saving them locally, enqueue a task to upload images to SharePoint
+            upload_full_size_images_to_sharepoint.delay(image_ids)
 
         except Exception as e:
             logger.exception("Error processing files: %s", e)

@@ -228,7 +228,14 @@ class SampleImage(models.Model):
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
 
-        # Call the superclass delete method to delete the database record
+        # After deleting the full-size image locally, delete it from SharePoint
+        if self.full_size_image and self.full_size_image.name:
+            try:
+                sharepoint_image_path = f"TestLabSamples:{self.full_size_image.name}"
+                subprocess.run(['rclone', 'delete', sharepoint_image_path], check=True)
+                logger.info(f"Deleted full-size image from SharePoint: {sharepoint_image_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete full-size image from SharePoint: {e}")
         super().delete(*args, **kwargs)
 
         # Function to check and delete directory if empty
