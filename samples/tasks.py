@@ -74,6 +74,9 @@ def delete_image_from_sharepoint(full_size_image_name):
             logger.exception(e)
     else:
         logger.error("No full_size_image_name provided to delete_image_from_sharepoint task")
+
+@shared_task
+def update_documentation_excels():
     logger.info("Starting update_documentation_excels task.")
     try:
         token = get_access_token()
