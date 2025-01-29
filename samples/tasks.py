@@ -280,29 +280,29 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
         # Retrieve the SampleImage instance
         sample_image = SampleImage.objects.get(id=sample_image_id)
 
-            # Define source and destination paths
-            source_path = sample_image.full_size_image.path
-            # Construct the destination path in SharePoint using the same relative path
-            # Assuming 'TestLabSamples' is the rclone remote name
-            destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
+        # Define source and destination paths
+        source_path = sample_image.full_size_image.path
+        # Construct the destination path in SharePoint using the same relative path
+        # Assuming 'TestLabSamples' is the rclone remote name
+        destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
 
-            # Log the paths
-            logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
+        # Log the paths
+        logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
 
-            # Copy the full-size image to SharePoint
-            result = subprocess.run(
-                [rclone_executable, 'copy', source_path, destination_path],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=os.environ
-            )
-            if result.stdout:
-                logger.debug(f"rclone stdout: {result.stdout}")
-            if result.stderr:
-                logger.error(f"rclone stderr: {result.stderr}")
-            subprocess.run(['rclone', 'copy', source_path, destination_path], check=True)
-            logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
+        # Copy the full-size image to SharePoint
+        result = subprocess.run(
+            [rclone_executable, 'copy', source_path, destination_path],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ
+        )
+        if result.stdout:
+            logger.debug(f"rclone stdout: {result.stdout}")
+        if result.stderr:
+            logger.error(f"rclone stderr: {result.stderr}")
+        subprocess.run(['rclone', 'copy', source_path, destination_path], check=True)
+        logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
 
-        except Exception as e:
-            logger.error(f"Failed to upload image {sample_image_id} to SharePoint: {e}")
+    except Exception as e:
+        logger.error(f"Failed to upload image {sample_image_id} to SharePoint: {e}")
