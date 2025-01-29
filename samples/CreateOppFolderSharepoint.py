@@ -1,5 +1,4 @@
 import os
-import csv
 import requests
 import logging
 from msal import PublicClientApplication, SerializableTokenCache
@@ -163,44 +162,6 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
     else:
         logger.error(f"Error updating folder fields ID {folder_id}: {resp.status_code}, {resp.text}")
 
-def update_hyperlinks_csv(opportunity_number, web_url):
-    """
-    Updates the Hyperlinks.csv file with the opportunity number and web URL.
-    If the opportunity number already exists, it updates the URL.
-    """
-    try:
-        # Ensure the CSV file exists. If not, create it with headers.
-        if not os.path.exists(HYPERLINKS_CSV_FILE):
-            with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['OpportunityNumber', 'Hyperlink'])
-
-        # Read existing entries
-        rows = []
-        exists = False
-        with open(HYPERLINKS_CSV_FILE, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile)
-            for row in reader:
-                if row and row[0] == opportunity_number:
-                    # Update the URL if the opportunity number exists
-                    rows.append([opportunity_number, web_url])
-                    exists = True
-                else:
-                    rows.append(row)
-
-        if not exists:
-            # Add new entry
-            rows.append([opportunity_number, web_url])
-
-        # Write back to CSV
-        with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerows(rows)
-
-        logger.info(f"Updated Hyperlinks.csv with opportunity '{opportunity_number}' and link '{web_url}'")
-
-    except Exception as e:
-        logger.error(f"Failed to update Hyperlinks.csv: {e}")
 
 def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     """
@@ -224,19 +185,6 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
                 logger.error(f"Failed to create opportunity folder '{opportunity_number}'.")
                 raise Exception(f"Failed to create opportunity folder '{opportunity_number}'.")
 
-        # 4) Retrieve the web URL and update Hyperlinks.csv
-        folder_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        resp = requests.get(folder_url, headers=headers)
-        if resp.status_code == 200:
-            folder_info = resp.json()
-            web_url = folder_info.get('webUrl')
-            if web_url:
-                update_hyperlinks_csv(opportunity_number, web_url)
-            else:
-                logger.error(f"Failed to retrieve webUrl for folder '{opportunity_number}'.")
-        else:
-            logger.error(f"Failed to retrieve folder info for '{opportunity_number}': {resp.status_code}, {resp.text}")
         create_subfolder(access_token, parent_folder_id, 'Samples')
         create_subfolder(access_token, parent_folder_id, 'Pics and Vids')
         create_subfolder(access_token, parent_folder_id, 'Modeling')
@@ -244,40 +192,3 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
         raise
-    """
-    Updates the Hyperlinks.csv file with the opportunity number and web URL.
-    If the opportunity number already exists, it updates the URL.
-    """
-    try:
-        # Ensure the CSV file exists. If not, create it with headers.
-        if not os.path.exists(HYPERLINKS_CSV_FILE):
-            with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['OpportunityNumber', 'Hyperlink'])
-
-        # Read existing entries
-        rows = []
-        exists = False
-        with open(HYPERLINKS_CSV_FILE, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.reader(csvfile)
-            for row in reader:
-                if row and row[0] == opportunity_number:
-                    # Update the URL if the opportunity number exists
-                    rows.append([opportunity_number, web_url])
-                    exists = True
-                else:
-                    rows.append(row)
-
-        if not exists:
-            # Add new entry
-            rows.append([opportunity_number, web_url])
-
-        # Write back to CSV
-        with open(HYPERLINKS_CSV_FILE, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerows(rows)
-
-        logger.info(f"Updated Hyperlinks.csv with opportunity '{opportunity_number}' and link '{web_url}'")
-
-    except Exception as e:
-        logger.error(f"Failed to update Hyperlinks.csv: {e}")

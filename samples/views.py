@@ -1,6 +1,5 @@
 import logging
 import json
-import csv
 import subprocess
 from celery import chain
 from .tasks import (
@@ -245,22 +244,6 @@ def create_sample(request):
 
         logger.debug(f"Samples List: {samples}")
 
-        # Read Hyperlinks.csv
-        try:
-            hyperlinks_csv_file = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
-            opportunity_links = {}
-
-            with open(hyperlinks_csv_file, 'r', newline='', encoding='utf-8') as csvfile:
-                reader = csv.reader(csvfile)
-                next(reader, None)  # Skip header row if present
-                for row in reader:
-                    if len(row) >= 2:
-                        opportunity_number = row[0].strip()
-                        web_address = row[1].strip()
-                        opportunity_links[opportunity_number] = web_address
-        except Exception as e:
-            logger.error(f"Error reading Hyperlinks.csv: {e}")
-            opportunity_links = {}
 
         return render(request, 'samples/create_sample.html', {
             'unique_customers': unique_customers,
