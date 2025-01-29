@@ -186,9 +186,9 @@ class Sample(models.Model):
                 opportunity.delete()
                 opportunity = None
 
-                # Add these lines to delete files and folders
-                delete_documentation_from_sharepoint(opportunity_number)
-                delete_local_opportunity_folder(opportunity_number)
+                # Offload cleanup operations to Celery tasks
+                delete_documentation_from_sharepoint_task.delay(opportunity_number)
+                delete_local_opportunity_folder_task.delay(opportunity_number)
         except Opportunity.DoesNotExist:
             opportunity = None  # Opportunity might have been deleted already
 

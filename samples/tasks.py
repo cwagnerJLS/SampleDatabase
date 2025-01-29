@@ -334,3 +334,30 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
         except Exception as e:
             logger.error(f"Failed to upload image {sample_image_id} to SharePoint: {e}")
             logger.exception(e)
+@shared_task
+def delete_documentation_from_sharepoint_task(opportunity_number):
+    logger.info(f"Starting task to delete documentation from SharePoint for opportunity {opportunity_number}")
+    # Construct the path to the opportunity directory on SharePoint
+    remote_folder_path = f"TestLabSamples:{opportunity_number}"
+    try:
+        subprocess.run(['rclone', 'purge', remote_folder_path], check=True)
+        logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
+
+@shared_task
+def delete_local_opportunity_folder_task(opportunity_number):
+    logger.info(f"Starting task to delete local folders for opportunity {opportunity_number}")
+    folder_paths = [
+        os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number),
+        os.path.join(settings.BASE_DIR, 'media', opportunity_number)
+    ]
+    for path in folder_paths:
+        if os.path.exists(path):
+            try:
+                shutil.rmtree(path)
+                logger.info(f"Deleted local folder: {path}")
+            except Exception as e:
+                logger.error(f"Failed to delete local folder {path}: {e}")
+        else:
+            logger.warning(f"Local folder does not exist: {path}")
