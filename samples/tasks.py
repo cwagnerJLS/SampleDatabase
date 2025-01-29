@@ -276,9 +276,9 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
         logger.error("rclone executable not found in PATH.")
 
     rclone_executable = rclone_path or '/usr/local/bin/rclone'  # Replace with the actual path to rclone
-        try:
-            # Retrieve the SampleImage instance
-            sample_image = SampleImage.objects.get(id=sample_image_id)
+    try:
+        # Retrieve the SampleImage instance
+        sample_image = SampleImage.objects.get(id=sample_image_id)
 
             # Define source and destination paths
             source_path = sample_image.full_size_image.path
