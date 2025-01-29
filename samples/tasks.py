@@ -7,6 +7,9 @@ import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils import create_documentation_on_sharepoint
 import subprocess
+import shutil
+import os
+
 from .EditExcelSharepoint import (
     get_access_token,
     find_excel_file,
@@ -262,7 +265,17 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         logger.error(f"Failed to send email: {e}")
 @shared_task
 def upload_full_size_images_to_sharepoint(sample_image_ids):
-    for sample_image_id in sample_image_ids:
+    logger.info(f"Environment variables in Celery worker: {os.environ}")
+    path_env = os.environ.get('PATH', '')
+    logger.info(f"Celery worker PATH environment variable: {path_env}")
+
+    # Attempt to find rclone in PATH
+    rclone_path = shutil.which('rclone')
+    logger.info(f"rclone found at: {rclone_path}")
+    if not rclone_path:
+        logger.error("rclone executable not found in PATH.")
+
+    rclone_executable = rclone_path or '/usr/local/bin/rclone'  # Replace with the actual path to rclone
         try:
             # Retrieve the SampleImage instance
             sample_image = SampleImage.objects.get(id=sample_image_id)
@@ -273,7 +286,21 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
             # Assuming 'TestLabSamples' is the rclone remote name
             destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
 
+            # Log the paths
+            logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
+
             # Copy the full-size image to SharePoint
+            result = subprocess.run(
+                [rclone_executable, 'copy', source_path, destination_path],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=os.environ
+            )
+            if result.stdout:
+                logger.debug(f"rclone stdout: {result.stdout}")
+            if result.stderr:
+                logger.error(f"rclone stderr: {result.stderr}")
             subprocess.run(['rclone', 'copy', source_path, destination_path], check=True)
             logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
 

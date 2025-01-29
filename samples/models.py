@@ -232,7 +232,14 @@ class SampleImage(models.Model):
         if self.full_size_image and self.full_size_image.name:
             try:
                 sharepoint_image_path = f"TestLabSamples:{self.full_size_image.name}"
-                subprocess.run(['rclone', 'delete', sharepoint_image_path], check=True)
+                rclone_executable = '/usr/local/bin/rclone'  # Replace with the actual path to rclone
+                subprocess.run(
+                    [rclone_executable, 'delete', sharepoint_image_path],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    env=os.environ
+                )
                 logger.info(f"Deleted full-size image from SharePoint: {sharepoint_image_path}")
             except Exception as e:
                 logger.error(f"Failed to delete full-size image from SharePoint: {e}")
