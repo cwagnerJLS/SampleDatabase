@@ -2,45 +2,33 @@ import logging
 import json
 import subprocess
 from celery import chain
-from .tasks import (
-    send_sample_received_email,
-    update_documentation_excels,
-    create_sharepoint_folder_task,
-    create_documentation_on_sharepoint_task
-)
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.urls import reverse
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.files.base import ContentFile
 import os
 from .models import Sample, SampleImage, Opportunity
-from .utils import create_documentation_on_sharepoint
 from .tasks import (
     send_sample_received_email,
     update_documentation_excels,
     create_sharepoint_folder_task,
     create_documentation_on_sharepoint_task,
-    save_full_size_image,
     upload_full_size_images_to_sharepoint
 )
 import pandas as pd
-import xlwings as xw
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import base64
 from PIL import Image
-import tempfile
-from django.http import HttpResponse, Http404
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 import qrcode
-from .CreateOppFolderSharepoint import create_sharepoint_folder
 
 # Configure logging
 logger = logging.getLogger('samples')
