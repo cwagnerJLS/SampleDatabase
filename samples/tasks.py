@@ -384,13 +384,26 @@ def delete_local_opportunity_folder_task(opportunity_number):
 def move_documentation_to_archive_task(opportunity_number):
     logger = logging.getLogger(__name__)
 
+    logger.info(f"Starting move_documentation_to_archive_task for opportunity {opportunity_number}")
+
     # Define the remote paths
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
     archive_folder_path = "TestLabSamples:_Archive"
 
     # Command to move the folder using rclone
     try:
-        subprocess.run(['rclone', 'moveto', remote_folder_path, f"{archive_folder_path}/{opportunity_number}"], check=True)
+        logger.info(f"Attempting to move {remote_folder_path} to {archive_folder_path}/{opportunity_number}")
+        result = subprocess.run(
+            ['rclone', 'moveto', remote_folder_path, f"{archive_folder_path}/{opportunity_number}"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ
+        )
+        if result.stdout:
+            logger.debug(f"rclone stdout: {result.stdout}")
+        if result.stderr:
+            logger.error(f"rclone stderr: {result.stderr}")
         logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}/{opportunity_number}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to move opportunity directory to archive: {e}")

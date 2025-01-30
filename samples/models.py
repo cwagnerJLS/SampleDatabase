@@ -184,6 +184,7 @@ class Sample(models.Model):
 
                 # Offload cleanup operations to Celery tasks
                 from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
+                logger.info(f"Invoking move_documentation_to_archive_task for opportunity {opportunity_number}")
                 move_documentation_to_archive_task.delay(opportunity_number)
                 delete_local_opportunity_folder_task.delay(opportunity_number)
         except Opportunity.DoesNotExist:
