@@ -183,8 +183,8 @@ class Sample(models.Model):
                 opportunity = None
 
                 # Offload cleanup operations to Celery tasks
-                from .tasks import delete_documentation_from_sharepoint_task, delete_local_opportunity_folder_task
-                delete_documentation_from_sharepoint_task.delay(opportunity_number)
+                from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
+                move_documentation_to_archive_task.delay(opportunity_number)
                 delete_local_opportunity_folder_task.delay(opportunity_number)
         except Opportunity.DoesNotExist:
             opportunity = None  # Opportunity might have been deleted already
