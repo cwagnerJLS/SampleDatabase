@@ -93,11 +93,6 @@ def create_sample(request):
                 opportunity_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
                 samples_folder = os.path.join(opportunity_folder, 'Samples')
                 os.makedirs(samples_folder, exist_ok=True)
-                # Create "Pics and Vids" and "Modeling" folders alongside "Samples" folder
-                pics_and_vids_folder = os.path.join(opportunity_folder, 'Pics and Vids')
-                modeling_folder = os.path.join(opportunity_folder, 'Modeling')
-                os.makedirs(pics_and_vids_folder, exist_ok=True)
-                os.makedirs(modeling_folder, exist_ok=True)
                 opportunity.customer = customer
                 opportunity.rsm = rsm_full_name
                 opportunity.description = description
