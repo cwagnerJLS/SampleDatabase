@@ -1,6 +1,5 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
-import os
 from .models import SampleImage, get_image_upload_path, Sample, Opportunity
 from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
@@ -16,13 +15,10 @@ from .models import SampleImage
 from .EditExcelSharepoint import (
     get_access_token,
     find_excel_file,
-    get_cell_value,
     update_cell_value,
-    append_rows_to_workbook,
     get_existing_ids_with_rows,
     clear_range_in_workbook,
     update_range_in_workbook,
-    update_row_in_workbook,
     delete_rows_in_workbook
 )
 

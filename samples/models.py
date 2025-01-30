@@ -1,11 +1,7 @@
 import os
 import re
 import random
-import shutil
 import logging
-import subprocess
-import subprocess
-import shutil
 from django.utils.deconstruct import deconstructible
 
 def delete_documentation_from_sharepoint(opportunity_number):
