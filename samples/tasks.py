@@ -357,6 +357,15 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
             logger.error(f"rclone stderr: {result.stderr}")
         logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
     except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to move opportunity directory to archive: {e}")
+        if e.stdout:
+            logger.error(f"rclone stdout: {e.stdout}")
+        if e.stderr:
+            logger.error(f"rclone stderr: {e.stderr}")
+        logger.exception(e)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in move_documentation_to_archive_task: {e}")
+        logger.exception(e)
         logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
         if e.stdout:
             logger.debug(f"rclone stdout: {e.stdout}")
@@ -386,15 +395,22 @@ def move_documentation_to_archive_task(opportunity_number):
 
     logger.info(f"Starting move_documentation_to_archive_task for opportunity {opportunity_number}")
 
-    # Define the remote paths
+    # Specify the full path to rclone executable
+    rclone_executable = '/usr/bin/rclone'  # Update this path if rclone is installed elsewhere
+    logger.info(f"Using rclone executable at: {rclone_executable}")
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
-    archive_folder_path = "TestLabSamples:_Archive"
+    archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
 
     # Command to move the folder using rclone
     try:
         logger.info(f"Attempting to move {remote_folder_path} to {archive_folder_path}/{opportunity_number}")
         result = subprocess.run(
-            ['rclone', 'moveto', remote_folder_path, f"{archive_folder_path}/{opportunity_number}"],
+            [
+                rclone_executable,
+                'moveto',
+                remote_folder_path,
+                archive_folder_path
+            ],
             check=True,
             capture_output=True,
             text=True,
