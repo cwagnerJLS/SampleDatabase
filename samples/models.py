@@ -175,12 +175,12 @@ class Sample(models.Model):
                 opportunity.save()
             else:
                 # Set 'update' to True before deleting the Opportunity
-                opportunity.update = True
-                opportunity.save()
+                # opportunity.update = True
+                # opportunity.save()
 
                 # If no samples remain, delete the Opportunity entry
-                opportunity.delete()
-                opportunity = None
+                # opportunity.delete()
+                # opportunity = None
 
                 # Offload cleanup operations to Celery tasks
                 from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
