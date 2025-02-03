@@ -383,7 +383,7 @@ def remove_from_inventory(request):
             for sample in samples_to_remove:
                 opportunity_number = sample.opportunity_number
                 affected_opportunity_numbers.add(opportunity_number)
-                sample.remove_from_inventory()
+                sample.delete()
 
             logger.debug(f"Removed samples from inventory with IDs: {ids}")
 
