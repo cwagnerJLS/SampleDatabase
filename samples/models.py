@@ -156,9 +156,9 @@ class Sample(models.Model):
         opportunity.update = True  # Set the 'update' field to True
         opportunity.save()
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, update_opportunity=True, **kwargs):
         opportunity_number = self.opportunity_number
-        super().delete(*args, **kwargs)
+        super(Sample, self).delete(*args, **kwargs)
 
         try:
             opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
@@ -214,7 +214,9 @@ class SampleImage(models.Model):
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    def delete(self, *args, **kwargs):
+    def remove_from_inventory(self):
+        self.delete(update_opportunity=False)
+        
         # Capture the image names before deletion
         image_name = self.image.name if self.image else None
         full_size_image_name = self.full_size_image.name if self.full_size_image else None

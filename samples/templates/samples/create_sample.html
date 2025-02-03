@@ -784,6 +784,79 @@
         <div class="button-container">
             <button type="button" onclick="validateAndShowModal()">Add Sample</button>
             <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
+            <script>
+                // Event listener for the "Remove From Inventory" button
+                document.getElementById('remove-from-inventory-button').addEventListener('click', function() {
+                    removeFromInventory();
+                });
+
+                function removeFromInventory() {
+                    const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
+                    const idsToRemove = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+
+                    if (idsToRemove.length === 0) {
+                        alert('No entries selected to remove from inventory.');
+                        return;
+                    }
+
+                    if (!confirm('Are you sure you want to remove the selected entries from inventory?')) {
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('csrfmiddlewaretoken', csrftoken);
+                    formData.append('ids', JSON.stringify(idsToRemove));
+
+                    fetch("{% url 'remove_from_inventory' %}", {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'  // Include cookies
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Remove the rows from the table
+                            selectedCheckboxes.forEach(checkbox => {
+                                const row = checkbox.closest('tr');
+                                row.parentNode.removeChild(row);
+                            });
+
+                            // Update group rows if necessary
+                            const affectedGroups = new Set();
+                            selectedCheckboxes.forEach(checkbox => {
+                                const row = checkbox.closest('tr');
+                                const oppNumCell = row.querySelector('.col-opportunity');
+                                if (oppNumCell) {
+                                    const oppNum = oppNumCell.textContent.trim();
+                                    affectedGroups.add(oppNum);
+                                }
+                            });
+
+                            affectedGroups.forEach(oppNum => {
+                                const sanitizedOppNum = sanitizeOppNum(oppNum);
+                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                                if (remainingRows.length === 0) {
+                                    // No more entries in the group, remove the group row
+                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
+                                    if (groupRow) {
+                                        groupRow.parentNode.removeChild(groupRow);
+                                    }
+                                }
+                            });
+
+                            // Uncheck the "Select All" checkbox
+                            document.getElementById('select-all-select').checked = false;
+
+                            console.log('Entries removed from inventory successfully.');
+                        } else {
+                            console.error('Error removing entries from inventory:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+                }
+            </script>
             <button type="button" onclick="resetFilters()">Reset</button>
             <button type="button" id="print-all-button">Print</button>
             <button type="button" id="delete-all-button">Delete</button>
