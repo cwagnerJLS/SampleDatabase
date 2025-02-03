@@ -383,18 +383,10 @@ def remove_from_inventory(request):
             for sample in samples_to_remove:
                 opportunity_number = sample.opportunity_number
                 affected_opportunity_numbers.add(opportunity_number)
-                sample.delete()
+                sample.delete(update_opportunity=False)
 
             logger.debug(f"Removed samples from inventory with IDs: {ids}")
 
-            # For each affected opportunity, check if there are remaining samples
-            for opportunity_number in affected_opportunity_numbers:
-                samples_remaining = Sample.objects.filter(opportunity_number=opportunity_number).exists()
-                if not samples_remaining:
-                    # Move the opportunity to archive
-                    from .tasks import move_documentation_to_archive_task
-                    move_documentation_to_archive_task.delay(opportunity_number)
-                    logger.info(f"Moved opportunity {opportunity_number} to archive.")
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:
