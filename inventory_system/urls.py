@@ -17,7 +17,6 @@ urlpatterns = [
     path('upload_files/', views.upload_files, name='upload_files'),
     path('get_sample_images/', views.get_sample_images, name='get_sample_images'),
     path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
-    path('samples/', include('samples.urls')),
 ]
 
 import os  # Make sure to import os
