@@ -157,38 +157,29 @@ class Sample(models.Model):
         opportunity.save()
 
     def delete(self, *args, update_opportunity=True, **kwargs):
-        opportunity_number = self.opportunity_number
-        super(Sample, self).delete(*args, **kwargs)
+        if update_opportunity:
+            opportunity_number = self.opportunity_number
+            try:
+                opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
 
-        try:
-            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+                # Retrieve all unique IDs associated with this opportunity after deletion
+                sample_ids = Sample.objects.filter(
+                    opportunity_number=opportunity_number
+                ).values_list('unique_id', flat=True)
 
-            # Retrieve all unique IDs associated with this opportunity after deletion
-            sample_ids = Sample.objects.filter(
-                opportunity_number=opportunity_number
-            ).values_list('unique_id', flat=True)
-
-            if sample_ids:
-                # Update the sample_ids field
-                opportunity.sample_ids = ','.join(map(str, sample_ids))
-                opportunity.update = True  # Set the 'update' field to True
-                opportunity.save()
-            else:
-                # Set 'update' to True before deleting the Opportunity
-                # opportunity.update = True
-                # opportunity.save()
-
-                # If no samples remain, delete the Opportunity entry
-                # opportunity.delete()
-                # opportunity = None
-
-                # Offload cleanup operations to Celery tasks
-                from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
-                logger.info(f"Invoking move_documentation_to_archive_task for opportunity {opportunity_number}")
-                move_documentation_to_archive_task.delay(opportunity_number)
-                delete_local_opportunity_folder_task.delay(opportunity_number)
-        except Opportunity.DoesNotExist:
-            opportunity = None  # Opportunity might have been deleted already
+                if sample_ids:
+                    # Update the sample_ids field
+                    opportunity.sample_ids = ','.join(map(str, sample_ids))
+                    opportunity.update = True  # Set the 'update' field to True
+                    opportunity.save()
+                else:
+                    # Offload cleanup operations to Celery tasks
+                    from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
+                    logger.info(f"Invoking move_documentation_to_archive_task for opportunity {opportunity_number}")
+                    move_documentation_to_archive_task.delay(opportunity_number)
+                    delete_local_opportunity_folder_task.delay(opportunity_number)
+            except Opportunity.DoesNotExist:
+                pass
 
 def get_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
