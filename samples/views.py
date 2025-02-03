@@ -406,29 +406,6 @@ def remove_from_inventory(request):
 
     logger.error("Invalid request method for remove_from_inventory")
     return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
-    if request.method == 'POST':
-        try:
-            ids = json.loads(request.POST.get('ids', '[]'))
-            ids = json.loads(request.POST.get('ids', '[]'))
-
-            # Retrieve the samples to be deleted
-            samples_to_delete = Sample.objects.filter(unique_id__in=ids)
-
-            for sample in samples_to_delete:
-                sample.delete()  # Calls the delete method on each instance
-
-            logger.debug(f"Deleted samples with IDs: {ids}")
-
-            return JsonResponse({'status': 'success'})
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON data: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
-        except Exception as e:
-            logger.error(f"Error deleting samples: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
-
-    logger.error("Invalid request method for delete_samples")
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
 def generate_qr_code(data):
     # Create a QR code instance
@@ -672,3 +649,25 @@ def delete_sample_image(request):
         logger.error(f"Error deleting image {image_id}: {e}")
         return JsonResponse({'status': 'error', 'error': 'An error occurred while deleting the image'})
 
+def delete_samples(request):
+    if request.method == 'POST':
+        try:
+            ids = json.loads(request.POST.get('ids', '[]'))
+            # Retrieve the samples to be deleted
+            samples_to_delete = Sample.objects.filter(unique_id__in=ids)
+
+            for sample in samples_to_delete:
+                sample.delete()  # Calls the delete method on each instance
+
+            logger.debug(f"Deleted samples with IDs: {ids}")
+
+            return JsonResponse({'status': 'success'})
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON data: {e}")
+            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            logger.error(f"Error deleting samples: {e}")
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+    else:
+        logger.error("Invalid request method for delete_samples")
+        return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
