@@ -206,8 +206,6 @@ class SampleImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def remove_from_inventory(self):
-        self.delete(update_opportunity=False)
-        
         # Capture the image names before deletion
         image_name = self.image.name if self.image else None
         full_size_image_name = self.full_size_image.name if self.full_size_image else None
@@ -230,6 +228,7 @@ class SampleImage(models.Model):
             delete_image_from_sharepoint.delay(full_size_image_name)
             logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
 
+        # Now delete the SampleImage instance
         super().delete()
 
         # Function to check and delete directory if empty
