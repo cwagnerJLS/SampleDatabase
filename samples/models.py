@@ -157,8 +157,12 @@ class Sample(models.Model):
         opportunity.save()
 
     def delete(self, *args, update_opportunity=True, **kwargs):
+        opportunity_number = self.opportunity_number  # Store before deletion
+
+        # Delete the sample from the database
+        super().delete(*args, **kwargs)
+
         if update_opportunity:
-            opportunity_number = self.opportunity_number
             try:
                 opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
 
@@ -170,10 +174,10 @@ class Sample(models.Model):
                 if sample_ids:
                     # Update the sample_ids field
                     opportunity.sample_ids = ','.join(map(str, sample_ids))
-                    opportunity.update = True  # Set the 'update' field to True
+                    opportunity.update = True  # Mark as needing an update
                     opportunity.save()
                 else:
-                    # Offload cleanup operations to Celery tasks
+                    # No samples remain; initiate cleanup tasks
                     from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
                     logger.info(f"Invoking move_documentation_to_archive_task for opportunity {opportunity_number}")
                     move_documentation_to_archive_task.delay(opportunity_number)
