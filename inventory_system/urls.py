@@ -1,7 +1,7 @@
 # inventory_system/urls.py
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from samples import views
@@ -17,6 +17,7 @@ urlpatterns = [
     path('upload_files/', views.upload_files, name='upload_files'),
     path('get_sample_images/', views.get_sample_images, name='get_sample_images'),
     path('delete_sample_image/', views.delete_sample_image, name='delete_sample_image'),
+    path('samples/', include('samples.urls')),
 ]
 
 import os  # Make sure to import os
