@@ -230,7 +230,7 @@ class SampleImage(models.Model):
             delete_image_from_sharepoint.delay(full_size_image_name)
             logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
 
-        super().delete(*args, **kwargs)
+        super().delete()
 
         # Function to check and delete directory if empty
         def remove_if_empty(directory):
