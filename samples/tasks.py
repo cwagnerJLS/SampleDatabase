@@ -423,3 +423,56 @@ def move_documentation_to_archive_task(opportunity_number):
         logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}/{opportunity_number}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to move opportunity directory to archive: {e}")
+@shared_task
+def restore_documentation_from_archive_task(opportunity_number):
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"Starting restore_documentation_from_archive_task for opportunity {opportunity_number}")
+
+    # Specify the full path to rclone executable
+    rclone_executable = '/usr/bin/rclone'  # Update this path if rclone is installed elsewhere
+    archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
+    main_folder_path = f"TestLabSamples:{opportunity_number}"
+
+    # Command to move the folder back using rclone
+    try:
+        logger.info(f"Attempting to move {archive_folder_path} back to {main_folder_path}")
+        result = subprocess.run(
+            [
+                rclone_executable,
+                'moveto',
+                archive_folder_path,
+                main_folder_path
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=os.environ
+        )
+        if result.stdout:
+            logger.debug(f"rclone stdout: {result.stdout}")
+        if result.stderr:
+            logger.error(f"rclone stderr: {result.stderr}")
+        logger.info(f"Restored opportunity directory from archive: {archive_folder_path} -> {main_folder_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to restore opportunity directory from archive: {e}")
+        if e.stdout:
+            logger.error(f"rclone stdout: {e.stdout}")
+        if e.stderr:
+            logger.error(f"rclone stderr: {e.stderr}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in restore_documentation_from_archive_task: {e}")
+        logger.exception(e)
+
+    # Restore local directories
+    local_archive_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Archive', opportunity_number)
+    local_main_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
+
+    if os.path.exists(local_archive_folder):
+        try:
+            shutil.move(local_archive_folder, local_main_folder)
+            logger.info(f"Moved local opportunity folder from archive: {local_archive_folder} -> {local_main_folder}")
+        except Exception as e:
+            logger.error(f"Failed to move local opportunity folder from archive: {e}")
+    else:
+        logger.warning(f"Local archive folder does not exist: {local_archive_folder}")

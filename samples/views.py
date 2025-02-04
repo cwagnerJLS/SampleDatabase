@@ -100,6 +100,17 @@ def create_sample(request):
                 opportunity.new = True
                 opportunity.update = True
                 opportunity.save()
+            else:
+                # Opportunity exists but may have been archived
+                samples_exist = Sample.objects.filter(opportunity_number=opportunity_number).exists()
+                if not samples_exist:
+                    # No samples exist; the opportunity was likely archived
+                    # Restore the documentation from the archive
+                    from .tasks import restore_documentation_from_archive_task
+                    restore_documentation_from_archive_task.delay(opportunity_number)
+                    logger.info(f"Restoring opportunity {opportunity_number} from archive.")
+                else:
+                    logger.info(f"Opportunity {opportunity_number} already exists with samples.")
 
             created_samples = []
 
