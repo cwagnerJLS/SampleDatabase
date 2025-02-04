@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 import os
 from .models import Sample, SampleImage, Opportunity
 from .tasks import (
+    update_documentation_excels,
     send_sample_received_email,
     update_documentation_excels,
     create_sharepoint_folder_task,
@@ -397,6 +398,9 @@ def remove_from_inventory(request):
                     logger.info(f"No samples remain for opportunity {opportunity_number}. Initiating cleanup tasks.")
                     move_documentation_to_archive_task.delay(opportunity_number)
                     delete_local_opportunity_folder_task.delay(opportunity_number)
+
+            # Call the update_documentation_excels task
+            update_documentation_excels.delay()
 
             return JsonResponse({'status': 'success'})
         except json.JSONDecodeError as e:
