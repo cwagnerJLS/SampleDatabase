@@ -70,6 +70,9 @@ DATABASES = {
     }
 }
 
+# Path to the rclone executable
+RCLONE_EXECUTABLE = '/usr/bin/rclone'  # Update this path based on where rclone is installed
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
