@@ -185,16 +185,6 @@ def create_sample(request):
         # Retrieve all opportunity numbers from the Opportunity model
         opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
 
-        # Update sample_ids field in the Opportunity table
-        for opportunity in Opportunity.objects.all():
-            # Retrieve all unique IDs associated with this opportunity
-            sample_ids = Sample.objects.filter(
-                opportunity_number=opportunity.opportunity_number
-            ).values_list('unique_id', flat=True)
-
-            # Update the sample_ids field
-            opportunity.sample_ids = ','.join(map(str, sample_ids))
-            opportunity.save()
 
         # Path to the DocumentationTemplate.xlsm file
         template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
