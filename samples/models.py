@@ -122,21 +122,24 @@ class Sample(models.Model):
     audit = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
+        # Get existing sample IDs from the Opportunity
+        try:
+            opportunity = Opportunity.objects.get(opportunity_number=self.opportunity_number)
+            existing_sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+        except Opportunity.DoesNotExist:
+            existing_sample_ids = []
+
         if not self.unique_id:
             for _ in range(100):
                 self.unique_id = generate_unique_id()
-                if not Sample.objects.filter(unique_id=self.unique_id).exists():
+                if (
+                    not Sample.objects.filter(unique_id=self.unique_id).exists() and
+                    str(self.unique_id) not in existing_sample_ids
+                ):
                     break
             else:
                 raise ValueError("Could not generate a unique ID after 100 attempts.")
         is_new = self.pk is None  # Check if the sample is new
-        if not self.unique_id:
-            for _ in range(100):
-                self.unique_id = generate_unique_id()
-                if not Sample.objects.filter(unique_id=self.unique_id).exists():
-                    break
-            else:
-                raise ValueError("Could not generate a unique ID after 100 attempts.")
         super().save(*args, **kwargs)
 
         # Update Opportunity's sample_ids field after the sample has been saved
