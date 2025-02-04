@@ -1,6 +1,5 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
-from .models import get_image_upload_path, Sample, Opportunity
 from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
@@ -28,6 +27,9 @@ logger = logging.getLogger(__name__)
 def create_sharepoint_folder_task(opportunity_number, customer, rsm, description):
     logger.info(f"Starting create_sharepoint_folder_task for opportunity {opportunity_number}")
     try:
+        # Import models locally
+        from .models import Opportunity
+
         create_sharepoint_folder(
             opportunity_number=opportunity_number,
             customer=customer,
@@ -76,6 +78,9 @@ def delete_image_from_sharepoint(full_size_image_name):
 def update_documentation_excels():
     logger.info("Starting update_documentation_excels task.")
     try:
+        # Import models locally
+        from .models import Opportunity, Sample
+
         token = get_access_token()
         logger.debug(f"Access token acquired: {token}")
         if not token:
@@ -222,6 +227,9 @@ def update_documentation_excels():
 @shared_task
 def save_full_size_image(sample_image_id, temp_file_path):
     try:
+        # Import models locally
+        from .models import SampleImage
+
         # Retrieve the SampleImage instance
         sample_image = SampleImage.objects.get(id=sample_image_id)
         sample = sample_image.sample

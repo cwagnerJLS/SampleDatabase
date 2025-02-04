@@ -4,11 +4,6 @@ import random
 import logging
 from django.utils.deconstruct import deconstructible
 from celery import chain
-from .tasks import (
-    update_documentation_excels,
-    move_documentation_to_archive_task,
-    delete_local_opportunity_folder_task
-)
 
 def delete_documentation_from_sharepoint(opportunity_number):
     import subprocess
@@ -190,6 +185,14 @@ class Sample(models.Model):
                     opportunity.sample_ids = ''
                     opportunity.update = True  # Mark as needing an update
                     opportunity.save()
+
+                    # Import tasks locally to avoid circular import
+                    from .tasks import (
+                        update_documentation_excels,
+                        move_documentation_to_archive_task,
+                        delete_local_opportunity_folder_task
+                    )
+                    from celery import chain
 
                     # Chain the tasks to ensure sequential execution
                     logger.info(f"Initiating task chain for opportunity {opportunity_number}")
