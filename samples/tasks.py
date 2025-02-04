@@ -1,6 +1,6 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
-from .models import SampleImage, get_image_upload_path, Sample, Opportunity
+from .models import get_image_upload_path, Sample, Opportunity
 from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
@@ -52,7 +52,7 @@ def delete_image_from_sharepoint(full_size_image_name):
     if full_size_image_name:
         try:
             sharepoint_image_path = f"TestLabSamples:{full_size_image_name}"
-            rclone_executable = '/usr/bin/rclone'  # Use the full path to rclone
+            rclone_executable = settings.RCLONE_EXECUTABLE
             logger.info(f"Using rclone executable at: {rclone_executable}")
             result = subprocess.run(
                 [rclone_executable, 'delete', sharepoint_image_path],
@@ -295,7 +295,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
     logger.info(f"Celery worker PATH environment variable: {path_env}")
 
     # Specify the full path to rclone
-    rclone_executable = '/usr/bin/rclone'
+    rclone_executable = settings.RCLONE_EXECUTABLE
     logger.info(f"Using rclone executable at: {rclone_executable}")
 
     # Add the for loop to iterate over sample_image_ids
@@ -339,7 +339,7 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
 
     # Specify the full path to rclone
-    rclone_executable = '/usr/bin/rclone'  # Update if rclone is installed elsewhere
+    rclone_executable = settings.RCLONE_EXECUTABLE
     logger.info(f"Using rclone executable at: {rclone_executable}")
 
     # Command to delete the folder using rclone
@@ -396,7 +396,7 @@ def move_documentation_to_archive_task(opportunity_number):
     logger.info(f"Starting move_documentation_to_archive_task for opportunity {opportunity_number}")
 
     # Specify the full path to rclone executable
-    rclone_executable = '/usr/bin/rclone'  # Update this path if rclone is installed elsewhere
+    rclone_executable = settings.RCLONE_EXECUTABLE
     logger.info(f"Using rclone executable at: {rclone_executable}")
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
     archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
@@ -430,7 +430,7 @@ def restore_documentation_from_archive_task(opportunity_number):
     logger.info(f"Starting restore_documentation_from_archive_task for opportunity {opportunity_number}")
 
     # Specify the full path to rclone executable
-    rclone_executable = '/usr/bin/rclone'  # Update this path if rclone is installed elsewhere
+    rclone_executable = settings.RCLONE_EXECUTABLE
     archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
     main_folder_path = f"TestLabSamples:{opportunity_number}"
 
