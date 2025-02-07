@@ -75,8 +75,8 @@ def delete_image_from_sharepoint(full_size_image_name):
         logger.error("No full_size_image_name provided to delete_image_from_sharepoint task")
 
 @shared_task
-def update_documentation_excels():
-    logger.info("Starting update_documentation_excels task.")
+def update_documentation_excels(opportunity_number=None):
+    logger.info(f"Starting update_documentation_excels task for opportunity {opportunity_number if opportunity_number else 'all opportunities'}.")
     try:
         # Import models locally
         from .models import Opportunity, Sample
@@ -90,8 +90,12 @@ def update_documentation_excels():
         library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
         logger.debug(f"Using library_id: {library_id}")
 
-        opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
-        logger.info(f"Found opportunity_numbers from Opportunity model: {list(opportunity_numbers)}")
+        if opportunity_number:
+            # Process only the specified opportunity
+            opportunity_numbers = [opportunity_number]
+        else:
+            # Process all opportunities
+            opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
 
         for opportunity_number in opportunity_numbers:
             logger.info(f"Processing opportunity number: {opportunity_number}")
@@ -213,10 +217,6 @@ def update_documentation_excels():
                     clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
                     logger.info(f"Cleared existing data in range {range_to_clear} because there are no sample IDs.")
 
-                # After updating, set opportunity.update = False
-                opportunity.update = False
-                opportunity.save()
-                logger.info(f"Set opportunity.update to False for {opportunity_number}.")
 
             else:
                 logger.info(f"Opportunity {opportunity_number} 'update' flag is False. Skipping update for cells A8 onward.")
@@ -428,7 +428,7 @@ def move_documentation_to_archive_task(opportunity_number):
             logger.debug(f"rclone stdout: {result.stdout}")
         if result.stderr:
             logger.error(f"rclone stderr: {result.stderr}")
-        logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}/{opportunity_number}")
+        logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to move opportunity directory to archive: {e}")
 @shared_task
@@ -484,3 +484,14 @@ def restore_documentation_from_archive_task(opportunity_number):
             logger.error(f"Failed to move local opportunity folder from archive: {e}")
     else:
         logger.warning(f"Local archive folder does not exist: {local_archive_folder}")
+@shared_task
+def set_opportunity_update_false(opportunity_number):
+    logger.info(f"Setting opportunity.update = False for {opportunity_number}")
+    try:
+        from .models import Opportunity
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        opportunity.update = False
+        opportunity.save()
+        logger.info(f"Set opportunity.update to False for {opportunity_number}")
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity with number {opportunity_number} not found. Could not set update=False.")

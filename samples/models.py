@@ -198,12 +198,22 @@ class Sample(models.Model):
                     )
                     from celery import chain
 
+                    # Import tasks locally to avoid circular import
+                    from .tasks import (
+                        update_documentation_excels,
+                        move_documentation_to_archive_task,
+                        delete_local_opportunity_folder_task,
+                        set_opportunity_update_false
+                    )
+                    from celery import chain
+
                     # Chain the tasks to ensure sequential execution
                     logger.info(f"Initiating task chain for opportunity {opportunity_number}")
                     task_chain = chain(
-                        update_documentation_excels.si(),
+                        update_documentation_excels.si(opportunity_number),
                         move_documentation_to_archive_task.si(opportunity_number),
-                        delete_local_opportunity_folder_task.si(opportunity_number)
+                        delete_local_opportunity_folder_task.si(opportunity_number),
+                        set_opportunity_update_false.si(opportunity_number)  # New task to set update=False
                     )
                     task_chain.delay()
             except Opportunity.DoesNotExist:
