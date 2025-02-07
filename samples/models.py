@@ -163,6 +163,8 @@ class Sample(models.Model):
     def delete(self, *args, update_opportunity=True, **kwargs):
         opportunity_number = self.opportunity_number  # Store before deletion
 
+        sample_unique_id = str(self.unique_id)  # Store the unique_id as a string
+
         # Delete the sample from the database
         super().delete(*args, **kwargs)
 
@@ -170,21 +172,23 @@ class Sample(models.Model):
             try:
                 opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
 
-                # Retrieve all unique IDs associated with this opportunity after deletion
-                sample_ids = Sample.objects.filter(
-                    opportunity_number=opportunity_number
-                ).values_list('unique_id', flat=True)
+                # Retrieve the current sample_ids from the Opportunity
+                sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
 
-                if sample_ids:
-                    # Update the sample_ids field
-                    opportunity.sample_ids = ','.join(map(str, sample_ids))
-                    opportunity.update = True  # Mark as needing an update
-                    opportunity.save()
-                else:
-                    # No samples remain; update sample_ids and chain the tasks
-                    opportunity.sample_ids = ''
-                    opportunity.update = True  # Mark as needing an update
-                    opportunity.save()
+                # Remove the unique_id of the deleted sample from the list
+                if sample_unique_id in sample_ids:
+                    sample_ids.remove(sample_unique_id)
+
+                # Update the sample_ids field
+                opportunity.sample_ids = ','.join(sample_ids)
+
+                # Mark the opportunity as needing an update
+                opportunity.update = True
+
+                opportunity.save()
+
+                # If no samples remain, proceed to archive the opportunity
+                if not sample_ids:
 
                     # Import tasks locally to avoid circular import
                     from .tasks import (
