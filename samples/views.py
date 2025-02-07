@@ -53,19 +53,6 @@ def create_sample(request):
             date_received = request.POST.get('date_received')
             quantity = request.POST.get('quantity')
 
-            # -- Ensure folder exists on SharePoint --
-            # Chain the tasks to ensure sequential execution, including update_documentation_excels
-            chain(
-                create_sharepoint_folder_task.s(
-                opportunity_number=opportunity_number,
-                customer=customer,
-                rsm=rsm_full_name,
-                description=description
-                ),
-                create_documentation_on_sharepoint_task.si(opportunity_number),
-                update_documentation_excels.si()
-            ).delay()
-
             try:
                 quantity = int(quantity)
                 date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
@@ -89,29 +76,49 @@ def create_sample(request):
                     'update': True,
                 }
             )
+
             if created:
                 # Create local directory structure under 'OneDrive_Sync'
                 opportunity_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
                 samples_folder = os.path.join(opportunity_folder, 'Samples')
                 os.makedirs(samples_folder, exist_ok=True)
-                opportunity.customer = customer
-                opportunity.rsm = rsm_full_name
-                opportunity.description = description
-                opportunity.date_received = date_received
+            else:
+                # Update existing Opportunity fields if new data is provided
+                updated = False
+                if customer and customer != opportunity.customer:
+                    opportunity.customer = customer
+                    updated = True
+                if rsm_full_name and rsm_full_name != opportunity.rsm:
+                    opportunity.rsm = rsm_full_name
+                    updated = True
+                if description and description != opportunity.description:
+                    opportunity.description = description
+                    updated = True
+                if date_received and date_received != opportunity.date_received:
+                    opportunity.date_received = date_received
+                    updated = True
+                if updated:
+                    opportunity.update = True
+                    opportunity.save()
+                    logger.debug(f"Opportunity {opportunity_number} updated with new data")
+
+            # Save the Opportunity instance if it was created or updated
+            if created or updated:
                 opportunity.new = True
                 opportunity.update = True
                 opportunity.save()
-            else:
-                # Opportunity exists but may have been archived
-                samples_exist = Sample.objects.filter(opportunity_number=opportunity_number).exists()
-                if not samples_exist:
-                    # No samples exist; the opportunity was likely archived
-                    # Restore the documentation from the archive
-                    from .tasks import restore_documentation_from_archive_task
-                    restore_documentation_from_archive_task.delay(opportunity_number)
-                    logger.info(f"Restoring opportunity {opportunity_number} from archive.")
-                else:
-                    logger.info(f"Opportunity {opportunity_number} already exists with samples.")
+
+            # Now, after the Opportunity is saved and up-to-date, call the task chain
+            chain(
+                create_sharepoint_folder_task.s(
+                    opportunity_number=opportunity_number,
+                    customer=opportunity.customer,
+                    rsm=opportunity.rsm,
+                    description=opportunity.description
+                ),
+                create_documentation_on_sharepoint_task.si(opportunity_number),
+                update_documentation_excels.si()
+            ).delay()
 
             created_samples = []
 
