@@ -130,10 +130,17 @@ def create_sample(request):
                 logger.debug(f"Created samples: {created_samples}")
 
                 # Update sample_ids field for the Opportunity
-                sample_ids = Sample.objects.filter(
-                    opportunity_number=opportunity_number
-                ).values_list('unique_id', flat=True)
-                opportunity.sample_ids = ','.join(map(str, sample_ids))
+
+                # Retrieve existing sample_ids from Opportunity
+                existing_sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+
+                # Append new sample IDs to existing sample_ids, ensuring no duplicates
+                for sample in created_samples:
+                    if str(sample.unique_id) not in existing_sample_ids:
+                        existing_sample_ids.append(str(sample.unique_id))
+
+                # Update the sample_ids field in Opportunity
+                opportunity.sample_ids = ','.join(existing_sample_ids)
                 opportunity.update = True
                 opportunity.save()
             else:
