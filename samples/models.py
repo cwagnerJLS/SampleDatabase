@@ -194,14 +194,6 @@ class Sample(models.Model):
                     from .tasks import (
                         update_documentation_excels,
                         move_documentation_to_archive_task,
-                        delete_local_opportunity_folder_task
-                    )
-                    from celery import chain
-
-                    # Import tasks locally to avoid circular import
-                    from .tasks import (
-                        update_documentation_excels,
-                        move_documentation_to_archive_task,
                         delete_local_opportunity_folder_task,
                         set_opportunity_update_false
                     )
@@ -214,7 +206,18 @@ class Sample(models.Model):
                         move_documentation_to_archive_task.si(opportunity_number),
                         delete_local_opportunity_folder_task.si(opportunity_number),
                         set_opportunity_update_false.si(opportunity_number)
-                        set_opportunity_update_false.si(opportunity_number)  # New task to set update=False
+                    )
+                    task_chain.delay()
+                else:
+                    # If samples remain, update the documentation and reset the update flag
+                    from .tasks import update_documentation_excels, set_opportunity_update_false
+                    from celery import chain
+
+                    # Create a task chain to update documentation and reset the update flag
+                    logger.info(f"Updating documentation for opportunity {opportunity_number} after deleting sample.")
+                    task_chain = chain(
+                        update_documentation_excels.si(opportunity_number),
+                        set_opportunity_update_false.si(opportunity_number)
                     )
                     task_chain.delay()
             except Opportunity.DoesNotExist:
