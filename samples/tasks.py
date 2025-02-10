@@ -209,8 +209,12 @@ def update_documentation_excels(opportunity_number=None):
                     else:
                         logger.info("No data to write to Excel.")
 
+                # Set opportunity.update to False after updating documentation
+                opportunity.update = False
+                opportunity.save()
+                logger.info(f"Set opportunity.update to False for {opportunity_number} after updating documentation.")
+
                 # Clear existing data if no sample IDs
-                if not sample_ids:
                     start_row = 8
                     end_row = start_row + max(len(existing_ids), 100)  # Adjust the number as needed
                     range_to_clear = f"A{start_row}:B{end_row}"
