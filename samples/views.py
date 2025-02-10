@@ -13,6 +13,7 @@ import os
 from .models import Sample, SampleImage, Opportunity
 from .tasks import (
     update_documentation_excels,
+    restore_documentation_from_archive_task,  # ← Add this
     send_sample_received_email,
     update_documentation_excels,
     create_sharepoint_folder_task,
@@ -109,16 +110,23 @@ def create_sample(request):
                 opportunity.save()
 
             # Now, after the Opportunity is saved and up-to-date, call the task chain
-            chain(
-                create_sharepoint_folder_task.s(
-                    opportunity_number=opportunity_number,
-                    customer=opportunity.customer,
-                    rsm=opportunity.rsm,
-                    description=opportunity.description
-                ),
-                create_documentation_on_sharepoint_task.si(opportunity_number),
-                update_documentation_excels.si()
-            ).delay()
+            if created:
+                chain(
+                    create_sharepoint_folder_task.s(
+                        opportunity_number=opportunity_number,
+                        customer=opportunity.customer,
+                        rsm=opportunity.rsm,
+                        description=opportunity.description
+                    ),
+                    create_documentation_on_sharepoint_task.si(opportunity_number),
+                    update_documentation_excels.si(opportunity_number)
+                ).delay()
+
+            else:
+                chain(
+                    restore_documentation_from_archive_task.si(opportunity_number),
+                    update_documentation_excels.si(opportunity_number)
+                ).delay()
 
             created_samples = []
 
