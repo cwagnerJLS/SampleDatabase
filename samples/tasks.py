@@ -189,26 +189,41 @@ def update_documentation_excels(opportunity_number=None):
                     except Sample.DoesNotExist:
                         logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
 
-                # Always clear the old data
-                start_row = 8
-                end_row = start_row + max(len(existing_ids), len(rows_to_write)) + 100
-                range_to_clear = f"A{start_row}:B{end_row}"
-                clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
-                logger.info(f"Cleared existing data in range {range_to_clear}")
+                # Remove IDs from Excel first
+                if ids_to_remove:
+                    rows_to_delete = [existing_ids[id_to_remove] for id_to_remove in ids_to_remove]
+                    delete_rows_in_workbook(token, library_id, excel_file_id, worksheet_name, rows_to_delete)
+                    logger.info(f"Removed IDs from rows: {rows_to_delete}")
 
-                # Always write rows_to_write (if non-empty)
-                if rows_to_write:
-                    update_range_in_workbook(
-                        token,
-                        library_id,
-                        excel_file_id,
-                        worksheet_name,
-                        start_row,
-                        rows_to_write
-                    )
-                    logger.info(f"Updated Excel sheet with full sample list (total {len(rows_to_write)} entries).")
-                else:
-                    logger.info("No sample IDs to write to Excel.")
+                # After that, append only the newly added IDs (ids_to_add) at the end
+                if ids_to_add:
+                    # Find the last used row in existing_ids (or 7 if there are none yet)
+                    last_used_row = max(existing_ids.values()) if existing_ids else 7
+                    start_row_for_new = last_used_row + 1
+
+                    # Build rows_to_write with only the new IDs
+                    rows_to_write = []
+                    for sample_id in sorted(ids_to_add):
+                        try:
+                            sample = Sample.objects.get(unique_id=sample_id)
+                            date_received = sample.date_received.strftime('%Y-%m-%d')
+                            rows_to_write.append([sample_id, date_received])
+                        except Sample.DoesNotExist:
+                            logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
+
+                    if rows_to_write:
+                        update_range_in_workbook(
+                            token,
+                            library_id,
+                            excel_file_id,
+                            worksheet_name,
+                            start_row_for_new,
+                            rows_to_write
+                        )
+                        logger.info(f"Appended {len(rows_to_write)} new rows starting at row {start_row_for_new}.")
+                    else:
+                        logger.info("No new rows to append.")
+
 
                 # Set opportunity.update to False after updating documentation
                 opportunity.update = False
