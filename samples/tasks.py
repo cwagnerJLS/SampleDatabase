@@ -215,11 +215,11 @@ def update_documentation_excels(opportunity_number=None):
                 logger.info(f"Set opportunity.update to False for {opportunity_number} after updating documentation.")
 
                 # Clear existing data if no sample IDs
-                    start_row = 8
-                    end_row = start_row + max(len(existing_ids), 100)  # Adjust the number as needed
-                    range_to_clear = f"A{start_row}:B{end_row}"
-                    clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
-                    logger.info(f"Cleared existing data in range {range_to_clear} because there are no sample IDs.")
+                start_row = 8
+                end_row = start_row + max(len(existing_ids), 100)  # Adjust the number as needed
+                range_to_clear = f"A{start_row}:B{end_row}"
+                clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
+                logger.info(f"Cleared existing data in range {range_to_clear} because there are no sample IDs.")
 
 
             else:
