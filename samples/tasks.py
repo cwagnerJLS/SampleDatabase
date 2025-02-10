@@ -179,35 +179,36 @@ def update_documentation_excels(opportunity_number=None):
                     delete_rows_in_workbook(token, library_id, excel_file_id, worksheet_name, rows_to_delete)
                     logger.info(f"Removed IDs from rows: {rows_to_delete}")
 
-                # Add new IDs to Excel sheet
-                if ids_to_add:
-                    # Find the next empty row in column A starting from row 8
-                    existing_row_numbers = existing_ids.values()
-                    # Build the list of rows to write to Excel sheet
-                    rows_to_write = []
-                    for sample_id in sorted(sample_ids):
-                        try:
-                            sample = Sample.objects.get(unique_id=sample_id)
-                            date_received = sample.date_received.strftime('%Y-%m-%d')
-                        except Sample.DoesNotExist:
-                            logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
-                            continue
-                        row = [sample_id, date_received]
-                        rows_to_write.append(row)
+                # Build rows_to_write with *all* sample_ids, not just the new ones
+                rows_to_write = []
+                for sample_id in sorted(sample_ids):
+                    try:
+                        sample = Sample.objects.get(unique_id=sample_id)
+                        date_received = sample.date_received.strftime('%Y-%m-%d')
+                        rows_to_write.append([sample_id, date_received])
+                    except Sample.DoesNotExist:
+                        logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
 
-                    # Clear existing data from Excel
-                    start_row = 8
-                    end_row = start_row + max(len(existing_ids), len(rows_to_write)) + 100  # Clear extra rows to be safe
-                    range_to_clear = f"A{start_row}:B{end_row}"
-                    clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
-                    logger.info(f"Cleared existing data in range {range_to_clear}")
+                # Always clear the old data
+                start_row = 8
+                end_row = start_row + max(len(existing_ids), len(rows_to_write)) + 100
+                range_to_clear = f"A{start_row}:B{end_row}"
+                clear_range_in_workbook(token, library_id, excel_file_id, worksheet_name, range_to_clear)
+                logger.info(f"Cleared existing data in range {range_to_clear}")
 
-                    # Write the new data to Excel
-                    if rows_to_write:
-                        update_range_in_workbook(token, library_id, excel_file_id, worksheet_name, start_row, rows_to_write)
-                        logger.info(f"Updated Excel sheet with new data starting from row {start_row}")
-                    else:
-                        logger.info("No data to write to Excel.")
+                # Always write rows_to_write (if non-empty)
+                if rows_to_write:
+                    update_range_in_workbook(
+                        token,
+                        library_id,
+                        excel_file_id,
+                        worksheet_name,
+                        start_row,
+                        rows_to_write
+                    )
+                    logger.info(f"Updated Excel sheet with full sample list (total {len(rows_to_write)} entries).")
+                else:
+                    logger.info("No sample IDs to write to Excel.")
 
                 # Set opportunity.update to False after updating documentation
                 opportunity.update = False
