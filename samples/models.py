@@ -121,6 +121,7 @@ class Sample(models.Model):
     quantity = models.IntegerField(default=1)
     description = models.TextField(default="No description")
     audit = models.BooleanField(default=False)
+    apps_eng = models.CharField(max_length=255, blank=True, null=True, default="")
 
     def save(self, *args, **kwargs):
         # Get existing sample IDs from the Opportunity
