@@ -693,9 +693,12 @@ def delete_samples(request):
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON data: {e}")
             return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+        except Sample.DoesNotExist as e:
+            logger.error(f"Sample not found: {e}")
+            return JsonResponse({'status': 'error', 'error': 'Sample not found'}, status=404)
         except Exception as e:
             logger.error(f"Error deleting samples: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            return JsonResponse({'status': 'error', 'error': 'An unexpected error occurred'}, status=500)
     else:
         logger.error("Invalid request method for delete_samples")
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
