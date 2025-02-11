@@ -461,6 +461,7 @@ def generate_qr_code(data):
 def mm_to_points(mm_value):
     return mm_value * (72 / 25.4)
 
+
 def generate_label(output_path, qr_data, id_value, date_received, rsm_value, description):
     label_width = mm_to_points(101.6)
     label_height = mm_to_points(50.8)
@@ -547,7 +548,7 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     normal_style.fontName = font_regular
     normal_style.fontSize = font_size
     normal_style.leading = font_size * 1.2
-    normal_style.alignment = 1
+    normal_style.alignment = 1  # Center alignment
 
     wrapped_paragraph = Paragraph(description, normal_style)
     max_text_width = label_width / 2 - 2 * margin
@@ -555,14 +556,23 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     # Calculate available height for the description.
     # The top limit is defined by the bottom of the RSM field.
     top_limit = label_height - margin - mm_to_points(14)
-    # The description starts a bit above the bottom margin.
+    # The description should start a bit above the bottom margin.
     bottom_limit = margin + mm_to_points(5)
-    available_height = top_limit - bottom_limit
 
-    # Use a saved state for coordinate translation so that drawing of the paragraph
-    # doesn’t affect other canvas elements.
+    # Option 1: Use the space between bottom_limit and top_limit
+    # available_height = top_limit - bottom_limit
+
+    # Option 2: Limit the description to a fixed maximum height (e.g., 10 mm)
+    max_description_height = mm_to_points(10)
+    available_height = min(top_limit - bottom_limit, max_description_height)
+
+    # Draw the description text within a clipping region to enforce the max height.
     c.saveState()
+    # Translate the origin to where the description should begin.
     c.translate(margin, bottom_limit)
+    # Set up a clipping rectangle: (x, y, width, height)
+    c.rect(0, 0, max_text_width, available_height, stroke=0, fill=0)
+    c.clipPath()  # Apply the clipping path so that drawing is limited to this rectangle.
     wrapped_paragraph.wrapOn(c, max_text_width, available_height)
     wrapped_paragraph.drawOn(c, 0, 0)
     c.restoreState()
