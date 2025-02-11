@@ -33,24 +33,8 @@
                     <th class="col-documentation"></th>
                 </tr>
             </thead>
-            <tbody>
-                {% for sample in samples %}
-                <tr>
-                    <td>{{ sample.opportunity_number }}</td>
-                    <td>{{ sample.customer }}</td>
-                    <td>{{ sample.rsm }}</td>
-                    <td>{{ sample.date_received }}</td>
-                    <td>{{ sample.description }}</td>
-                    <td>{{ sample.unique_id }}</td>
-                    <td>{{ sample.storage_location }}</td>
-                    <td>
-                        <button type="button" onclick="readOnlyViewImages('{{ sample.unique_id }}')">View</button>
-                    </td>
-                    <td>
-                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{{ sample.opportunity_number }}" target="_blank">Documentation</a>
-                    </td>
-                </tr>
-                {% endfor %}
+            <tbody id="viewSamplesBody">
+                <!-- Will be filled via JavaScript -->
             </tbody>
         </table>
     </div>
@@ -61,26 +45,111 @@
     </div>
 
     <script type="text/javascript">
-        const samples = {{ samples|safe }};
+        document.addEventListener("DOMContentLoaded", function() {
+            // Convert the Django QuerySet to a plain array if not already:
+            const sampleArray = {{ samples|safe }};
 
-        function readOnlyViewImages(sampleId) {
-            // Open the modal
-            document.getElementById('fullSizeModal').style.display = 'block';
-
-            // Fetch existing images for this sample and display thumbnails
-            fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    displayThumbnails(data.images);
-                } else {
-                    console.error('Error fetching images:', data.error);
+            // Group samples by 'opportunity_number'
+            const groupedSamples = {};
+            sampleArray.forEach(sample => {
+                const oppNum = sample.opportunity_number;
+                if (!groupedSamples[oppNum]) {
+                    groupedSamples[oppNum] = [];
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+                groupedSamples[oppNum].push(sample);
             });
-        }
+
+            const tableBody = document.getElementById('viewSamplesBody');
+            tableBody.innerHTML = ''; // Clear any existing rows
+
+            Object.keys(groupedSamples).forEach(oppNum => {
+                const group = groupedSamples[oppNum];
+
+                if (group.length === 1) {
+                    // If only one entry, display it as a single row
+                    const sample = group[0];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${sample.opportunity_number}</td>
+                        <td>${sample.customer}</td>
+                        <td>${sample.rsm}</td>
+                        <td>${sample.date_received}</td>
+                        <td>${sample.description}</td>
+                        <td>${sample.unique_id}</td>
+                        <td>${sample.storage_location}</td>
+                        <td>
+                            <button type="button" onclick="readOnlyViewImages('${sample.unique_id}')">View</button>
+                        </td>
+                        <td>
+                            <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                } else {
+                    // Create a group row
+                    const sanitizedOppNum = oppNum.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+                    const groupRow = document.createElement('tr');
+                    groupRow.classList.add('group-row');
+                    groupRow.setAttribute('data-opp-num', sanitizedOppNum);
+                    groupRow.innerHTML = `
+                        <td>
+                            <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
+                            ${oppNum}
+                        </td>
+                        <td>${group[0].customer}</td>
+                        <td>${group[0].rsm}</td>
+                        <td colspan="6">(${group.length} entries)</td>
+                    `;
+                    tableBody.appendChild(groupRow);
+
+                    // Add a row for each sample in the group, initially hidden
+                    group.forEach(sample => {
+                        const sampleRow = document.createElement('tr');
+                        sampleRow.classList.add(`group-${sanitizedOppNum}`, 'grouped-row');
+                        sampleRow.style.display = 'none';
+                        sampleRow.innerHTML = `
+                            <td>${sample.opportunity_number}</td>
+                            <td>${sample.customer}</td>
+                            <td>${sample.rsm}</td>
+                            <td>${sample.date_received}</td>
+                            <td>${sample.description}</td>
+                            <td>${sample.unique_id}</td>
+                            <td>${sample.storage_location}</td>
+                            <td>
+                                <button type="button" onclick="readOnlyViewImages('${sample.unique_id}')">View</button>
+                            </td>
+                            <td>
+                                <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                            </td>
+                        `;
+                        tableBody.appendChild(sampleRow);
+                    });
+                }
+            });
+
+            // Expand/Collapse logic
+            document.querySelectorAll('.expand-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const oppNum = this.getAttribute('data-opp-num');
+                    const groupedRows = document.querySelectorAll(`.group-${oppNum}`);
+                    const isExpanded = this.textContent === '-';
+
+                    if (isExpanded) {
+                        // Collapse
+                        this.textContent = '+';
+                        groupedRows.forEach(row => {
+                            row.style.display = 'none';
+                        });
+                    } else {
+                        // Expand
+                        this.textContent = '-';
+                        groupedRows.forEach(row => {
+                            row.style.display = '';
+                        });
+                    }
+                });
+            });
+        });
 
         function displayThumbnails(imageDataArray) {
             const thumbnailsContainer = document.getElementById('thumbnailsContainer');
