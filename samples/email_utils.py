@@ -20,6 +20,8 @@ TEST_LAB_GROUP = [
     "ndekker@jlsautomation.com",
     "cwentz@jlsautomation.com",
     "mmooney@jlsautomation.com",
+    "kharding@jlsautomation.com",
+    "msmith@jlsautomation.com",
     # Add other emails as needed in the future
 ]
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
