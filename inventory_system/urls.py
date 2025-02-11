@@ -4,6 +4,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.conf.urls import re_path
+from django.views.static import serve
 from samples import views
 
 urlpatterns = [
