@@ -561,7 +561,7 @@ def handle_print_request(request):
 
             # Use the first sample_id to determine the labels directory
             sample = Sample.objects.get(unique_id=ids_to_print[0])
-            labels_dir = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', sample.opportunity_number, 'Samples', 'Labels')
+            labels_dir = os.path.join(settings.BASE_DIR, 'Labels')
             os.makedirs(labels_dir, exist_ok=True)
 
             if not ids_to_print:
