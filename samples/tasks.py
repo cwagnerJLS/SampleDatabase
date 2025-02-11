@@ -356,7 +356,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 
             # Copy the full-size image to SharePoint
             result = subprocess.run(
-                [rclone_executable, 'copy', source_path, destination_path],
+                [rclone_executable, 'copyto', source_path, destination_path],
                 check=True,
                 capture_output=True,
                 text=True,
