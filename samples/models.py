@@ -243,35 +243,23 @@ class SampleImage(models.Model):
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    def remove_from_inventory(self):
-        # Capture the image names before deletion
-        image_name = self.image.name if self.image else None
-        full_size_image_name = self.full_size_image.name if self.full_size_image else None
-
-        # Get the directory paths before deleting
-        thumbnail_dir = os.path.dirname(self.image.path) if self.image else None
-        full_size_dir = os.path.dirname(self.full_size_image.path) if self.full_size_image else None
-
-        # Delete the thumbnail image from storage
+    def delete(self, *args, **kwargs):
+        # Ensure the local thumbnail file is removed
         if self.image and self.image.storage.exists(self.image.name):
             self.image.delete(save=False)
-
-        # Delete the full-size image from storage
+        # Ensure the local full-size file is removed
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
 
-        super().delete()
+        super().delete(*args, **kwargs)
 
-        # Function to check and delete directory if empty
+        # Optionally remove empty directories, like in remove_from_inventory()
+        thumbnail_dir = os.path.dirname(self.image.path) if self.image else None
+        full_size_dir = os.path.dirname(self.full_size_image.path) if self.full_size_image else None
+
         def remove_if_empty(directory):
             if directory and os.path.isdir(directory) and not os.listdir(directory):
-                try:
-                    os.rmdir(directory)
-                    logger.info(f"Removed empty directory: {directory}")
-                except Exception as e:
-                    logger.error(f"Error removing directory {directory}: {e}")
-                    logger.exception(e)
+                os.rmdir(directory)
 
-        # Remove directories if they are empty
         remove_if_empty(thumbnail_dir)
         remove_if_empty(full_size_dir)
