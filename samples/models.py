@@ -191,7 +191,6 @@ class Sample(models.Model):
                     from .tasks import (
                         update_documentation_excels,
                         move_documentation_to_archive_task,
-                        delete_local_opportunity_folder_task,
                         set_opportunity_update_false
                     )
                     from celery import chain

@@ -416,7 +416,7 @@ def remove_from_inventory(request):
             for opportunity_number in affected_opportunity_numbers:
                 samples_remaining = Sample.objects.filter(opportunity_number=opportunity_number).exists()
                 if not samples_remaining:
-                    from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
+                    from .tasks import move_documentation_to_archive_task
                     logger.info(f"No samples remain for opportunity {opportunity_number}. Initiating cleanup tasks.")
                     move_documentation_to_archive_task.delay(opportunity_number)
 
