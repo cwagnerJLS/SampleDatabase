@@ -262,10 +262,6 @@ class SampleImage(models.Model):
             self.full_size_image.delete(save=False)
 
         # Enqueue a Celery task to delete the image from SharePoint
-        if full_size_image_name:
-            from .tasks import delete_image_from_sharepoint  # Import inside the condition
-            delete_image_from_sharepoint.delay(full_size_image_name)
-            logger.info(f"Enqueued task to delete image from SharePoint: {full_size_image_name}")
 
         # Now delete the SampleImage instance
         super().delete()
