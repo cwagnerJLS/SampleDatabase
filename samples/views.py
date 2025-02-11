@@ -53,6 +53,7 @@ def create_sample(request):
             description = request.POST.get('description')
             date_received = request.POST.get('date_received')
             quantity = request.POST.get('quantity')
+            apps_eng = request.POST.get('apps_eng', '')
 
             try:
                 quantity = int(quantity)
@@ -139,7 +140,8 @@ def create_sample(request):
                         opportunity_number=opportunity_number,
                         description=description,
                         storage_location=location,
-                        quantity=1  # Each entry represents a single unit
+                        quantity=1,  # Each entry represents a single unit
+                        apps_eng=apps_eng
                     )
                     created_samples.append(sample)
                 logger.debug(f"Created samples: {created_samples}")

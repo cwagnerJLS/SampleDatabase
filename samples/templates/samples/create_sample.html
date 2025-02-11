@@ -779,6 +779,10 @@
                 <label for="description">Description:</label>
                 <input type="text" id="description" name="description" readonly>
             </div>
+            <div class="input-group">
+                <label for="apps_eng">Applications Engineer:</label>
+                <input type="text" id="apps_eng" name="apps_eng" readonly>
+            </div>
         </div>
 
         <div class="button-container">
@@ -1340,6 +1344,7 @@
                     formData.append('description', description);
                     formData.append('location', location);
                     formData.append('quantity', quantity);
+                    formData.append('apps_eng', document.getElementById('apps_eng').value);
 
                     fetch("{% url 'create_sample' %}", {
                         method: 'POST',
@@ -1418,6 +1423,7 @@
                     $('#customer').val(selectedData['Customer']).trigger('change.select2');
                     $('#rsm').val(selectedData['RSM']).trigger('change.select2');
                     document.getElementById('description').value = selectedData['Description'];
+                    document.getElementById('apps_eng').value = selectedData['Applications Engineer'] || '';
                     isPopulating = false; // Reset flag to false
                 } else {
                     document.getElementById('description').value = '';
