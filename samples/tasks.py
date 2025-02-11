@@ -349,8 +349,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 
             # Define source and destination paths
             source_path = sample_image.full_size_image.path
-            destination_directory = os.path.dirname(sample_image.full_size_image.name)
-            destination_path = f"TestLabSamples:{destination_directory}"
+            destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
 
             # Log the paths
             logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
