@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 import os
 from .models import Sample, SampleImage, Opportunity
 from .tasks import (
+    delete_image_from_sharepoint,
     update_documentation_excels,
     restore_documentation_from_archive_task,  # ← Add this
     send_sample_received_email,
@@ -667,7 +668,12 @@ def delete_sample_image(request):
     image_id = request.POST.get('image_id')
     try:
         image = SampleImage.objects.get(id=image_id)
-        # Delete the SampleImage instance (its delete method handles file deletion)
+        # Capture the SharePoint path before deleting the local file
+        full_size_name = image.full_size_image.name
+        if full_size_name:
+            delete_image_from_sharepoint.delay(full_size_name)
+
+        # Delete the local file + DB record
         image.delete()
         return JsonResponse({'status': 'success'})
     except SampleImage.DoesNotExist:
