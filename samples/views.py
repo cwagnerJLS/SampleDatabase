@@ -32,6 +32,7 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 import qrcode
+from django.http import JsonResponse
 
 # Configure logging
 logger = logging.getLogger('samples')
@@ -708,3 +709,14 @@ def delete_samples(request):
     else:
         logger.error("Invalid request method for delete_samples")
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+def handle_400(request, exception=None):
+    return JsonResponse({'status': 'error', 'error': 'Bad Request'}, status=400)
+
+def handle_403(request, exception=None):
+    return JsonResponse({'status': 'error', 'error': 'Forbidden'}, status=403)
+
+def handle_404(request, exception=None):
+    return JsonResponse({'status': 'error', 'error': 'Not Found'}, status=404)
+
+def handle_500(request):
+    return JsonResponse({'status': 'error', 'error': 'Server Error'}, status=500)
