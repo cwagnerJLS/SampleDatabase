@@ -92,8 +92,8 @@ class CustomFileSystemStorage(FileSystemStorage):
 
 class FullSizeImageStorage(CustomFileSystemStorage):
     def __init__(self, *args, **kwargs):
-        kwargs['location'] = os.path.join(settings.BASE_DIR, 'OneDrive_Sync')
-        kwargs['base_url'] = '/onedrive_media/'
+        kwargs['location'] = settings.MEDIA_ROOT
+        kwargs['base_url'] = settings.MEDIA_URL
         super().__init__(*args, **kwargs)
 
 def generate_unique_id():
@@ -230,7 +230,7 @@ def get_image_upload_path(instance, filename):
 
 def get_full_size_image_upload_path(instance, filename):
     opportunity_number = str(instance.sample.opportunity_number)
-    return os.path.join(opportunity_number, 'Samples', filename)
+    return os.path.join('Full Size Images', opportunity_number, filename)
 
 class SampleImage(models.Model):
     sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
