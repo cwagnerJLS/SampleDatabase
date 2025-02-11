@@ -229,7 +229,7 @@ def get_full_size_image_upload_path(instance, filename):
     return os.path.join('Full Size Images', opportunity_number, filename)
 
 class SampleImage(models.Model):
-    sample = models.ForeignKey(Sample, related_name='images', on_delete=models.CASCADE)
+    sample = models.ForeignKey(Sample, related_name='images', on_delete=models.SET_NULL, null=True, blank=True)
     # Thumbnail image field
     image = models.ImageField(
         upload_to=get_image_upload_path,  # Correct function for thumbnails
