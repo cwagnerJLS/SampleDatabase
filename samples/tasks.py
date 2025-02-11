@@ -294,7 +294,16 @@ def test_task():
 @shared_task
 def send_sample_received_email(rsm_full_name, date_received, opportunity_number, customer, quantity):
     try:
-        # Extract the first name from the full name
+        # Gather distinct engineers for this opportunity
+        from .models import Sample
+        from .email_utils import generate_email
+        apps_eng_values = Sample.objects.filter(opportunity_number=opportunity_number).values_list('apps_eng', flat=True).distinct()
+        cc_list = TEST_LAB_GROUP.copy()
+        for apps_eng_name in apps_eng_values:
+            if apps_eng_name:
+                apps_eng_email = generate_email(apps_eng_name)
+                if apps_eng_email:
+                    cc_list.append(apps_eng_email)
         first_name = rsm_full_name.strip().split()[0]
 
         # Determine the greeting name (use nickname if available)
@@ -313,7 +322,7 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         """
         recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
-            send_email(subject, body, recipient_email, cc_emails=TEST_LAB_GROUP)
+            send_email(subject, body, recipient_email, cc_emails=cc_list)
             logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
         else:
             logger.error(f"Failed to generate email address for RSM '{rsm_full_name}'. Email not sent.")
