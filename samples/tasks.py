@@ -49,11 +49,11 @@ def create_documentation_on_sharepoint_task(opportunity_number):
     except Exception as e:
         logger.error(f"Error copying documentation template to SharePoint for opportunity {opportunity_number}: {e}")
 @shared_task
-def delete_image_from_sharepoint(full_size_image_name):
+def delete_image_from_sharepoint(full_size_image_name, opportunity_number):
     logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
     if full_size_image_name:
         try:
-            sharepoint_image_path = f"TestLabSamples:{full_size_image_name}"
+            sharepoint_image_path = f"TestLabSamples:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
             rclone_executable = settings.RCLONE_EXECUTABLE
             logger.info(f"Using rclone executable at: {rclone_executable}")
             result = subprocess.run(
@@ -349,7 +349,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 
             # Define source and destination paths
             source_path = sample_image.full_size_image.path
-            destination_path = f"TestLabSamples:{sample_image.full_size_image.name}"
+            destination_path = f"TestLabSamples:{sample.opportunity_number}/Samples/{os.path.basename(sample_image.full_size_image.name)}"
 
             # Log the paths
             logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")

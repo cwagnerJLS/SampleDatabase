@@ -670,8 +670,9 @@ def delete_sample_image(request):
         image = SampleImage.objects.get(id=image_id)
         # Capture the SharePoint path before deleting the local file
         full_size_name = image.full_size_image.name
+        opportunity_number = image.sample.opportunity_number
         if full_size_name:
-            delete_image_from_sharepoint.delay(full_size_name)
+            delete_image_from_sharepoint.delay(full_size_name, opportunity_number)
 
         # Delete the local file + DB record
         image.delete()
