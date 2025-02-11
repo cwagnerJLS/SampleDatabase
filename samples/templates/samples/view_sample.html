@@ -7,51 +7,267 @@
 <body>
     <h1>Samples (Read Only)</h1>
 
-    <!-- The table mimics create_sample.html but without the "Select" column, no add/remove/print buttons,
-         and the Location column is plain text. The "Pictures" column has a read-only "View" button
-         that opens a modal with no Upload or Delete functionality. -->
+    <div class="table-responsive">
+        <table id="samplesTable" border="1">
+            <thead>
+                <tr>
+                    <th class="col-opportunity">Opp Number</th>
+                    <th class="col-customer">Customer</th>
+                    <th class="col-rsm">RSM</th>
+                    <th class="col-date">Date Received</th>
+                    <th class="col-description">Description</th>
+                    <th class="col-id">ID</th>
+                    <th class="col-location">Location</th>
+                    <th class="col-pictures">Pictures</th>
+                    <th class="col-documentation">Documentation</th>
+                </tr>
+                <tr>
+                    <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
+                    <th class="col-pictures"></th>
+                    <th class="col-documentation"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sample in samples %}
+                <tr>
+                    <td>{{ sample.opportunity_number }}</td>
+                    <td>{{ sample.customer }}</td>
+                    <td>{{ sample.rsm }}</td>
+                    <td>{{ sample.date_received }}</td>
+                    <td>{{ sample.description }}</td>
+                    <td>{{ sample.unique_id }}</td>
+                    <td>{{ sample.storage_location }}</td>
+                    <td>
+                        <button type="button" onclick="readOnlyViewImages('{{ sample.unique_id }}')">View</button>
+                    </td>
+                    <td>
+                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{{ sample.opportunity_number }}" target="_blank">Documentation</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Example table (shortened here). 
-         Keep your existing class names, but remove checkboxes and read/write features. -->
-    <table>
-        <thead>
-            <tr>
-                <!-- Remove <th class="col-select"> and the filter row. -->
-                <th>Opp Number</th>
-                <th>Customer</th>
-                <th>RSM</th>
-                <th>Date Received</th>
-                <th>Description</th>
-                <th>ID</th>
-                <th>Location</th>
-                <th>Pictures</th>
-                <th>Documentation</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for sample in samples %}
-            <tr>
-                <td>{{ sample.opportunity_number }}</td>
-                <td>{{ sample.customer }}</td>
-                <td>{{ sample.rsm }}</td>
-                <td>{{ sample.date_received }}</td>
-                <td>{{ sample.description }}</td>
-                <td>{{ sample.unique_id }}</td>
-                <td>{{ sample.storage_location }}</td>
-                <td>
-                    <!-- "View" button that opens modal, no upload/delete -->
-                    <button type="button" onclick="readOnlyViewImages('{{ sample.unique_id }}')">View</button>
-                </td>
-                <td>
-                    <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{{ sample.opportunity_number }}" target="_blank">Documentation</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Full-Size Image Modal -->
+    <div id="fullSizeModal" class="modal" style="display: none;" onclick="closeFullSizeModal(event)">
+        <!-- The content will be dynamically generated in JavaScript -->
+    </div>
 
-    <!-- Include a "View" modal similar to your existing image‐view modal, but remove
-         file uploads, delete buttons, etc. Just show thumbnails and allow full‐size viewing. -->
+    <script type="text/javascript">
+        const samples = {{ samples|safe }};
+
+        function readOnlyViewImages(sampleId) {
+            // Open the modal
+            document.getElementById('fullSizeModal').style.display = 'block';
+
+            // Fetch existing images for this sample and display thumbnails
+            fetch("{% url 'get_sample_images' %}?sample_id=" + sampleId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayThumbnails(data.images);
+                } else {
+                    console.error('Error fetching images:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function displayThumbnails(imageDataArray) {
+            const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+            thumbnailsContainer.innerHTML = '';
+
+            imageDataArray.forEach((imageData, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('thumbnail-wrapper');
+
+                const link = document.createElement('a');
+                link.href = imageData.full_size_url || imageData.url;
+                link.target = '_blank';
+
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    if (imageData.full_size_url) {
+                        viewFullSizeImage(index);
+                    } else {
+                        alert('The full-size image is still being processed. Please try again shortly.');
+                    }
+                });
+
+                const img = document.createElement('img');
+                img.src = imageData.url;
+
+                link.appendChild(img);
+                wrapper.appendChild(link);
+                thumbnailsContainer.appendChild(wrapper);
+            });
+        }
+
+        function viewFullSizeImage(index) {
+            const imageDataArray = window.currentImageDataArray;
+            const imageData = imageDataArray[index];
+            const fullSizeImageUrl = imageData.full_size_url;
+            const filename = imageData.filename;
+            const fullSizeModal = document.getElementById('fullSizeModal');
+            if (fullSizeModal) {
+                fullSizeModal.innerHTML = `
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header full-size-modal-header">
+                                <h2>${filename}</h2>
+                                <span class="close" onclick="closeFullSizeModal()">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <img src="${fullSizeImageUrl}" alt="${filename}">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                fullSizeModal.style.display = 'flex';
+            }
+        }
+
+        function closeFullSizeModal(event) {
+            if (event) {
+                const modalContent = document.querySelector('#fullSizeModal .modal-content');
+                if (modalContent && modalContent.contains(event.target)) {
+                    return;
+                }
+            }
+            const fullSizeModal = document.getElementById('fullSizeModal');
+            if (fullSizeModal) {
+                fullSizeModal.style.display = 'none';
+                fullSizeModal.innerHTML = '';
+            }
+        }
+
+        window.filterTable = function() {
+            const idFilter = document.getElementById('idFilter').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
+            const customerFilter = document.getElementById('customerFilter').value.toLowerCase();
+            const rsmFilter = document.getElementById('rsmFilter').value.toLowerCase();
+            const opportunityFilter = document.getElementById('opportunityFilter').value.toLowerCase();
+            const descriptionFilter = document.getElementById('descriptionFilter').value.toLowerCase();
+            const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
+
+            const table = document.getElementById('samplesTable');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 2; i < tr.length; i++) {
+                const row = tr[i];
+                const tdOpportunity = row.getElementsByTagName('td')[0];
+                const tdCustomer = row.getElementsByTagName('td')[1];
+                const tdRsm = row.getElementsByTagName('td')[2];
+                const tdDate = row.getElementsByTagName('td')[3];
+                const tdDescription = row.getElementsByTagName('td')[4];
+                const tdId = row.getElementsByTagName('td')[5];
+                const tdLocation = row.getElementsByTagName('td')[6];
+
+                if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
+                    const idValue = tdId.textContent || tdId.innerText;
+                    const dateValue = tdDate.textContent || tdDate.innerText;
+                    const customerValue = tdCustomer.textContent || tdCustomer.innerText;
+                    const rsmValue = tdRsm.textContent || tdRsm.innerText;
+                    const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
+                    const descriptionValue = tdDescription.textContent || tdDescription.innerText;
+                    const locationValue = tdLocation.textContent || tdLocation.innerText;
+
+                    if (
+                        idValue.toLowerCase().indexOf(idFilter) > -1 &&
+                        dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
+                        customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
+                        rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
+                        opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
+                        descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
+                        locationValue.toLowerCase().indexOf(locationFilter) > -1
+                    ) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            }
+        };
+    </script>
 
 </body>
 </html>
+    <style>
+        body {
+            background-color: #FFFFFF;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        #samplesTable {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #samplesTable th, #samplesTable td {
+            border: 1px solid #DDD;
+            padding: 6px;
+            text-align: center;
+            word-wrap: break-word;
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+
+        #samplesTable th {
+            background-color: #EAF2F8;
+            color: #000000;
+        }
+
+        .filter-input {
+            border: 1px solid #CCC;
+            padding: 5px;
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+
+        .filter-input:focus {
+            border-color: #002B5C;
+            box-shadow: 0 0 5px rgba(0, 43, 92, 0.5);
+        }
+
+        .filter-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .filter-wrapper input {
+            width: 100%;
+            min-width: 40px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .col-id { width: 40px; text-align: center; }
+        .col-date { width: 120px; white-space: nowrap; }
+        .col-customer { width: 300px; }
+        .col-rsm { width: 120px; }
+        .col-opportunity { width: 80px; }
+        .col-description { width: auto; }
+        .col-location { width: 150px; }
+        .col-pictures { width: 100px; vertical-align: middle; }
+        .col-documentation { width: 130px; vertical-align: middle; text-align: center; }
+    </style>
