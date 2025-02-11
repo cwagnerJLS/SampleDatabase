@@ -201,7 +201,6 @@ class Sample(models.Model):
                     task_chain = chain(
                         update_documentation_excels.si(opportunity_number),
                         move_documentation_to_archive_task.si(opportunity_number),
-                        delete_local_opportunity_folder_task.si(opportunity_number),
                         set_opportunity_update_false.si(opportunity_number)
                     )
                     task_chain.delay()

@@ -80,10 +80,6 @@ def create_sample(request):
             )
 
             if created:
-                # Create local directory structure under 'OneDrive_Sync'
-                opportunity_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-                samples_folder = os.path.join(opportunity_folder, 'Samples')
-                os.makedirs(samples_folder, exist_ok=True)
             else:
                 # Update existing Opportunity fields if new data is provided
                 updated = False
@@ -421,7 +417,6 @@ def remove_from_inventory(request):
                     from .tasks import move_documentation_to_archive_task, delete_local_opportunity_folder_task
                     logger.info(f"No samples remain for opportunity {opportunity_number}. Initiating cleanup tasks.")
                     move_documentation_to_archive_task.delay(opportunity_number)
-                    delete_local_opportunity_folder_task.delay(opportunity_number)
 
             # Call the update_documentation_excels task
             update_documentation_excels.delay()

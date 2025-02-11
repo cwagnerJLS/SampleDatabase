@@ -416,22 +416,6 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
         logger.exception(e)
 
 @shared_task
-def delete_local_opportunity_folder_task(opportunity_number):
-    logger.info(f"Starting task to delete local folders for opportunity {opportunity_number}")
-    folder_paths = [
-        os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number),
-        os.path.join(settings.BASE_DIR, 'media', opportunity_number)
-    ]
-    for path in folder_paths:
-        if os.path.exists(path):
-            try:
-                shutil.rmtree(path)
-                logger.info(f"Deleted local folder: {path}")
-            except Exception as e:
-                logger.error(f"Failed to delete local folder {path}: {e}")
-        else:
-            logger.warning(f"Local folder does not exist: {path}")
-@shared_task
 def move_documentation_to_archive_task(opportunity_number):
     logger = logging.getLogger(__name__)
 
@@ -506,18 +490,6 @@ def restore_documentation_from_archive_task(opportunity_number):
         logger.error(f"An unexpected error occurred in restore_documentation_from_archive_task: {e}")
         logger.exception(e)
 
-    # Restore local directories
-    local_archive_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Archive', opportunity_number)
-    local_main_folder = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-
-    if os.path.exists(local_archive_folder):
-        try:
-            shutil.move(local_archive_folder, local_main_folder)
-            logger.info(f"Moved local opportunity folder from archive: {local_archive_folder} -> {local_main_folder}")
-        except Exception as e:
-            logger.error(f"Failed to move local opportunity folder from archive: {e}")
-    else:
-        logger.warning(f"Local archive folder does not exist: {local_archive_folder}")
 @shared_task
 def set_opportunity_update_false(opportunity_number):
     logger.info(f"Setting opportunity.update = False for {opportunity_number}")
