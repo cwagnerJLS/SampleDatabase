@@ -5,6 +5,12 @@ from celery import chain
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+
+def view_samples(request):
+    samples = Sample.objects.all()
+    return render(request, 'samples/view_sample.html', {
+        'samples': samples,
+    })
 from django.urls import reverse
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder

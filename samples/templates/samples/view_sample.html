@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Samples (Read Only)</title>
+    <!-- Include necessary CSS/JS similar to create_sample.html -->
+</head>
+<body>
+    <h1>Samples (Read Only)</h1>
+
+    <!-- The table mimics create_sample.html but without the "Select" column, no add/remove/print buttons,
+         and the Location column is plain text. The "Pictures" column has a read-only "View" button
+         that opens a modal with no Upload or Delete functionality. -->
+
+    <!-- Example table (shortened here). 
+         Keep your existing class names, but remove checkboxes and read/write features. -->
+    <table>
+        <thead>
+            <tr>
+                <!-- Remove <th class="col-select"> and the filter row. -->
+                <th>Opp Number</th>
+                <th>Customer</th>
+                <th>RSM</th>
+                <th>Date Received</th>
+                <th>Description</th>
+                <th>ID</th>
+                <th>Location</th>
+                <th>Pictures</th>
+                <th>Documentation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sample in samples %}
+            <tr>
+                <td>{{ sample.opportunity_number }}</td>
+                <td>{{ sample.customer }}</td>
+                <td>{{ sample.rsm }}</td>
+                <td>{{ sample.date_received }}</td>
+                <td>{{ sample.description }}</td>
+                <td>{{ sample.unique_id }}</td>
+                <td>{{ sample.storage_location }}</td>
+                <td>
+                    <!-- "View" button that opens modal, no upload/delete -->
+                    <button type="button" onclick="readOnlyViewImages('{{ sample.unique_id }}')">View</button>
+                </td>
+                <td>
+                    <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{{ sample.opportunity_number }}" target="_blank">Documentation</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Include a "View" modal similar to your existing image‐view modal, but remove
+         file uploads, delete buttons, etc. Just show thumbnails and allow full‐size viewing. -->
+
+</body>
+</html>
