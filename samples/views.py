@@ -467,13 +467,7 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     label_height = mm_to_points(50.8)
     c = canvas.Canvas(output_path, pagesize=(label_width, label_height))
 
-    # Generate the QR code
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=1
-    )
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=1)
     qr.add_data(qr_data)
     qr.make(fit=True)
 
@@ -495,7 +489,6 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     font_regular = "Helvetica"
     font_size = mm_to_points(4)
 
-    # Draw ID field
     id_text = "ID: "
     c.setFont(font_bold, font_size)
     id_text_width = c.stringWidth(id_text)
@@ -512,7 +505,6 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     c.setFont(font_regular, font_size)
     c.drawString(start_x_id + id_text_width, label_height - margin - mm_to_points(2), id_value)
 
-    # Draw Date Received field
     date_text = "Date Received: "
     c.setFont(font_bold, font_size)
     date_text_width = c.stringWidth(date_text)
@@ -527,7 +519,6 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     c.setFont(font_regular, font_size)
     c.drawString(start_x_date + date_text_width, label_height - margin - mm_to_points(8), date_received)
 
-    # Draw RSM field
     rsm_text = "RSM: "
     c.setFont(font_bold, font_size)
     rsm_text_width = c.stringWidth(rsm_text)
@@ -542,40 +533,21 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     c.setFont(font_regular, font_size)
     c.drawString(start_x_rsm + rsm_text_width, label_height - margin - mm_to_points(14), rsm_value)
 
-    # Prepare the style for the Description text
     styles = getSampleStyleSheet()
     normal_style = styles['Normal']
     normal_style.fontName = font_regular
     normal_style.fontSize = font_size
     normal_style.leading = font_size * 1.2
-    normal_style.alignment = 1  # Center alignment
+    normal_style.alignment = 1
 
     wrapped_paragraph = Paragraph(description, normal_style)
     max_text_width = label_width / 2 - 2 * margin
+    text_x = margin
+    text_y = margin + mm_to_points(5)
 
-    # Calculate available height for the description.
-    # The top limit is defined by the bottom of the RSM field.
-    top_limit = label_height - margin - mm_to_points(14)
-    # The description should start a bit above the bottom margin.
-    bottom_limit = margin + mm_to_points(5)
-
-    # Option 1: Use the space between bottom_limit and top_limit
-    # available_height = top_limit - bottom_limit
-
-    # Option 2: Limit the description to a fixed maximum height (e.g., 10 mm)
-    max_description_height = mm_to_points(10)
-    available_height = min(top_limit - bottom_limit, max_description_height)
-
-    # Draw the description text within a clipping region to enforce the max height.
-    c.saveState()
-    # Translate the origin to where the description should begin.
-    c.translate(margin, bottom_limit)
-    # Set up a clipping rectangle: (x, y, width, height)
-    c.rect(0, 0, max_text_width, available_height, stroke=0, fill=0)
-    c.clipPath()  # Apply the clipping path so that drawing is limited to this rectangle.
-    wrapped_paragraph.wrapOn(c, max_text_width, available_height)
+    c.translate(text_x, text_y)
+    wrapped_paragraph.wrapOn(c, max_text_width, label_height)
     wrapped_paragraph.drawOn(c, 0, 0)
-    c.restoreState()
 
     c.save()
 
