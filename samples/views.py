@@ -543,7 +543,7 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     wrapped_paragraph = Paragraph(description, normal_style)
     max_text_width = label_width / 2 - 2 * margin
     text_left = margin
-    text_top = label_height - margin - mm_to_points(20)  # push below RSM
+    text_top = label_height - margin - mm_to_points(5)  # push below RSM
 
     wrapped_paragraph.wrapOn(c, max_text_width, text_top - margin)
     wrapped_paragraph.drawOn(c, text_left, text_top - wrapped_paragraph.height)
