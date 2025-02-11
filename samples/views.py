@@ -80,6 +80,7 @@ def create_sample(request):
             )
 
             if created:
+                pass
             else:
                 # Update existing Opportunity fields if new data is provided
                 updated = False
