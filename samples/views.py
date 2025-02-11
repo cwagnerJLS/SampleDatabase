@@ -7,9 +7,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 
 def view_samples(request):
-    samples = Sample.objects.all()
+    # Convert samples to list of dicts, then JSON-encode.
+    samples_list = list(Sample.objects.all().values())
+
+    # If you need to format date fields, do so here.
+    for entry in samples_list:
+        if entry['date_received']:
+            entry['date_received'] = entry['date_received'].strftime('%Y-%m-%d')
+
     return render(request, 'samples/view_sample.html', {
-        'samples': samples,
+        'samples': json.dumps(samples_list, cls=DjangoJSONEncoder),
     })
 from django.urls import reverse
 from django.conf import settings

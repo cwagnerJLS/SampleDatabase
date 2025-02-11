@@ -46,7 +46,7 @@
 
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            // Convert the Django QuerySet to a plain array if not already:
+            // Now this is valid JSON, not a Python representation:
             const sampleArray = {{ samples|safe }};
 
             // Group samples by 'opportunity_number'
