@@ -26,31 +26,27 @@ def delete_local_opportunity_folder(opportunity_number):
     import logging
     logger = logging.getLogger(__name__)
 
-    # Path to the entire local opportunity folder
-    folder_path = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', opportunity_number)
-
-    # Delete the opportunity folder if it exists
-    if os.path.exists(folder_path):
+    # Clean up thumbnails
+    thumbnail_folder_path = os.path.join(settings.BASE_DIR, 'media', 'Thumbnails', opportunity_number)
+    if os.path.exists(thumbnail_folder_path):
         try:
-            shutil.rmtree(folder_path)
-            logger.info(f"Deleted local opportunity folder: {folder_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete local opportunity folder: {e}")
-    else:
-        logger.warning(f"Local opportunity folder does not exist: {folder_path}")
-
-    # Path to the entire local opportunity folder
-    media_folder_path = os.path.join(settings.BASE_DIR, 'media', opportunity_number)
-
-    # Delete the opportunity folder if it exists
-    if os.path.exists(media_folder_path):
-        try:
-            shutil.rmtree(media_folder_path)
-            logger.info(f"Deleted local thumbnail folder: {media_folder_path}")
+            shutil.rmtree(thumbnail_folder_path)
+            logger.info(f"Deleted local thumbnail folder: {thumbnail_folder_path}")
         except Exception as e:
             logger.error(f"Failed to delete local thumbnail folder: {e}")
     else:
-        logger.warning(f"Local thumbnail folder does not exist: {media_folder_path}")
+        logger.warning(f"Local thumbnail folder does not exist: {thumbnail_folder_path}")
+
+    # Clean up full-size images
+    fullsize_folder_path = os.path.join(settings.BASE_DIR, 'media', 'Full Size Images', opportunity_number)
+    if os.path.exists(fullsize_folder_path):
+        try:
+            shutil.rmtree(fullsize_folder_path)
+            logger.info(f"Deleted local full-size image folder: {fullsize_folder_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete local full-size image folder: {e}")
+    else:
+        logger.warning(f"Local full-size image folder does not exist: {fullsize_folder_path}")
 
 # Configure logging
 logger = logging.getLogger(__name__)
