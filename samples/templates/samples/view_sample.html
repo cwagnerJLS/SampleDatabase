@@ -77,7 +77,6 @@
                         <td class="col-select">
                             <input type="checkbox" name="select_checkbox" value="${sample.unique_id}" disabled>
                         </td>
-                    row.innerHTML = `
                         <td>${sample.opportunity_number}</td>
                         <td>${sample.customer}</td>
                         <td>${sample.rsm}</td>
@@ -103,9 +102,6 @@
                         <td class="col-select">
                             <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
                         </td>
-                    groupRow.classList.add('group-row');
-                    groupRow.setAttribute('data-opp-num', sanitizedOppNum);
-                    groupRow.innerHTML = `
                         <td>
                             <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
                             ${oppNum}
