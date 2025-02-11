@@ -261,9 +261,6 @@ class SampleImage(models.Model):
         if self.full_size_image and self.full_size_image.storage.exists(self.full_size_image.name):
             self.full_size_image.delete(save=False)
 
-        # Enqueue a Celery task to delete the image from SharePoint
-
-        # Now delete the SampleImage instance
         super().delete()
 
         # Function to check and delete directory if empty
