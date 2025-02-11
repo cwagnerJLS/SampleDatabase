@@ -22,6 +22,12 @@ urlpatterns = [
 
 import os  # Make sure to import os
 
+# Add these lines to define custom error handlers:
+handler400 = 'samples.views.handle_400'
+handler403 = 'samples.views.handle_403'
+handler404 = 'samples.views.handle_404'
+handler500 = 'samples.views.handle_500'
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static('/onedrive_media/', document_root=os.path.join(settings.BASE_DIR, 'OneDrive_Sync'))
