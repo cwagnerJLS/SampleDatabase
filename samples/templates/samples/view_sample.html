@@ -188,6 +188,15 @@
             });
         }
 
+        /* Match the same resizing used by uploadModal in create_sample.html */
+        body .read-only-modal .modal-dialog {
+            position: relative;
+            margin: 5% auto;
+            width: auto;           /* allow the width to adjust automatically */
+            min-width: 600px;      /* match create_sample.html */
+            max-width: 90%;        /* match create_sample.html */
+        }
+
         function viewFullSizeImage(index) {
             const imageDataArray = window.currentImageDataArray;
             const imageData = imageDataArray[index];
@@ -336,7 +345,7 @@
     </script>
 
 <!-- A "Read-Only" modal for viewing images -->
-<div id="readOnlyViewModal" class="modal" style="display: none;">
+<div id="readOnlyViewModal" class="modal read-only-modal" style="display: none;">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
