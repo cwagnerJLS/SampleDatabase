@@ -41,9 +41,9 @@
     </div>
 
     <!-- Full-Size Image Modal -->
-    <div id="fullSizeModal" class="modal" style="display: none;" onclick="closeFullSizeModal(event)">
+    <!-- <div id="fullSizeModal" class="modal" style="display: none;" onclick="closeFullSizeModal(event)">
         <!-- The content will be dynamically generated in JavaScript -->
-    </div>
+    </div> -->
 
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
@@ -275,6 +275,83 @@
         };
     </script>
 
+    <script>
+    function readOnlyViewImages(sampleId) {
+        // Clear existing thumbnails
+        document.getElementById('readOnlyThumbnailsContainer').innerHTML = '';
+        // Show the modal
+        document.getElementById('readOnlyViewModal').style.display = 'block';
+
+        // Fetch images for this sample
+        fetch("/get_sample_images?sample_id=" + sampleId)
+          .then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  // Store images in a global array so we can do full-size viewing
+                  window.readOnlyImageDataArray = data.images;
+                  displayReadOnlyThumbnails(data.images);
+              } else {
+                  console.error("Error fetching images:", data.error);
+              }
+          })
+          .catch(error => console.error("Error:", error));
+    }
+
+    function displayReadOnlyThumbnails(imageDataArray) {
+        const container = document.getElementById('readOnlyThumbnailsContainer');
+        container.innerHTML = '';
+        window.currentImageDataArray = imageDataArray; // reuse for full-size viewing
+
+        imageDataArray.forEach((imageData, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('thumbnail-wrapper');
+
+            // A link to the image or a click handler to open full-size
+            const link = document.createElement('a');
+            link.href = imageData.full_size_url || imageData.url;
+            link.target = '_blank';
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                if (imageData.full_size_url) {
+                    // Reuse or replicate your full-size viewing function
+                    viewFullSizeImage(index);
+                } else {
+                    alert('Still processing full-size image. Please try again.');
+                }
+            });
+
+            const img = document.createElement('img');
+            img.src = imageData.url;
+            link.appendChild(img);
+            wrapper.appendChild(link);
+
+            // No delete button here, because read-only
+            container.appendChild(wrapper);
+        });
+    }
+
+    function closeReadOnlyModal() {
+        document.getElementById('readOnlyViewModal').style.display = 'none';
+    }
+    </script>
+
+<!-- A "Read-Only" modal for viewing images -->
+<div id="readOnlyViewModal" class="modal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>View Images</h2>
+                <span class="close" onclick="closeReadOnlyModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="readOnlyThumbnailsContainer"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeReadOnlyModal()">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
     <style>
