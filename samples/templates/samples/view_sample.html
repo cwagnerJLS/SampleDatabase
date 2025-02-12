@@ -443,7 +443,27 @@
         }
         /* Match the "upload/view" modal look from create_sample.html */
 
-        .modal-content {
+        .modal {
+            display: none;              /* Hide by default */
+            position: fixed !important; /* Overlay the entire page */
+            z-index: 9999 !important;   /* Ensure on top of everything */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;             /* Scroll if needed */
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-dialog {
+            position: relative;
+            margin: 5% auto;
+            max-width: 600px; /* or match create_sample.html */
+            width: 80%;
+            background-color: #fff;   /* Match up with .modal-content if you like */
+            border-radius: 8px;
+            overflow: hidden;
+        }
             display: block;       /* ensures block layout */
             width: 100%;          /* fill parent width */
             background-color: #fff;
