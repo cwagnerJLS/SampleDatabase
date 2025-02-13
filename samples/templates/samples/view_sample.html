@@ -751,9 +751,21 @@
                 <th class="col-select">
                     <input type="checkbox" id="select-all-select">
                 </th>
-                <th class="col-opportunity"></th>
-                <th class="col-customer"></th>
-                <th class="col-rsm"></th>
+                <th class="col-opportunity">
+                    <div class="filter-wrapper">
+                        <input type="text" id="opportunityFilter" placeholder="Filter Opp Number" class="filter-input" onkeyup="filterTable()">
+                    </div>
+                </th>
+                <th class="col-customer">
+                    <div class="filter-wrapper">
+                        <input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()">
+                    </div>
+                </th>
+                <th class="col-rsm">
+                    <div class="filter-wrapper">
+                        <input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()">
+                    </div>
+                </th>
                 <th class="col-date">
                     <div class="filter-wrapper">
                         <input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()">
@@ -1239,6 +1251,9 @@
                                 const locationValue = tdLocation.textContent || tdLocation.innerText;
 
                                 if (
+                                    opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
+                                    customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
+                                    rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
                                     idValue.toLowerCase().indexOf(idFilter) > -1 &&
                                     dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
                                     descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
