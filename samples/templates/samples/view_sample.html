@@ -1291,11 +1291,10 @@
                 const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
                 const customerFilter = document.getElementById('customerFilter').value.toLowerCase();
                 const rsmFilter = document.getElementById('rsmFilter').value.toLowerCase();
-                const opportunityFilter = document.getElementById('opportunityFilter').value.toLowerCase();
                 const descriptionFilter = document.getElementById('descriptionFilter').value.toLowerCase();
                 const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
 
-                const filtersApplied = idFilter || dateFilter || customerFilter || rsmFilter || opportunityFilter || descriptionFilter || locationFilter;
+                const filtersApplied = idFilter || dateFilter || descriptionFilter || locationFilter;
 
                 const table = document.getElementById('samplesTable');
                 const tr = table.getElementsByTagName('tr');
