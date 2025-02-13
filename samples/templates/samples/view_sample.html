@@ -748,47 +748,6 @@
         <!-- The content will be dynamically generated in JavaScript -->
     </div>
 
-    <form method="POST" id="sampleForm">
-        <!-- Include CSRF token in the form -->
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-        <div class="form-container">
-            <div class="input-group">
-                <label for="customer">Customer:</label>
-                <select id="customer" name="customer" onchange="filterOptions()">
-                    <option value="">Select a Customer</option>
-                    {% for customer in unique_customers %}
-                    <option value="{{ customer }}">{{ customer }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="rsm">RSM:</label>
-                <select id="rsm" name="rsm" onchange="filterOptions()">
-                    <option value="">Select an RSM</option>
-                    {% for rsm in unique_rsms %}
-                    <option value="{{ rsm }}">{{ rsm }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="opportunity_number">Opportunity #:</label>
-                <select id="opportunity_number" name="opportunity_number" class="opportunity-dropdown" onchange="populateFieldsFromOpportunity()">
-                    <option value="">Select an Opportunity</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="description">Description:</label>
-                <input type="text" id="description" name="description" readonly>
-            </div>
-            <input type="hidden" id="apps_eng" name="apps_eng" value="">
-        </div>
-
-        <div class="button-container">
-        </div>
-    </form>
 
     <!-- The Table for displaying samples -->
     <div class="table-responsive">
@@ -991,26 +950,6 @@
             let isPopulating = false; // Flag to prevent recursive triggering
             let currentSampleId = null; // For image uploads
 
-            // Initialize Select2 for dropdowns with search capability
-            $('#customer, #rsm, #opportunity_number').select2({
-                width: 'resolve',
-                matcher: matchCustom
-            });
-
-            // Custom matcher function for multi-keyword search
-            function matchCustom(params, data) {
-                if ($.trim(params.term) === '') {
-                    return data;
-                }
-                const terms = params.term.toLowerCase().split(' ');
-                const original = data.text.toLowerCase();
-                const matches = terms.every(term => original.includes(term));
-
-                if (matches) {
-                    return data;
-                }
-                return null;
-            }
 
 
             // Minimize all groups
@@ -1188,38 +1127,6 @@
                 }
             };
 
-            // Filter Options function
-            window.filterOptions = function() {
-                if (isPopulating) return;
-                const customer = document.getElementById('customer').value;
-                const rsm = document.getElementById('rsm').value;
-
-                const filteredData = excelData.filter(record =>
-                    (customer === "" || record['Customer'] === customer) &&
-                    (rsm === "" || record['RSM'] === rsm)
-                );
-
-                updateSelectOptions(document.getElementById('customer'), 'Customer', filteredData, customer);
-                updateSelectOptions(document.getElementById('rsm'), 'RSM', filteredData, rsm);
-                updateSelectOptions(document.getElementById('opportunity_number'), 'Opportunity #', filteredData);
-            };
-
-            // Populate Fields from Opportunity function
-            window.populateFieldsFromOpportunity = function() {
-                const opportunityNumber = document.getElementById('opportunity_number').value;
-                const selectedData = excelData.find(record => record['Opportunity #'] === parseInt(opportunityNumber));
-
-                if (selectedData) {
-                    isPopulating = true; // Set flag to true
-                    $('#customer').val(selectedData['Customer']).trigger('change.select2');
-                    $('#rsm').val(selectedData['RSM']).trigger('change.select2');
-                    document.getElementById('description').value = selectedData['Description'];
-                    document.getElementById('apps_eng').value = selectedData['Application Engineer'] || '';
-                    isPopulating = false; // Reset flag to false
-                } else {
-                    document.getElementById('description').value = '';
-                }
-            };
 
             // Open Add Sample Modal function
             function openAddSampleModal() {
@@ -1399,18 +1306,6 @@
                 }
             };
 
-            // Reset Form function
-            window.resetForm = function() {
-                document.getElementById('sampleForm').reset(); // Resets all form fields
-                // If you're using Select2, reset it as well
-                $('#customer, #rsm, #opportunity_number').val(null).trigger('change.select2');
-                document.getElementById('description').value = ''; // Clear the description field
-            };
-
-            // Initialize dropdowns with all options
-            updateSelectOptions(document.getElementById('customer'), 'Customer', excelData);
-            updateSelectOptions(document.getElementById('rsm'), 'RSM', excelData);
-            updateSelectOptions(document.getElementById('opportunity_number'), 'Opportunity #', excelData);
 
             // Load existing samples into the table
             // Group samples by 'opportunity_number'
