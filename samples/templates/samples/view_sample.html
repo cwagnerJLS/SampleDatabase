@@ -992,75 +992,6 @@
                 }, this);
             });
 
-            // Update Sample Location function
-            window.updateSampleLocation = function(sampleId, location) {
-                // Get all selected checkboxes
-                const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-
-                // If there are selected checkboxes, update all of them
-                if (selectedCheckboxes.length > 0) {
-                    const idsToUpdate = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
-
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('ids', JSON.stringify(idsToUpdate));
-                    formData.append('location', location);
-
-                    fetch("{% url 'update_sample_location' %}", {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'  // Include cookies
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            console.log('Sample locations updated successfully for selected samples.');
-
-                            // Update the dropdowns in real-time
-                            idsToUpdate.forEach(id => {
-                                const dropdown = document.querySelector(`select[data-sample-id="${id}"]`);
-                                if (dropdown) {
-                                    dropdown.value = location;
-                                }
-                            });
-                        } else {
-                            console.error('Error updating sample locations:', data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-                } else {
-                    // If no checkboxes are selected, update only the single sample whose dropdown was changed
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('sample_id', sampleId);
-                    formData.append('location', location);
-
-                    fetch("{% url 'update_sample_location' %}", {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'  // Include cookies
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            console.log(`Sample location updated successfully for sample ID: ${sampleId}.`);
-
-                            // Update the dropdown in real-time
-                            const dropdown = document.querySelector(`select[data-sample-id="${sampleId}"]`);
-                            if (dropdown) {
-                                dropdown.value = location;
-                            }
-                        } else {
-                            console.error(`Error updating sample location for sample ID: ${sampleId}:`, data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-                }
-            };
 
             // Submit Form function
             window.submitForm = function(event) {
@@ -1362,15 +1293,7 @@
                         <td class="col-description">${sample.description}</td>
                         <td class="col-id">${sample.unique_id}</td>
                         <td class="col-location">
-                            <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
-                                <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                                <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                                <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                                <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                                <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
-                                <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
-                            </select>
+                            ${sample.storage_location || "Choose a location"}
                         </td>
                         <td class="col-pictures">
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">View</button>
@@ -1415,15 +1338,7 @@
                             <td class="col-description">${sample.description}</td>
                             <td class="col-id">${sample.unique_id}</td>
                             <td class="col-location">
-                                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                    <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
-                                    <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                                    <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                                    <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                                    <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                                    <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
-                                    <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
-                                </select>
+                                ${sample.storage_location || "Choose a location"}
                             </td>
                             <td class="col-pictures">
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">View</button>
