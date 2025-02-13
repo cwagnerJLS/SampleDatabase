@@ -699,7 +699,13 @@
     <!-- Include CSRF token and excelData for JavaScript -->
     <script type="text/javascript">
         const csrftoken = '{{ csrf_token }}';
-        const excelData = JSON.parse('{{ excel_data|escapejs }}');
+        const rawExcelData = '{{ excel_data|default:"[]"|escapejs }}';
+        let excelData = [];
+        try {
+            excelData = JSON.parse(rawExcelData);
+        } catch(e) {
+            console.error("Invalid excel_data JSON. Using empty array.");
+        }
         const samples = JSON.parse('{{ samples|escapejs }}');
 
         function downloadDocumentation(sampleId) {
