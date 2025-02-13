@@ -790,77 +790,6 @@
             <button type="button" onclick="validateAndShowModal()">Add Sample</button>
             <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
             <script>
-                // Event listener for the "Remove From Inventory" button
-                document.getElementById('remove-from-inventory-button').addEventListener('click', function() {
-                    removeFromInventory();
-                });
-
-                function removeFromInventory() {
-                    const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                    const idsToRemove = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
-
-                    if (idsToRemove.length === 0) {
-                        alert('No entries selected to remove from inventory.');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to remove the selected entries from inventory?')) {
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('ids', JSON.stringify(idsToRemove));
-
-                    fetch("{% url 'remove_from_inventory' %}", {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'  // Include cookies
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // Remove the rows from the table
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                row.parentNode.removeChild(row);
-                            });
-
-                            // Update group rows if necessary
-                            const affectedGroups = new Set();
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                const oppNumCell = row.querySelector('.col-opportunity');
-                                if (oppNumCell) {
-                                    const oppNum = oppNumCell.textContent.trim();
-                                    affectedGroups.add(oppNum);
-                                }
-                            });
-
-                            affectedGroups.forEach(oppNum => {
-                                const sanitizedOppNum = sanitizeOppNum(oppNum);
-                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                                if (remainingRows.length === 0) {
-                                    // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                    if (groupRow) {
-                                        groupRow.parentNode.removeChild(groupRow);
-                                    }
-                                }
-                            });
-
-                            // Uncheck the "Select All" checkbox
-                            document.getElementById('select-all-select').checked = false;
-
-                            console.log('Entries removed from inventory successfully.');
-                        } else {
-                            console.error('Error removing entries from inventory:', data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-                }
             </script>
             <button type="button" onclick="resetFilters()">Reset</button>
             <button type="button" id="print-all-button">Print</button>
@@ -1093,75 +1022,6 @@
                 return null;
             }
 
-            // Event listener for the print button
-            document.getElementById('print-all-button').addEventListener('click', function() {
-                submitPrint();
-            });
-
-            // Submit Print function
-            window.submitPrint = function() {
-                const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                const idsToPrint = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
-
-                if (idsToPrint.length === 0) {
-                    return;
-                }
-
-                console.log(`Proceeding to print ${idsToPrint.length} entries.`);
-
-                // Define affectedGroups as a Set to keep track of affected opportunity numbers
-                const affectedGroups = new Set();
-                // Collect the opportunity numbers of the selected samples
-                selectedCheckboxes.forEach(checkbox => {
-                    const row = checkbox.closest('tr');
-                    const oppNumCell = row.querySelector('.col-opportunity');
-                    if (oppNumCell) {
-                        const oppNum = oppNumCell.textContent.trim();
-                        affectedGroups.add(oppNum);
-                    }
-                });
-
-                fetch("{% url 'handle_print_request' %}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({'ids': idsToPrint}),
-                    credentials: 'same-origin'  // Include cookies in the request
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw err; });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Labels have been generated successfully
-
-                        // Here you would send this data to your printer
-                        // For each affected group, check if any entries remain
-                        affectedGroups.forEach(oppNum => {
-                            const sanitizedOppNum = sanitizeOppNum(oppNum);
-                            const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                            if (remainingRows.length === 0) {
-                                // No more entries in the group, remove the group row
-                                const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                if (groupRow) {
-                                    groupRow.parentNode.removeChild(groupRow);
-                                }
-                            }
-                        });
-
-                    } else {
-                        console.error('Error generating labels:', data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch Error:', error);
-                });
-            };
 
             // Minimize all groups
             const expandButtons = document.querySelectorAll('.expand-button');
@@ -1174,66 +1034,6 @@
                 });
             });
 
-            // Delete selected entries
-            document.getElementById('delete-all-button').addEventListener('click', function() {
-                const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                const idsToDelete = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
-
-                if (idsToDelete.length === 0) {
-                    alert('No entries selected for deletion.');
-                    return;
-                }
-
-                if (confirm('Are you sure you want to delete the selected entries?')) {
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('ids', JSON.stringify(idsToDelete));
-
-                    // Define affectedGroups
-                    const affectedGroups = new Set();
-
-                    selectedCheckboxes.forEach(checkbox => {
-                        const row = checkbox.closest('tr');
-                        const oppNumCell = row.querySelector('.col-opportunity');
-                        if (oppNumCell) {
-                            const oppNum = oppNumCell.textContent.trim();
-                            affectedGroups.add(oppNum);
-                        }
-                    });
-
-                    fetch("{% url 'delete_samples' %}", {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'  // Include cookies
-                    }).then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                row.parentNode.removeChild(row); // Remove the row from the table
-                            });
-
-                            // For each affected group, check if any entries remain
-                            affectedGroups.forEach(oppNum => {
-                                const sanitizedOppNum = sanitizeOppNum(oppNum);
-                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                                if (remainingRows.length === 0) {
-                                    // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                    if (groupRow) {
-                                        groupRow.parentNode.removeChild(groupRow);
-                                    }
-                                }
-                            });
-
-                            selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
-                            console.log('Entries deleted successfully.');
-                        } else {
-                            console.error('Error deleting entries:', data.error);
-                        }
-                    });
-                }
-            });
 
             // Select All functionality with row highlighting
             selectAllSelectCheckbox.addEventListener('change', function() {
@@ -1455,18 +1255,6 @@
                 document.getElementById('addSampleForm').reset();
             }
 
-            // Validate and Show Modal function
-            window.validateAndShowModal = function() {
-                const customer = document.getElementById('customer').value;
-                const rsm = document.getElementById('rsm').value;
-                const opportunityNumber = document.getElementById('opportunity_number').value;
-
-                if (customer === "" || rsm === "" || opportunityNumber === "") {
-                    alert("Please complete all selections before adding a sample.");
-                } else {
-                    openAddSampleModal();
-                }
-            };
 
             // Close the modal when clicking outside of it
             window.onclick = function(event) {
@@ -1476,59 +1264,6 @@
                 }
             };
 
-            // Reset Filters function
-            window.resetFilters = function() {
-                // Reset dropdown filters
-                document.getElementById('customer').value = "";
-                document.getElementById('rsm').value = "";
-                document.getElementById('opportunity_number').value = "";
-                document.getElementById('description').value = "";
-
-                // Update dropdown options to default
-                updateSelectOptions(document.getElementById('customer'), 'Customer', excelData);
-                updateSelectOptions(document.getElementById('rsm'), 'RSM', excelData);
-                updateSelectOptions(document.getElementById('opportunity_number'), 'Opportunity #', excelData);
-
-                // Reset Select2 elements
-                $('#customer, #rsm, #opportunity_number').val(null).trigger('change.select2');
-
-                // Clear text filters in the table
-                document.getElementById('idFilter').value = "";
-                document.getElementById('dateFilter').value = "";
-                document.getElementById('customerFilter').value = "";
-                document.getElementById('rsmFilter').value = "";
-                document.getElementById('opportunityFilter').value = "";
-                document.getElementById('descriptionFilter').value = "";
-                document.getElementById('locationFilter').value = "";
-
-                // Uncheck all checkboxes in the table and remove highlighting
-                const checkboxes = document.querySelectorAll('input[name="select_checkbox"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                    const row = checkbox.closest('tr');
-                    row.classList.remove('selected-row');
-                });
-
-                // Clear the "Select All" checkbox
-                const selectAllCheckbox = document.getElementById('select-all-select');
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.checked = false;
-                }
-
-                // Reapply filters to clear the table
-                filterTable();
-
-                // Collapse all groups
-                const expandButtons = document.querySelectorAll('.expand-button');
-                expandButtons.forEach(button => {
-                    button.textContent = '+';
-                    const sanitizedOppNum = button.getAttribute('data-opp-num'); // Already sanitized
-                    const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                    groupedRows.forEach(row => {
-                        row.style.display = 'none';
-                    });
-                });
-            };
 
             // Update Select Options function
             function updateSelectOptions(selectElement, key, filteredData, currentValue = "") {
