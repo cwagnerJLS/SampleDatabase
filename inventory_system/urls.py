@@ -10,7 +10,7 @@ from samples import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.create_sample, name='home'),
+    path('', views.view_samples, name='home'),
     path('create_sample/', views.create_sample, name='create_sample'),
     path('view_samples/', views.view_samples, name='view_samples'),
     path('update_sample_location/', views.update_sample_location, name='update_sample_location'),
