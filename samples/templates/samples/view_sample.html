@@ -845,7 +845,6 @@
                     <div id="thumbnailsContainer"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="selectFiles()">Upload</button>
                     <button type="button" onclick="closeUploadModal()">Done</button>
                 </div>
             </div>
@@ -1126,7 +1125,7 @@
                                         </select>
                                     </td>
                                     <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
+                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">View</button>
                                     </td>
                                     <td class="col-documentation">
                                         <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
@@ -1428,7 +1427,7 @@
                                 </select>
                             </td>
                             <td class="col-pictures">
-                                <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
+                                <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">View</button>
                             </td>
                             <td class="col-documentation">
                                 <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
