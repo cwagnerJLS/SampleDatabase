@@ -520,7 +520,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
 
         resp = requests.get(children_url, headers=headers)
         if resp.status_code != 200:
-            logger.error(f\"Failed to get children for folder {parent_id}: {resp.status_code}, {resp.text}\")
+            logger.error(f"Failed to get children for folder {parent_id}: {resp.status_code}, {resp.text}")
             return None
 
         items = resp.json().get(\"value\", [])
