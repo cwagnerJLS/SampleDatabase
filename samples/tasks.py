@@ -307,16 +307,23 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
         greeting_name = NICKNAMES.get(rsm_full_name, first_name)
         subject = f'{opportunity_number} ({customer}) Samples Received'
         
-        url = f"https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/{opportunity_number}/Samples"
+        from .models import Opportunity
+        opp = Opportunity.objects.filter(opportunity_number=opportunity_number).first()
+        if opp and opp.sample_info_url:
+            folder_link = f'<a href="{opp.sample_info_url}">here</a>'
+            folder_message = f"They will be documented and uploaded to the Sample Info folder on SharePoint shortly. You can access it {folder_link}."
+        else:
+            folder_message = (
+                "They will be documented and uploaded to SharePoint shortly. "
+                "However, the Sample Info folder was not found. Please verify that it exists "
+                "in the Opportunity folder on the Sales Engineering drive."
+            )
         body = f"""
-        <html>
-            <body>
-                <p>Hello {greeting_name},</p>
-                <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. They will be documented and uploaded to the opportunity folder on SharePoint shortly. You can access the sample documentation <a href="{url}">here</a>.</p>
-                <p>-Test Lab</p>
-            </body>
-        </html>
-        """
+        <html><body>
+            <p>Hello {greeting_name},</p>
+            <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. {folder_message}</p>
+            <p>-Test Lab</p>
+        </body></html>
         recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
             send_email(subject, body, recipient_email, cc_emails=cc_list)
