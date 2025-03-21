@@ -9,13 +9,9 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = "Finds the 'Sample Info' folder for a given customer/opportunity inside the lettered folder structure."
 
-    def add_arguments(self, parser):
-        parser.add_argument('--customer_name', required=True, help='Customer name (e.g. "Campbell Snacks")')
-        parser.add_argument('--opportunity_number', required=True, help='4-digit opportunity number (e.g. "8076")')
-
     def handle(self, *args, **options):
-        customer_name = options['customer_name']
-        opportunity_number = options['opportunity_number']
+        customer_name = "Campbell Snacks"
+        opportunity_number = "8076"
 
         # Use the first letter of the customer name (uppercase)
         letter_folder_name = customer_name[0].upper()
