@@ -204,7 +204,7 @@ def create_sample(request):
                         customer,
                         total_quantity
                     )
-                )
+                ).delay()
                 logger.debug(f"Email sent to {rsm_full_name} regarding opportunity {opportunity_number}")
             else:
                 logger.debug("Quantity is zero; email not sent.")
