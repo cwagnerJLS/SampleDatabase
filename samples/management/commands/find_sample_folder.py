@@ -13,8 +13,8 @@ class Command(BaseCommand):
     help = "Finds the 'Sample Info' folder for a given customer/opportunity inside the lettered folder structure."
 
     def handle(self, *args, **options):
-        customer_name = "Standard Meat"
-        opportunity_number = "7953"
+        customer_name = "Depalo Foods"
+        opportunity_number = "8163"
 
         # Use the first letter of the customer name (uppercase)
         letter_folder_name = customer_name[0].upper()
