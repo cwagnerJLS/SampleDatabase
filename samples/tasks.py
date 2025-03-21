@@ -554,10 +554,10 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
     try:
         access_token = get_access_token()
         if not access_token:
-            logger.error(\"Failed to acquire access token.\")
+            logger.error("Failed to acquire access token.")
             return
 
-        headers = {\"Authorization\": f\"Bearer {access_token}\"}
+        headers = {"Authorization": f"Bearer {access_token}"}
 
         letter_folder_name = customer_name[0].upper() if customer_name else \"#\"
         letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, headers)
