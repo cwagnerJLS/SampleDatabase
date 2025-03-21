@@ -325,6 +325,7 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
             <p>-Test Lab</p>
         </body></html>
     </body></html>
+    """
     recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
             send_email(subject, body, recipient_email, cc_emails=cc_list)
