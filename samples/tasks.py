@@ -523,10 +523,10 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             logger.error(f"Failed to get children for folder {parent_id}: {resp.status_code}, {resp.text}")
             return None
 
-        items = resp.json().get(\"value\", [])
+        items = resp.json().get("value", [])
         for item in items:
-            if \"folder\" in item and item.get(\"name\", \"\").strip().lower() == folder_name.strip().lower():
-                return item[\"id\"]
+            if "folder" in item and item.get("name", "").strip().lower() == folder_name.strip().lower():
+                return item["id"]
         return None
 
     def find_folder_containing(drive_id, start_folder_id, substring, headers):
