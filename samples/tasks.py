@@ -556,34 +556,34 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
 
         opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, headers)
         if not opp_folder_id:
-            logger.warning(f\"Could not find opportunity folder containing {opportunity_number}\")
+            logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
         info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, \"1 Info\", headers)
         if not info_folder_id:
-            logger.warning(f\"Could not find '1 Info' folder\")
+            logger.warning(f"Could not find '1 Info' folder")
             return
 
         sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, \"Sample Info\", headers)
         if not sample_info_folder_id:
-            logger.warning(f\"Could not find 'Sample Info' folder\")
+            logger.warning(f"Could not find 'Sample Info' folder")
             return
 
         folder_details_url = f\"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}\"
         resp = requests.get(folder_details_url, headers=headers)
         if resp.status_code != 200:
-            logger.warning(f\"Failed to get folder details: {resp.status_code} - {resp.text}\")
+            logger.warning(f"Failed to get folder details: {resp.status_code} - {resp.text}")
             return
 
         folder_data = resp.json()
         web_url = folder_data.get(\"webUrl\", \"\")
         if web_url:
-            logger.info(f\"Found 'Sample Info' folder at: {web_url}\")
+            logger.info(f"Found 'Sample Info' folder at: {web_url}")
             try:
                 opp = Opportunity.objects.get(opportunity_number=opportunity_number)
                 opp.sample_info_url = web_url
                 opp.save()
             except Opportunity.DoesNotExist:
-                logger.error(f\"Opportunity {opportunity_number} does not exist.\")
+                logger.error(f"Opportunity {opportunity_number} does not exist.")
     except Exception as e:
         logger.error(f"Error finding sample info folder for opportunity {opportunity_number}: {e}")
