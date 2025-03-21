@@ -559,17 +559,17 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
-        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, \"1 Info\", headers)
+        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, "1 Info", headers)
         if not info_folder_id:
             logger.warning(f"Could not find '1 Info' folder")
             return
 
-        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, \"Sample Info\", headers)
+        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, "Sample Info", headers)
         if not sample_info_folder_id:
             logger.warning(f"Could not find 'Sample Info' folder")
             return
 
-        folder_details_url = f\"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}\"
+        folder_details_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
         resp = requests.get(folder_details_url, headers=headers)
         if resp.status_code != 200:
             logger.warning(f"Failed to get folder details: {resp.status_code} - {resp.text}")
