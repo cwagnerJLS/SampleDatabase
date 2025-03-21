@@ -549,23 +549,28 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
         headers = {"Authorization": f"Bearer {access_token}"}
 
         letter_folder_name = customer_name[0].upper() if customer_name else "#"
+        logger.debug(f"Looking for letter folder: {letter_folder_name}")
         letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, headers)
         if not letter_folder_id:
+            logger.warning(f"Letter folder '{letter_folder_name}' not found in library.")
             logger.warning(f"Could not find letter folder for {letter_folder_name}")
             return
 
         opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, headers)
         if not opp_folder_id:
+            logger.warning(f"Opportunity folder containing '{opportunity_number}' not found.")
             logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
         info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, "1 Info", headers)
         if not info_folder_id:
+            logger.warning(f"'1 Info' folder not found in opportunity folder.")
             logger.warning(f"Could not find '1 Info' folder")
             return
 
         sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, "Sample Info", headers)
         if not sample_info_folder_id:
+            logger.warning(f"'Sample Info' folder not found in '1 Info' folder.")
             logger.warning(f"Could not find 'Sample Info' folder")
             return
 
