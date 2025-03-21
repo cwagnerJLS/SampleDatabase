@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from samples.CreateOppFolderSharepoint import get_access_token
 
 LIBRARY_ID = "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w"
+MAX_DEPTH = 3
 
 logger = logging.getLogger(__name__)
 
