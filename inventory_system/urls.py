@@ -31,6 +31,8 @@ handler403 = 'samples.views.handle_403'
 handler404 = 'samples.views.handle_404'
 handler500 = 'samples.views.handle_500'
 
+handler405 = 'samples.views.handle_405'
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static('/onedrive_media/', document_root=os.path.join(settings.BASE_DIR, 'OneDrive_Sync'))

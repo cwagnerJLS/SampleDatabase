@@ -728,7 +728,8 @@ def delete_samples(request):
     else:
         logger.error("Invalid request method for delete_samples")
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
-def handle_400(request, exception=None):
+def handle_405(request, exception=None):
+    return JsonResponse({'status': 'error', 'error': 'Method Not Allowed'}, status=405)
     return JsonResponse({'status': 'error', 'error': 'Bad Request'}, status=400)
 
 def handle_403(request, exception=None):
