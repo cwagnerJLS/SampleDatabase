@@ -551,7 +551,7 @@ def generate_label(output_path, qr_data, id_value, date_received, rsm_value, des
     normal_style.leading = font_size * 1.2
     normal_style.alignment = 1
 
-    wrapped_paragraph = Paragraph(description, normal_style)
+    wrapped_paragraph = Par/add agraph(description, normal_style)
     max_text_width = label_width / 2 - 2 * margin
     text_left = margin
     text_top = label_height - margin - mm_to_points(20)  # push below RSM
