@@ -559,7 +559,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        letter_folder_name = customer_name[0].upper() if customer_name else \"#\"
+        letter_folder_name = customer_name[0].upper() if customer_name else "#"
         letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, headers)
         if not letter_folder_id:
             logger.warning(f\"Could not find letter folder for {letter_folder_name}\")
