@@ -530,10 +530,10 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
         return None
 
     def find_folder_containing(drive_id, start_folder_id, substring, headers):
-        search_url = f\"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')\"
+        search_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
         resp = requests.get(search_url, headers=headers)
         if resp.status_code != 200:
-            logger.error(f\"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}\")
+            logger.error(f"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}")
             return None
 
         items = resp.json().get('value', [])
