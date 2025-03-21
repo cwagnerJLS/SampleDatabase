@@ -576,7 +576,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             return
 
         folder_data = resp.json()
-        web_url = folder_data.get(\"webUrl\", \"\")
+        web_url = folder_data.get("webUrl", "")
         if web_url:
             logger.info(f"Found 'Sample Info' folder at: {web_url}")
             try:
