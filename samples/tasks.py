@@ -537,7 +537,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
         for item in items:
             if 'folder' not in item:
                 continue
-            parent_path = item.get('parentReference', {}).get('path', '')
+            parent_path = item.get("parentReference", {}).get("path", "")
             if ':' in parent_path:
                 path_part = parent_path.split(':', 1)[1]
                 depth = path_part.count('/')
