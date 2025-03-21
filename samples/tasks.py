@@ -324,7 +324,8 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
             <p>{quantity} sample(s) for opportunity number {opportunity_number} ({customer}) were received on {date_received}. {folder_message}</p>
             <p>-Test Lab</p>
         </body></html>
-        recipient_email = get_rsm_email(rsm_full_name)
+    </body></html>
+    recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
             send_email(subject, body, recipient_email, cc_emails=cc_list)
             logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
