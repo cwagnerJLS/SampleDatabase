@@ -134,7 +134,6 @@ def create_sample(request):
                     create_documentation_on_sharepoint_task.si(opportunity_number),
                     update_documentation_excels.si(opportunity_number)
                 ).delay()
-                )
 
             else:
                 chain(
