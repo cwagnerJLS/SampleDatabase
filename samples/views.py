@@ -29,10 +29,10 @@ from .tasks import (
     update_documentation_excels,
     restore_documentation_from_archive_task,  # ← Add this
     send_sample_received_email,
-    update_documentation_excels,
     create_sharepoint_folder_task,
     create_documentation_on_sharepoint_task,
-    upload_full_size_images_to_sharepoint
+    upload_full_size_images_to_sharepoint,
+    find_sample_info_folder_url
 )
 import pandas as pd
 from django.views.decorators.http import require_POST
