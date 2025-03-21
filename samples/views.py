@@ -132,7 +132,8 @@ def create_sample(request):
                         description=opportunity.description
                     ),
                     create_documentation_on_sharepoint_task.si(opportunity_number),
-                    update_documentation_excels.si(opportunity_number)
+                    update_documentation_excels.si(opportunity_number),
+                    find_sample_info_folder_url.si(opportunity.customer, opportunity_number)
                 ).delay()
 
             else:

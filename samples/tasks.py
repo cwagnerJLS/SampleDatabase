@@ -500,3 +500,101 @@ def set_opportunity_update_false(opportunity_number):
         logger.info(f"Set opportunity.update to False for {opportunity_number}")
     except Opportunity.DoesNotExist:
         logger.warning(f"Opportunity with number {opportunity_number} not found. Could not set update=False.")
+
+@shared_task
+def find_sample_info_folder_url(customer_name, opportunity_number):
+    logger.info(f"Starting find_sample_info_folder_url for opportunity {opportunity_number} with customer {customer_name}")
+    # Library ID from find_sample_folder.py
+    LIBRARY_ID = "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w"
+
+    from .CreateOppFolderSharepoint import get_access_token
+    from django.conf import settings
+    import requests
+    from .models import Opportunity
+
+    def find_folder_by_name(drive_id, parent_id, folder_name, headers):
+        if parent_id:
+            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_id}/children"
+        else:
+            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+
+        resp = requests.get(children_url, headers=headers)
+        if resp.status_code != 200:
+            logger.error(f\"Failed to get children for folder {parent_id}: {resp.status_code}, {resp.text}\")
+            return None
+
+        items = resp.json().get(\"value\", [])
+        for item in items:
+            if \"folder\" in item and item.get(\"name\", \"\").strip().lower() == folder_name.strip().lower():
+                return item[\"id\"]
+        return None
+
+    def find_folder_containing(drive_id, start_folder_id, substring, headers):
+        search_url = f\"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')\"
+        resp = requests.get(search_url, headers=headers)
+        if resp.status_code != 200:
+            logger.error(f\"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}\")
+            return None
+
+        items = resp.json().get('value', [])
+        MAX_DEPTH = 3
+        for item in items:
+            if 'folder' not in item:
+                continue
+            parent_path = item.get('parentReference', {}).get('path', '')
+            if ':' in parent_path:
+                path_part = parent_path.split(':', 1)[1]
+                depth = path_part.count('/')
+            else:
+                depth = 0
+            if depth <= MAX_DEPTH:
+                return item['id']
+        return None
+
+    try:
+        access_token = get_access_token()
+        if not access_token:
+            logger.error(\"Failed to acquire access token.\")
+            return
+
+        headers = {\"Authorization\": f\"Bearer {access_token}\"}
+
+        letter_folder_name = customer_name[0].upper() if customer_name else \"#\"
+        letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, headers)
+        if not letter_folder_id:
+            logger.warning(f\"Could not find letter folder for {letter_folder_name}\")
+            return
+
+        opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, headers)
+        if not opp_folder_id:
+            logger.warning(f\"Could not find opportunity folder containing {opportunity_number}\")
+            return
+
+        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, \"1 Info\", headers)
+        if not info_folder_id:
+            logger.warning(f\"Could not find '1 Info' folder\")
+            return
+
+        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, \"Sample Info\", headers)
+        if not sample_info_folder_id:
+            logger.warning(f\"Could not find 'Sample Info' folder\")
+            return
+
+        folder_details_url = f\"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}\"
+        resp = requests.get(folder_details_url, headers=headers)
+        if resp.status_code != 200:
+            logger.warning(f\"Failed to get folder details: {resp.status_code} - {resp.text}\")
+            return
+
+        folder_data = resp.json()
+        web_url = folder_data.get(\"webUrl\", \"\")
+        if web_url:
+            logger.info(f\"Found 'Sample Info' folder at: {web_url}\")
+            try:
+                opp = Opportunity.objects.get(opportunity_number=opportunity_number)
+                opp.sample_info_url = web_url
+                opp.save()
+            except Opportunity.DoesNotExist:
+                logger.error(f\"Opportunity {opportunity_number} does not exist.\")
+    except Exception as e:
+        logger.error(f\"Error finding sample info folder for opportunity {opportunity_number}: {e}\")
