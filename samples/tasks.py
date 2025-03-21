@@ -189,11 +189,6 @@ def update_documentation_excels(opportunity_number=None):
                     except Sample.DoesNotExist:
                         logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
 
-                # Remove IDs from Excel first
-                if ids_to_remove:
-                    rows_to_delete = [existing_ids[id_to_remove] for id_to_remove in ids_to_remove]
-                    delete_rows_in_workbook(token, library_id, excel_file_id, worksheet_name, rows_to_delete)
-                    logger.info(f"Removed IDs from rows: {rows_to_delete}")
 
                 # After that, append only the newly added IDs (ids_to_add) at the end
                 if ids_to_add:
@@ -398,20 +393,14 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
             logger.error(f"rclone stderr: {result.stderr}")
         logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to move opportunity directory to archive: {e}")
+        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
         if e.stdout:
             logger.error(f"rclone stdout: {e.stdout}")
         if e.stderr:
             logger.error(f"rclone stderr: {e.stderr}")
         logger.exception(e)
     except Exception as e:
-        logger.error(f"An unexpected error occurred in move_documentation_to_archive_task: {e}")
-        logger.exception(e)
-        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
-        if e.stdout:
-            logger.debug(f"rclone stdout: {e.stdout}")
-        if e.stderr:
-            logger.error(f"rclone stderr: {e.stderr}")
+        logger.error(f"An unexpected error occurred in delete_documentation_from_sharepoint_task: {e}")
         logger.exception(e)
 
 @shared_task
