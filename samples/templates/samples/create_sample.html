@@ -1093,6 +1093,34 @@
                 submitPrint();
             });
 
+            // Event listener for the export button
+            document.getElementById('export-all-button').addEventListener('click', function() {
+                const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
+                if (selectedCheckboxes.length === 0) {
+                    alert('No samples selected for export.');
+                    return;
+                }
+
+                // Gather distinct opportunity numbers from selected checkboxes
+                const oppNums = new Set();
+                selectedCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const oppCell = row.querySelector('.col-opportunity');
+                    if (oppCell) {
+                        oppNums.add(oppCell.textContent.trim());
+                    }
+                });
+
+                // If more than one opp number is found, display alert
+                if (oppNums.size > 1) {
+                    alert('Only one opportunity can be selected at a time for export.');
+                    return;
+                }
+
+                // Proceed with export logic here
+                console.log('Proceed with export for opportunity:', Array.from(oppNums)[0]);
+            });
+
             // Submit Print function
             window.submitPrint = function() {
                 const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
