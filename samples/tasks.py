@@ -586,4 +586,4 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             except Opportunity.DoesNotExist:
                 logger.error(f\"Opportunity {opportunity_number} does not exist.\")
     except Exception as e:
-        logger.error(f\"Error finding sample info folder for opportunity {opportunity_number}: {e}\")
+        logger.error(f"Error finding sample info folder for opportunity {opportunity_number}: {e}")
