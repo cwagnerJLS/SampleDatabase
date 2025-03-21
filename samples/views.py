@@ -134,11 +134,6 @@ def create_sample(request):
                     create_documentation_on_sharepoint_task.si(opportunity_number),
                     update_documentation_excels.si(opportunity_number)
                 ).delay()
-
-                # Call find_sample_info_folder_url separately
-                find_sample_info_folder_url.delay(
-                    opportunity.customer,
-                    opportunity_number
                 )
 
             else:
@@ -196,14 +191,20 @@ def create_sample(request):
             else:
                 total_quantity = 0
 
-            # Send email only if total_quantity > 0
+            # Chain find_sample_info_folder_url + send_sample_received_email only if total_quantity > 0
             if total_quantity > 0:
-                send_sample_received_email.delay(
-                    rsm_full_name,
-                    date_received.strftime('%Y-%m-%d'),
-                    opportunity_number,
-                    customer,
-                    total_quantity
+                chain(
+                    find_sample_info_folder_url.si(
+                        opportunity.customer,
+                        opportunity_number
+                    ),
+                    send_sample_received_email.si(
+                        rsm_full_name,
+                        date_received.strftime('%Y-%m-%d'),
+                        opportunity_number,
+                        customer,
+                        total_quantity
+                    )
                 )
                 logger.debug(f"Email sent to {rsm_full_name} regarding opportunity {opportunity_number}")
             else:
