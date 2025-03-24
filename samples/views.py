@@ -730,6 +730,7 @@ def delete_samples(request):
         return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 def handle_405(request, exception=None):
     return JsonResponse({'status': 'error', 'error': 'Method Not Allowed'}, status=405)
+def handle_400(request, exception=None):
     return JsonResponse({'status': 'error', 'error': 'Bad Request'}, status=400)
 
 def handle_403(request, exception=None):
