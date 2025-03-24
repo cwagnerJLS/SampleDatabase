@@ -595,6 +595,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             try:
                 opp = Opportunity.objects.get(opportunity_number=opportunity_number)
                 opp.sample_info_url = web_url
+                opp.sample_info_id = sample_info_folder_id
                 opp.save()
             except Opportunity.DoesNotExist:
                 logger.error(f"Opportunity {opportunity_number} does not exist.")
