@@ -501,6 +501,118 @@ def set_opportunity_update_false(opportunity_number):
         logger.warning(f"Opportunity with number {opportunity_number} not found. Could not set update=False.")
 
 @shared_task
+def export_documentation(opportunity_number):
+    """
+    Copy all files from the 'Samples' folder in the Test Engineering library
+    into the opportunity’s Sample Info folder (by folder ID) in SharePoint.
+    """
+    logger.info(f"Starting export_documentation for opportunity {opportunity_number}")
+
+    from .models import Opportunity
+    from .CreateOppFolderSharepoint import get_access_token
+    import requests
+    import time
+
+    # REPLACE this with your actual Test Engineering library drive ID
+    TEST_ENGINEERING_LIBRARY_ID = "b!YOUR_TEST_ENGINEERING_LIBRARY_ID_HERE"
+
+    try:
+        # Retrieve the Opportunity record
+        opp = Opportunity.objects.get(opportunity_number=opportunity_number)
+        sample_info_folder_id = opp.sample_info_id  # target folder ID
+        if not sample_info_folder_id:
+            logger.error(f"No sample_info_folder_id for opportunity {opportunity_number}. Aborting export.")
+            return
+
+        access_token = get_access_token()
+        if not access_token:
+            logger.error("Failed to acquire access token; aborting.")
+            return
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+        def find_folder_by_name(drive_id, parent_id, folder_name):
+            """
+            Helper to locate a child folder by exact name under parent_id.
+            Return the item's ID or None if not found.
+            """
+            if parent_id:
+                children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_id}/children"
+            else:
+                children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+
+            resp = requests.get(children_url, headers=headers)
+            if resp.status_code != 200:
+                logger.error(f"Failed listing child items under {parent_id}: {resp.text}")
+                return None
+
+            for item in resp.json().get("value", []):
+                if item.get("name", "").strip().lower() == folder_name.strip().lower() and "folder" in item:
+                    return item["id"]
+            return None
+
+        def list_children(drive_id, folder_id):
+            """List files under the given folder_id."""
+            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{folder_id}/children"
+            resp = requests.get(children_url, headers=headers)
+            if resp.status_code != 200:
+                logger.error(f"Failed listing child items under {folder_id}: {resp.text}")
+                return []
+            return resp.json().get("value", [])
+
+        # 1) Find the folder for this opportunity
+        opp_folder_id = find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, opportunity_number)
+        if not opp_folder_id:
+            logger.warning(f"Opportunity folder '{opportunity_number}' not found in Test Engineering library.")
+            return
+
+        # 2) Find the 'Samples' subfolder inside that opportunity folder
+        samples_folder_id = find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, opp_folder_id, "Samples")
+        if not samples_folder_id:
+            logger.warning(f"No 'Samples' folder found for {opportunity_number} in Test Engineering.")
+            return
+
+        # 3) List the files in 'Samples'
+        files_to_copy = list_children(TEST_ENGINEERING_LIBRARY_ID, samples_folder_id)
+        if not files_to_copy:
+            logger.info(f"No files found in 'Samples' folder for {opportunity_number}. Nothing to copy.")
+            return
+
+        # 4) For each file, issue a copy request to the sample_info_folder_id
+        for file_item in files_to_copy:
+            if "folder" in file_item:
+                # Skip any subfolders (if desired). Otherwise handle recursively.
+                continue
+
+            file_id = file_item["id"]
+            file_name = file_item["name"]
+
+            copy_endpoint = f"https://graph.microsoft.com/v1.0/drives/{TEST_ENGINEERING_LIBRARY_ID}/items/{file_id}/copy"
+            copy_body = {
+                "parentReference": { "id": sample_info_folder_id },
+                "name": file_name
+            }
+
+            logger.info(f"Copying '{file_name}' to folder ID {sample_info_folder_id} ...")
+            copy_resp = requests.post(copy_endpoint, json=copy_body, headers=headers)
+            if copy_resp.status_code not in [200, 202]:
+                logger.error(
+                    f"Failed copy for {file_name}: {copy_resp.status_code} {copy_resp.text}"
+                )
+                continue
+
+            # If copy is async (202), you could poll "Location" header. Simple approach: just wait a moment.
+            if copy_resp.status_code == 202:
+                time.sleep(1)
+                logger.info(f"Request accepted for '{file_name}', continuing...")
+
+        logger.info(f"Completed export_documentation for {opportunity_number}.")
+
+    except Opportunity.DoesNotExist:
+        logger.error(f"No Opportunity found with opportunity_number {opportunity_number}")
+    except Exception as e:
+        logger.error(f"Unhandled error in export_documentation: {e}")
+
+@shared_task
 def find_sample_info_folder_url(customer_name, opportunity_number):
     logger.info(f"Starting find_sample_info_folder_url for opportunity {opportunity_number} with customer {customer_name}")
     # Library ID from find_sample_folder.py
