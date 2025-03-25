@@ -514,7 +514,7 @@ def export_documentation(opportunity_number):
     import time
 
     # REPLACE this with your actual Test Engineering library drive ID
-    TEST_ENGINEERING_LIBRARY_ID = "b!YOUR_TEST_ENGINEERING_LIBRARY_ID_HERE"
+    TEST_ENGINEERING_LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
 
     try:
         # Retrieve the Opportunity record
@@ -588,7 +588,10 @@ def export_documentation(opportunity_number):
 
             copy_endpoint = f"https://graph.microsoft.com/v1.0/drives/{TEST_ENGINEERING_LIBRARY_ID}/items/{file_id}/copy"
             copy_body = {
-                "parentReference": { "id": sample_info_folder_id },
+                "parentReference": {
+                    "driveId": "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w",
+                    "id": sample_info_folder_id
+                },
                 "name": file_name
             }
 
