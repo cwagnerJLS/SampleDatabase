@@ -592,7 +592,8 @@ def export_documentation(opportunity_number):
                     "driveId": "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w",
                     "id": sample_info_folder_id
                 },
-                "name": file_name
+                "name": file_name,
+                "@microsoft.graph.conflictBehavior": "replace"
             }
 
             logger.info(f"Copying '{file_name}' to folder ID {sample_info_folder_id} ...")
