@@ -32,7 +32,8 @@ from .tasks import (
     create_sharepoint_folder_task,
     create_documentation_on_sharepoint_task,
     upload_full_size_images_to_sharepoint,
-    find_sample_info_folder_url
+    find_sample_info_folder_url,
+    export_documentation  # We'll define export_documentation in tasks later
 )
 import pandas as pd
 from django.views.decorators.http import require_POST
@@ -663,6 +664,17 @@ def manage_sample(request, sample_id):
 
     # For GET requests, render the template with the sample data
     return render(request, 'samples/manage_sample.html', {'sample': sample})
+
+def export_documentation_view(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        opportunity_number = data.get('opportunity_number', None)
+        if opportunity_number:
+            export_documentation.delay(opportunity_number)
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'error', 'error': 'No opportunity number'}, status=400)
+    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
 def get_sample_images(request):
     sample_id = request.GET.get('sample_id')

@@ -1117,7 +1117,30 @@
                     return;
                 }
 
-                // Proceed with export logic here
+                const oppNumber = Array.from(oppNums)[0];
+
+                fetch("{% url 'export_documentation' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        'opportunity_number': oppNumber
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Export task triggered successfully');
+                    } else {
+                        console.error('Export error:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                });
                 console.log('Proceed with export for opportunity:', Array.from(oppNums)[0]);
             });
 
