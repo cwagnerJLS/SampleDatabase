@@ -1133,9 +1133,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        console.log('Export task triggered successfully');
+                        alert('Export request submitted successfully. A background job is processing your request!');
                     } else {
                         console.error('Export error:', data.error);
+                        alert('Export error: ' + data.error);
                     }
                 })
                 .catch(error => {
