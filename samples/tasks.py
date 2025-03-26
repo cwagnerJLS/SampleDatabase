@@ -382,50 +382,6 @@ def send_missing_sample_info_folder_email(opportunity_number):
         logger.error(f"No Opportunity found with number {opportunity_number}")
     except Exception as e:
         logger.error(f"Failed to send 'missing sample info folder' email: {e}")
-    from .models import Opportunity, Sample
-    from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP, generate_email
-    import logging
-
-    logger = logging.getLogger(__name__)
-    try:
-        opp = Opportunity.objects.get(opportunity_number=opportunity_number)
-        if not opp.rsm:
-            logger.warning(f"No RSM name for {opportunity_number}; cannot send completed email.")
-            return
-
-        # Gather CC list (similar to send_sample_received_email)
-        apps_eng_values = Sample.objects.filter(opportunity_number=opportunity_number).values_list('apps_eng', flat=True).distinct()
-        cc_list = TEST_LAB_GROUP.copy()
-        for apps_eng_name in apps_eng_values:
-            if apps_eng_name:
-                apps_eng_email = generate_email(apps_eng_name)
-                if apps_eng_email and apps_eng_email not in cc_list:
-                    cc_list.append(apps_eng_email)
-
-        rsm_full_name = opp.rsm
-        first_name = rsm_full_name.split()[0]
-        greeting_name = NICKNAMES.get(rsm_full_name, first_name)
-
-        subject = f"{opportunity_number} ({opp.customer}) Documentation Completed"
-        body = f"""
-        <html><body>
-            <p>Hello {greeting_name},</p>
-            <p>The sample documentation for opportunity {opportunity_number} ({opp.customer}) is now complete. 
-            You can access it <a href="{opp.sample_info_url}">here</a>.</p>
-            <p>-Test Lab</p>
-        </body></html>
-        """
-
-        recipient_email = get_rsm_email(rsm_full_name)
-        if recipient_email:
-            send_email(subject, body, recipient_email, cc_emails=cc_list)
-            logger.info(f"Documentation-completed email sent to {recipient_email} for {opportunity_number}")
-        else:
-            logger.error(f"Unable to generate an email for RSM '{rsm_full_name}'. No email sent.")
-    except Opportunity.DoesNotExist:
-        logger.error(f"No Opportunity found with number {opportunity_number}")
-    except Exception as e:
-        logger.error(f"Failed to send 'documentation completed' email: {e}")
 
 @shared_task
 def send_sample_received_email(rsm_full_name, date_received, opportunity_number, customer, quantity):
