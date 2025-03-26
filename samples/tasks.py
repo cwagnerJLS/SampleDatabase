@@ -367,7 +367,7 @@ def send_missing_sample_info_folder_email(opportunity_number):
         <html><body>
             <p>Hello {greeting_name},</p>
             <p>The Sample Info folder for opportunity {opportunity_number} ({opp.customer}) was not found.
-            Please verify that it exists for this customer.</p>
+            Please verify that it exists for <strong>{opp.customer}</strong>.</p>
             <p>-Test Lab</p>
         </body></html>
         """
