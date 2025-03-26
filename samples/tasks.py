@@ -661,6 +661,7 @@ def export_documentation(opportunity_number):
         sample_info_folder_id = opp.sample_info_id  # target folder ID
         if not sample_info_folder_id:
             logger.error(f"No sample_info_folder_id for opportunity {opportunity_number}. Aborting export.")
+            send_missing_sample_info_folder_email.delay(opportunity_number)
             return
 
         access_token = get_access_token()
