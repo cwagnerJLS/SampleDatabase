@@ -580,6 +580,32 @@ def export_documentation(opportunity_number):
         # 4) For each file, issue a copy request to the sample_info_folder_id
         for file_item in files_to_copy:
             if "folder" in file_item:
+                # Skip subfolders unless you want to recurse
+                continue
+
+            file_id = file_item["id"]
+            file_name = file_item["name"]
+
+            # ──────────────────────────────────────────────────────────────────────────────
+            # ADD THIS BLOCK to remove existing file with the same name from destination:
+            destination_children_url = f"https://graph.microsoft.com/v1.0/drives/b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w/items/{sample_info_folder_id}/children"
+            dest_resp = requests.get(destination_children_url, headers=headers)
+            if dest_resp.status_code == 200:
+                for existing_item in dest_resp.json().get("value", []):
+                    if existing_item.get("name") and existing_item["name"].lower() == file_name.lower():
+                        existing_file_id = existing_item["id"]
+                        delete_url = f"https://graph.microsoft.com/v1.0/drives/b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w/items/{existing_file_id}"
+                        logger.info(f"Deleting existing file '{file_name}' from destination to allow overwrite.")
+                        del_resp = requests.delete(delete_url, headers=headers)
+                        if del_resp.status_code == 204:
+                            logger.info("Existing file deleted successfully.")
+                        else:
+                            logger.warning(f"Failed to delete existing file. Status: {del_resp.status_code}, {del_resp.text}")
+            else:
+                logger.warning(f"Failed to check destination files: {dest_resp.status_code}, {dest_resp.text}")
+            # ──────────────────────────────────────────────────────────────────────────────
+        for file_item in files_to_copy:
+            if "folder" in file_item:
                 # Skip any subfolders (if desired). Otherwise handle recursively.
                 continue
 
