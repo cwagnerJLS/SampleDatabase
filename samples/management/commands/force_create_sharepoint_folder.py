@@ -17,14 +17,20 @@ class Command(BaseCommand):
         if not os.path.exists(excel_file):
             raise CommandError(f"Excel file not found at {excel_file}")
 
-        df = pd.read_excel(excel_file)
-        row = df.loc[df['Opportunity #'] == opportunity_number]
+        # Read the Excel file without assuming headers, then rename columns
+        df = pd.read_excel(excel_file, header=None)
+        # A=Customer, B=Unused, C=OpportunityNumber, D=Description
+        df.columns = ['Customer','_unused','OpportunityNumber','Description']
+
+        # Filter rows matching the opportunity_number in col C
+        row = df.loc[df['OpportunityNumber'] == opportunity_number]
         if row.empty:
             raise CommandError(f"No matching row for '{opportunity_number}' in the Excel file.")
 
-        customer = str(row.iloc[0]['Customer']) if 'Customer' in df.columns else ''
-        rsm = str(row.iloc[0]['RSM']) if 'RSM' in df.columns else ''
-        description = str(row.iloc[0]['Description']) if 'Description' in df.columns else ''
+        customer = str(row.iloc[0]['Customer'])
+        description = str(row.iloc[0]['Description'])
+        # We have no RSM column, so just pass an empty string
+        rsm = ''
         try:
             create_sharepoint_folder(opportunity_number, customer, rsm, description)
             self.stdout.write(
