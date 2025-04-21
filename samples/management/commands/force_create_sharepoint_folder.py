@@ -18,7 +18,7 @@ class Command(BaseCommand):
             raise CommandError(f"Excel file not found at {excel_file}")
 
         df = pd.read_excel(excel_file)
-        row = df.loc[df['Opportunity Number'] == opportunity_number]
+        row = df.loc[df['Opportunity #'] == opportunity_number]
         if row.empty:
             raise CommandError(f"No matching row for '{opportunity_number}' in the Excel file.")
 
