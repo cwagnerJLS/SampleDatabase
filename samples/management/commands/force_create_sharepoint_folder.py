@@ -28,9 +28,9 @@ class Command(BaseCommand):
             raise CommandError(f"No matching row for '{opportunity_number}' in the Excel file.")
 
         customer = str(row.iloc[0]['Customer'])
+        rsm = str(row.iloc[0]['RSM'])
         description = str(row.iloc[0]['Description'])
-        # We have no RSM column, so just pass an empty string
-        rsm = ''
+        apps_eng = str(row.iloc[0]['AppsEng'])  # This is column E, adjust usage as desired
         try:
             create_sharepoint_folder(opportunity_number, customer, rsm, description)
             self.stdout.write(
