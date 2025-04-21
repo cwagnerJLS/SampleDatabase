@@ -19,8 +19,8 @@ class Command(BaseCommand):
 
         # Read the Excel file without assuming headers, then rename columns
         df = pd.read_excel(excel_file, header=None)
-        # A=Customer, B=Unused, C=OpportunityNumber, D=Description
-        df.columns = ['Customer','_unused','OpportunityNumber','Description']
+        # A=Customer, B=RSM, C=OpportunityNumber, D=Description, E=AppsEng
+        df.columns = ['Customer','RSM','OpportunityNumber','Description','AppsEng']
 
         # Filter rows matching the opportunity_number in col C
         row = df.loc[df['OpportunityNumber'] == opportunity_number]
