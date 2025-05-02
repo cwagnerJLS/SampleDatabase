@@ -53,17 +53,6 @@ FIELD_DESCRIPTION = "_ExtendedDescription"  # 'Description' column is '_Extended
 # ------------------------------------------------------------
 # 2) TOKEN ACQUISITION
 # ------------------------------------------------------------
-def load_token_cache():
-    cache = SerializableTokenCache()
-    if os.path.exists(TOKEN_CACHE_FILE):
-        with open(TOKEN_CACHE_FILE, "r") as f:
-            cache.deserialize(f.read())
-    return cache
-
-def save_token_cache(cache):
-    if cache.has_state_changed:
-        with open(TOKEN_CACHE_FILE, "w") as f:
-            f.write(cache.serialize())
 
 def get_access_token():
     """
