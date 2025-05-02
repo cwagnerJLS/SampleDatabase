@@ -25,7 +25,7 @@ def manual_authenticate():
     flow = app.initiate_device_flow(scopes=scopes)
     if "user_code" not in flow:
         raise Exception("Device-flow initiation failed.")
-    self.stdout.write(flow["message"])
+    print(flow["message"])
     result = app.acquire_token_by_device_flow(flow)
     if "access_token" in result:
         return result["access_token"]
