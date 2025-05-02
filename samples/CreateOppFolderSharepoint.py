@@ -40,7 +40,6 @@ def create_subfolder(access_token, parent_folder_id, subfolder_name):
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"      # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"      # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"                 # Service Account Email
-TOKEN_CACHE_FILE = "token_cache.json"
 
 # The Drive (document library) ID
 LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
