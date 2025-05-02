@@ -2,7 +2,8 @@ import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
 import requests
 from django.conf import settings
-from msal import PublicClientApplication, SerializableTokenCache
+from msal import PublicClientApplication
+from samples.token_cache_utils import get_token_cache
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,29 +29,6 @@ CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App C
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"             # Your Service Account Email
 
-TOKEN_CACHE_FILE = "token_cache.json"
-
-def load_token_cache():
-    """
-    Load the token cache from a JSON file.
-    Returns:
-        SerializableTokenCache: The loaded token cache.
-    """
-    cache = SerializableTokenCache()
-    if os.path.exists(TOKEN_CACHE_FILE):
-        with open(TOKEN_CACHE_FILE, "r") as f:
-            cache.deserialize(f.read())
-    return cache
-
-def save_token_cache(cache):
-    """
-    Save the token cache to a JSON file.
-    Args:
-        cache (SerializableTokenCache): The token cache to save.
-    """
-    if cache.has_state_changed:
-        with open(TOKEN_CACHE_FILE, "w") as f:
-            f.write(cache.serialize())
 
 def get_access_token():
     """
@@ -61,7 +39,7 @@ def get_access_token():
         Exception: If token acquisition fails.
     """
     # Load existing token cache
-    cache = load_token_cache()
+    cache = get_token_cache()
 
     # Initialize the MSAL PublicClientApplication
     app = PublicClientApplication(
@@ -79,7 +57,6 @@ def get_access_token():
         result = app.acquire_token_silent(scopes, account=accounts[0])
         if result and "access_token" in result:
             print("Access token acquired from cache.")
-            save_token_cache(app.token_cache)
             return result["access_token"]
 
     # If silent acquisition fails, use Device Code Flow
@@ -94,7 +71,6 @@ def get_access_token():
 
     if "access_token" in result:
         print("Access token acquired via Device Code Flow.")
-        save_token_cache(app.token_cache)
         return result["access_token"]
     else:
         error = result.get("error")

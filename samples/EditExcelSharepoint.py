@@ -1,5 +1,6 @@
 import requests
 from msal import PublicClientApplication
+from samples.token_cache_utils import get_token_cache
 import os
 import logging
 
@@ -134,33 +135,13 @@ def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, s
 CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
 TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
 USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
-TOKEN_CACHE_FILE = "token_cache.json"
-
-def load_token_cache():
-    """
-    Load the token cache from a JSON file.
-    """
-    from msal import SerializableTokenCache
-    cache = SerializableTokenCache()
-    if os.path.exists(TOKEN_CACHE_FILE):
-        with open(TOKEN_CACHE_FILE, "r") as f:
-            cache.deserialize(f.read())
-    return cache
-
-def save_token_cache(cache):
-    """
-    Save the token cache to a JSON file.
-    """
-    if cache.has_state_changed:
-        with open(TOKEN_CACHE_FILE, "w") as f:
-            f.write(cache.serialize())
 
 def get_access_token():
     """
     Acquire an access token using MSAL with a token cache and device code flow.
     """
     logger.debug("Attempting to acquire access token.")
-    cache = load_token_cache()
+    cache = get_token_cache()
 
     app = PublicClientApplication(
         CLIENT_ID,
@@ -176,7 +157,6 @@ def get_access_token():
     if accounts:
         result = app.acquire_token_silent(scopes, account=accounts[0])
         if result and "access_token" in result:
-            save_token_cache(app.token_cache)
             return result["access_token"]
 
     # If silent acquisition fails, initiate device code flow
@@ -188,7 +168,6 @@ def get_access_token():
     result = app.acquire_token_by_device_flow(flow)
 
     if "access_token" in result:
-        save_token_cache(app.token_cache)
         logger.debug("Access token acquired successfully.")
         return result["access_token"]
 

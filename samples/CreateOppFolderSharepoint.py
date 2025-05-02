@@ -1,7 +1,8 @@
 import os
 import requests
 import logging
-from msal import PublicClientApplication, SerializableTokenCache
+from msal import PublicClientApplication
+from samples.token_cache_utils import get_token_cache
 from django.conf import settings
 
 # Define the path to Hyperlinks.csv using BASE_DIR
@@ -68,7 +69,7 @@ def get_access_token():
     """
     Acquire an access token for Microsoft Graph using MSAL device flow.
     """
-    cache = load_token_cache()
+    cache = get_token_cache()
     app = PublicClientApplication(
         client_id=CLIENT_ID,
         authority=f"https://login.microsoftonline.com/{TENANT_ID}",
@@ -81,7 +82,6 @@ def get_access_token():
     if accounts:
         result = app.acquire_token_silent(scopes, account=accounts[0])
         if result and "access_token" in result:
-            save_token_cache(app.token_cache)
             return result["access_token"]
 
     # Fallback to device flow
@@ -92,7 +92,6 @@ def get_access_token():
     print(flow["message"])
     result = app.acquire_token_by_device_flow(flow)
     if "access_token" in result:
-        save_token_cache(app.token_cache)
         return result["access_token"]
 
     raise Exception("Authentication failed.")
