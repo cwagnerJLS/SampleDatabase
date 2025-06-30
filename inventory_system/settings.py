@@ -21,6 +21,8 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.6.91']
 # Ensure Django does not append slashes automatically
 APPEND_SLASH = True
 
+#Test
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
