@@ -1,0 +1,27 @@
+[Unit]
+Description=Django Sample Database Server (Gunicorn)
+After=network.target
+
+[Service]
+Type=forking
+User=jls
+Group=jls
+WorkingDirectory=/home/jls/Desktop/SampleDatabase
+Environment="PATH=/home/jls/Desktop/SampleDatabase/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/jls/Desktop/SampleDatabase/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 inventory_system.wsgi:application --daemon --pid /home/jls/Desktop/SampleDatabase/gunicorn.pid
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PIDFile=/home/jls/Desktop/SampleDatabase/gunicorn.pid
+
+# Restart configuration
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=append:/home/jls/Desktop/SampleDatabase/django.log
+StandardError=append:/home/jls/Desktop/SampleDatabase/django_error.log
+
+[Install]
+WantedBy=multi-user.target

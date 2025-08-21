@@ -7,9 +7,11 @@ from django.conf.urls.static import static
 from django.urls import re_path
 from django.views.static import serve
 from samples import views
+from samples.health import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health_check, name='health_check'),
     path('', views.view_samples, name='home'),
     path('create_sample/', views.create_sample, name='create_sample'),
     path('view_samples/', views.view_samples, name='view_samples'),
