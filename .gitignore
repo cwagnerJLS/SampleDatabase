@@ -31,3 +31,9 @@ token_cache.json
 
 # === Ignore specific file ===
 Apps_Database.xlsx
+
+# === Runtime/PID files ===
+*.pid
+
+# === Claude Code instructions ===
+CLAUDE.md
