@@ -4,6 +4,29 @@ import os
 import logging
 
 
+def sync_to_sharepoint(backup_folder):
+    """Sync local backup folder to SharePoint, making it an exact mirror"""
+    try:
+        result = subprocess.run([
+            '/usr/bin/rclone', 'sync',
+            backup_folder,
+            'TestLabSamples:_Backups',
+            '--delete-during'  # Remove files from SharePoint that aren't in local folder
+        ], 
+        check=True, 
+        capture_output=True, 
+        text=True)
+        
+        if result.stdout:
+            logging.debug(f"rclone stdout: {result.stdout}")
+        logging.info("Successfully synced backups to SharePoint")
+        
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to sync to SharePoint: {e.stderr}")
+    except Exception as e:
+        logging.error(f"Unexpected error syncing to SharePoint: {e}")
+
+
 def backup_database():
     # Define paths
     local_db_path = '/home/jls/Desktop/SampleDatabase/db.sqlite3'
@@ -30,6 +53,9 @@ def backup_database():
 
     # Optional: Remove old backups locally (e.g., older than 7 days)
     cleanup_local_backups(backup_folder, days=7)
+    
+    # Sync the local backup folder to SharePoint (mirrors the folder exactly)
+    sync_to_sharepoint(backup_folder)
 
 
 def cleanup_local_backups(folder, days=7):
