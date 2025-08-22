@@ -19,6 +19,12 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from .models import Sample, SampleImage, Opportunity
 from .label_utils import generate_label, generate_qr_code, mm_to_points
+from .services.opportunity_service import OpportunityService
+from .sharepoint_config import (
+    get_documentation_template_path,
+    get_apps_database_path,
+    THUMBNAIL_SIZE
+)
 from .tasks import (
     delete_image_from_sharepoint,
     update_documentation_excels,
@@ -94,24 +100,14 @@ def create_sample(request):
             if created:
                 pass
             else:
-                # Update existing Opportunity fields if new data is provided
-                updated = False
-                if customer and customer != opportunity.customer:
-                    opportunity.customer = customer
-                    updated = True
-                if rsm_full_name and rsm_full_name != opportunity.rsm:
-                    opportunity.rsm = rsm_full_name
-                    updated = True
-                if description and description != opportunity.description:
-                    opportunity.description = description
-                    updated = True
-                if date_received and date_received != opportunity.date_received:
-                    opportunity.date_received = date_received
-                    updated = True
-                if updated:
-                    opportunity.update = True
-                    opportunity.save()
-                    logger.debug(f"Opportunity {opportunity_number} updated with new data")
+                # Update existing Opportunity fields using the service
+                updated = OpportunityService.update_opportunity_fields(
+                    opportunity, 
+                    customer=customer,
+                    rsm=rsm_full_name,
+                    description=description,
+                    date_received=date_received
+                )
 
             # Save the Opportunity instance if it was created or updated
             if created or updated:
@@ -155,31 +151,14 @@ def create_sample(request):
                     created_samples.append(sample)
                 logger.debug(f"Created samples: {created_samples}")
 
-                # Update sample_ids field for the Opportunity
-
-                # Retrieve existing sample_ids from Opportunity
-                existing_sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
-
-                # Append new sample IDs to existing sample_ids, ensuring no duplicates
-                for sample in created_samples:
-                    if str(sample.unique_id) not in existing_sample_ids:
-                        existing_sample_ids.append(str(sample.unique_id))
-
-                # Update the sample_ids field in Opportunity
-                opportunity.sample_ids = ','.join(existing_sample_ids)
-                opportunity.update = True
-                opportunity.save()
+                # Update sample_ids field for the Opportunity using the service
+                sample_ids_to_add = [str(sample.unique_id) for sample in created_samples]
+                OpportunityService.add_sample_ids(opportunity, sample_ids_to_add)
             else:
                 logger.debug("Quantity is zero; no samples created.")
                 # Clear sample_ids for the Opportunity
                 opportunity.sample_ids = ''
                 opportunity.save()
-
-            # Calculate the total quantity
-            if created_samples:
-                total_quantity = sum(sample.quantity for sample in created_samples)
-            else:
-                total_quantity = 0
 
             # Calculate the total quantity
             if created_samples:
@@ -237,20 +216,20 @@ def create_sample(request):
         opportunity_numbers = Opportunity.objects.values_list('opportunity_number', flat=True)
 
 
-        # Path to the DocumentationTemplate.xlsm file
-        template_file = os.path.join(settings.BASE_DIR, 'OneDrive_Sync', '_Templates', 'DocumentationTemplate.xlsm')
-        if not os.path.exists(template_file):
-            logger.error(f"Documentation template not found at: {template_file}")
+        # Check template file exists
+        documentation_template_path = get_documentation_template_path()
+        if not os.path.exists(documentation_template_path):
+            logger.error(f"Documentation template not found at: {documentation_template_path}")
 
-        # Define excel_file before the loop
-        excel_file = os.path.join(settings.BASE_DIR, 'Apps_Database.xlsx')
-        if not os.path.exists(excel_file):
-            logger.error(f"Excel file not found at {excel_file}")
+        # Check Excel database file exists
+        apps_database_path = get_apps_database_path()
+        if not os.path.exists(apps_database_path):
+            logger.error(f"Excel file not found at {apps_database_path}")
             return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
 
 
-        # Now excel_file is defined, so you can read it
-        df = pd.read_excel(excel_file)
+        # Read the Excel database
+        df = pd.read_excel(apps_database_path)
 
         # Get unique customers and RSMs
         unique_customers = sorted(df['Customer'].dropna().unique())
@@ -314,7 +293,7 @@ def upload_files(request):
                 image = image.convert('RGB')  # Ensure image is in RGB mode
 
                 # Create a thumbnail
-                max_size = (200, 200)  # Set the desired thumbnail size
+                max_size = THUMBNAIL_SIZE  # Use centralized thumbnail size configuration
                 image.thumbnail(max_size, resample=Image.LANCZOS)
 
                 # Save the thumbnail to an in-memory file

@@ -8,6 +8,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from .sharepoint_config import LABEL_WIDTH_MM, LABEL_HEIGHT_MM
 
 
 def mm_to_points(mm_value):
@@ -39,8 +40,8 @@ def generate_qr_code(data):
 
 def generate_label(output_path, qr_data, id_value, date_received, rsm_value, description):
     """Generate a PDF label with QR code and sample information."""
-    label_width = mm_to_points(101.6)
-    label_height = mm_to_points(50.8)
+    label_width = mm_to_points(LABEL_WIDTH_MM)
+    label_height = mm_to_points(LABEL_HEIGHT_MM)
     c = canvas.Canvas(output_path, pagesize=(label_width, label_height))
 
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=1)

@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 from django.db import models
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+from samples.services.opportunity_service import OpportunityService
 
 class Opportunity(models.Model):
     opportunity_number = models.CharField(max_length=255, unique=True)
@@ -107,14 +108,11 @@ class Sample(models.Model):
         if created:
             opportunity.new = True  # Set 'new' to True
             opportunity.sample_ids = str(self.unique_id)
+            opportunity.update = True
+            opportunity.save()
         else:
-            # Append the new sample's unique_id to sample_ids
-            sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
-            if str(self.unique_id) not in sample_ids:
-                sample_ids.append(str(self.unique_id))
-                opportunity.sample_ids = ','.join(sample_ids)
-        opportunity.update = True  # Set the 'update' field to True
-        opportunity.save()
+            # Use the service to add the sample ID
+            OpportunityService.add_sample_ids(opportunity, [str(self.unique_id)])
 
     def delete(self, *args, update_opportunity=True, **kwargs):
         opportunity_number = self.opportunity_number  # Store before deletion
@@ -128,23 +126,11 @@ class Sample(models.Model):
             try:
                 opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
 
-                # Retrieve the current sample_ids from the Opportunity
-                sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+                # Use the service to remove the sample ID
+                OpportunityService.remove_sample_id(opportunity, sample_unique_id)
 
-                # Remove the unique_id of the deleted sample from the list
-                if sample_unique_id in sample_ids:
-                    sample_ids.remove(sample_unique_id)
-
-                # Update the sample_ids field
-                opportunity.sample_ids = ','.join(sample_ids)
-
-                # Mark the opportunity as needing an update
-                opportunity.update = True
-
-                opportunity.save()
-
-                # If no samples remain, proceed to archive the opportunity
-                if not sample_ids:
+                # Check if the opportunity should be archived
+                if OpportunityService.should_archive(opportunity):
 
                     # Import tasks locally to avoid circular import
                     from .tasks import (

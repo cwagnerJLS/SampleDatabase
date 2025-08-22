@@ -91,6 +91,44 @@ def get_authority_url():
         raise ValueError("Azure Authority URL is not configured. Check AZURE_TENANT_ID environment variable.")
     return AZURE_AUTHORITY
 
+# File Paths and Templates
+# -------------------------
+def get_documentation_template_path():
+    """Get the documentation template path (lazy evaluation for Django settings)."""
+    from django.conf import settings
+    return os.path.join(
+        settings.BASE_DIR, 
+        'OneDrive_Sync', 
+        '_Templates', 
+        'DocumentationTemplate.xlsm'
+    )
+
+def get_apps_database_path():
+    """Get the apps database path (lazy evaluation for Django settings)."""
+    from django.conf import settings
+    return os.path.join(
+        settings.BASE_DIR, 
+        'Apps_Database.xlsx'
+    )
+
+# SharePoint Folder Structure
+SHAREPOINT_FOLDERS = {
+    'info': '1 Info',
+    'sample_info': 'Sample Info',
+    'archive': '_Archive',
+    'templates': '_Templates'
+}
+
+# Label Configuration
+LABEL_WIDTH_MM = float(os.getenv('LABEL_WIDTH_MM', '101.6'))
+LABEL_HEIGHT_MM = float(os.getenv('LABEL_HEIGHT_MM', '50.8'))
+
+# Image Configuration
+THUMBNAIL_SIZE = (
+    int(os.getenv('THUMBNAIL_WIDTH', '200')),
+    int(os.getenv('THUMBNAIL_HEIGHT', '200'))
+)
+
 def is_configured():
     """Check if all required configuration is present."""
     required_vars = [

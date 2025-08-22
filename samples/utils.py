@@ -3,19 +3,16 @@ from django.conf import settings
 import pandas as pd
 import subprocess
 import logging
+from .sharepoint_config import get_documentation_template_path
 
 def create_documentation_on_sharepoint(opportunity_number):
     logger = logging.getLogger(__name__)
 
     # Construct the path to the documentation file on SharePoint
     remote_file_path = f"TestLabSamples:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
-    # Use an absolute path for the template file
-    template_file_path = os.path.join(
-        settings.BASE_DIR,
-        'OneDrive_Sync',
-        '_Templates',
-        'DocumentationTemplate.xlsm'
-    )
+    
+    # Use centralized template file path
+    template_file_path = get_documentation_template_path()
 
     # Add a check to confirm the template file exists
     if not os.path.exists(template_file_path):

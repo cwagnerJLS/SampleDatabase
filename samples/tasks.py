@@ -12,7 +12,8 @@ from .sharepoint_config import (
     TEST_ENGINEERING_LIBRARY_ID,
     SALES_ENGINEERING_LIBRARY_ID,
     GRAPH_API_URL,
-    get_library_url
+    get_library_url,
+    SHAREPOINT_FOLDERS
 )
 
 from .models import SampleImage
@@ -814,13 +815,13 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
-        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, "1 Info", headers)
+        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], headers)
         if not info_folder_id:
             logger.warning(f"'1 Info' folder not found in opportunity folder.")
             logger.warning(f"Could not find '1 Info' folder")
             return
 
-        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, "Sample Info", headers)
+        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], headers)
         if not sample_info_folder_id:
             logger.warning(f"'Sample Info' folder not found in '1 Info' folder.")
             logger.warning(f"Could not find 'Sample Info' folder")
