@@ -1,31 +1,51 @@
 #!/usr/bin/env python3
 
 import os
-from msal import PublicClientApplication
+import sys
+from pathlib import Path
 
-# Configuration
-CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
-TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
+# Add the project root to path and setup Django
+sys.path.append(str(Path(__file__).resolve().parent))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
+
+import django
+django.setup()
+
+from msal import PublicClientApplication
 from samples.token_cache_utils import get_token_cache
+from samples.sharepoint_config import (
+    AZURE_CLIENT_ID as CLIENT_ID,
+    AZURE_TENANT_ID as TENANT_ID,
+    AZURE_USERNAME as USERNAME,
+    AZURE_AUTHORITY,
+    SHAREPOINT_SCOPES,
+    is_configured
+)
 
 
 def manual_authenticate():
     """
     Authenticate manually and update the token cache if successful.
     """
+    # Check if environment variables are configured
+    if not is_configured():
+        print("ERROR: Required environment variables are not set!")
+        print("Please ensure all required environment variables are configured.")
+        print("See .env.example for the list of required variables.")
+        return None
+    
     # Initialize token cache
     cache = get_token_cache()
 
     # Create the MSAL application instance
     app = PublicClientApplication(
         CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        authority=AZURE_AUTHORITY,
         token_cache=cache
     )
 
     # Required scopes for accessing Microsoft Graph resources
-    scopes = ["Sites.ReadWrite.All", "Files.ReadWrite.All"]
+    scopes = SHAREPOINT_SCOPES
 
     # Attempt silent token acquisition first
     accounts = app.get_accounts(username=USERNAME)

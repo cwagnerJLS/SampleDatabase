@@ -8,10 +8,14 @@ import subprocess
 import shutil
 import os
 from django.conf import settings
+from .sharepoint_config import (
+    TEST_ENGINEERING_LIBRARY_ID,
+    SALES_ENGINEERING_LIBRARY_ID,
+    GRAPH_API_URL,
+    get_library_url
+)
 
 from .models import SampleImage
-
-# test
 
 from .EditExcelSharepoint import (
     get_access_token,
@@ -90,7 +94,7 @@ def update_documentation_excels(opportunity_number=None):
             send_missing_sample_info_folder_email.delay(opportunity_number)
             return
 
-        library_id = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
+        library_id = TEST_ENGINEERING_LIBRARY_ID
         logger.debug(f"Using library_id: {library_id}")
 
         if opportunity_number:
@@ -609,7 +613,6 @@ def export_documentation(opportunity_number):
     import time
 
     # REPLACE this with your actual Test Engineering library drive ID
-    TEST_ENGINEERING_LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
 
     try:
         # Retrieve the Opportunity record
@@ -632,9 +635,9 @@ def export_documentation(opportunity_number):
             Return the item's ID or None if not found.
             """
             if parent_id:
-                children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_id}/children"
+                children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
             else:
-                children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+                children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
 
             resp = requests.get(children_url, headers=headers)
             if resp.status_code != 200:
@@ -648,7 +651,7 @@ def export_documentation(opportunity_number):
 
         def list_children(drive_id, folder_id):
             """List files under the given folder_id."""
-            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{folder_id}/children"
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{folder_id}/children"
             resp = requests.get(children_url, headers=headers)
             if resp.status_code != 200:
                 logger.error(f"Failed listing child items under {folder_id}: {resp.text}")
@@ -684,13 +687,13 @@ def export_documentation(opportunity_number):
 
             # ──────────────────────────────────────────────────────────────────────────────
             # ADD THIS BLOCK to remove existing file with the same name from destination:
-            destination_children_url = f"https://graph.microsoft.com/v1.0/drives/b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w/items/{sample_info_folder_id}/children"
+            destination_children_url = f"{GRAPH_API_URL}/drives/{SALES_ENGINEERING_LIBRARY_ID}/items/{sample_info_folder_id}/children"
             dest_resp = requests.get(destination_children_url, headers=headers)
             if dest_resp.status_code == 200:
                 for existing_item in dest_resp.json().get("value", []):
                     if existing_item.get("name") and existing_item["name"].lower() == file_name.lower():
                         existing_file_id = existing_item["id"]
-                        delete_url = f"https://graph.microsoft.com/v1.0/drives/b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w/items/{existing_file_id}"
+                        delete_url = f"{GRAPH_API_URL}/drives/{SALES_ENGINEERING_LIBRARY_ID}/items/{existing_file_id}"
                         logger.info(f"Deleting existing file '{file_name}' from destination to allow overwrite.")
                         del_resp = requests.delete(delete_url, headers=headers)
                         if del_resp.status_code == 204:
@@ -708,10 +711,10 @@ def export_documentation(opportunity_number):
             file_id = file_item["id"]
             file_name = file_item["name"]
 
-            copy_endpoint = f"https://graph.microsoft.com/v1.0/drives/{TEST_ENGINEERING_LIBRARY_ID}/items/{file_id}/copy"
+            copy_endpoint = f"{GRAPH_API_URL}/drives/{TEST_ENGINEERING_LIBRARY_ID}/items/{file_id}/copy"
             copy_body = {
                 "parentReference": {
-                    "driveId": "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w",
+                    "driveId": SALES_ENGINEERING_LIBRARY_ID,
                     "id": sample_info_folder_id
                 },
                 "name": file_name,
@@ -743,7 +746,7 @@ def export_documentation(opportunity_number):
 def find_sample_info_folder_url(customer_name, opportunity_number):
     logger.info(f"Starting find_sample_info_folder_url for opportunity {opportunity_number} with customer {customer_name}")
     # Library ID from find_sample_folder.py
-    LIBRARY_ID = "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w"
+    LIBRARY_ID = SALES_ENGINEERING_LIBRARY_ID
 
     from .CreateOppFolderSharepoint import get_access_token
     from django.conf import settings
@@ -752,9 +755,9 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
 
     def find_folder_by_name(drive_id, parent_id, folder_name, headers):
         if parent_id:
-            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_id}/children"
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
         else:
-            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
 
         resp = requests.get(children_url, headers=headers)
         if resp.status_code != 200:
@@ -768,7 +771,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
         return None
 
     def find_folder_containing(drive_id, start_folder_id, substring, headers):
-        search_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
+        search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
         resp = requests.get(search_url, headers=headers)
         if resp.status_code != 200:
             logger.error(f"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}")
@@ -823,7 +826,7 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             logger.warning(f"Could not find 'Sample Info' folder")
             return
 
-        folder_details_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
+        folder_details_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
         resp = requests.get(folder_details_url, headers=headers)
         if resp.status_code != 200:
             logger.warning(f"Failed to get folder details: {resp.status_code} - {resp.text}")

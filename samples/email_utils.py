@@ -4,6 +4,24 @@ import requests
 from django.conf import settings
 from msal import PublicClientApplication
 from samples.token_cache_utils import get_token_cache
+from samples.sharepoint_config import (
+    AZURE_CLIENT_ID as CLIENT_ID,
+    AZURE_TENANT_ID as TENANT_ID,
+    AZURE_USERNAME as USERNAME,
+    AZURE_AUTHORITY,
+    EMAIL_SENDER,
+    EMAIL_DOMAIN,
+    TEST_MODE_EMAIL,
+    TEST_LAB_GROUP_EMAILS,
+    EMAIL_SCOPES,
+    GRAPH_API_URL,
+    is_configured
+)
+from samples.exceptions import (
+    EmailAuthenticationError,
+    EmailSendError,
+    ConfigurationError
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,19 +33,8 @@ NICKNAMES = {
     # Add other mappings as needed
 }
 
-# Test Lab Group emails
-TEST_LAB_GROUP = [
-    "cwagner@jlsautomation.com",
-    "ndekker@jlsautomation.com",
-    "cwentz@jlsautomation.com",
-    "mmooney@jlsautomation.com",
-    "kharding@jlsautomation.com",
-    "msmith@jlsautomation.com",
-    # Add other emails as needed in the future
-]
-CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"         # Your Azure AD App Client ID
-TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"         # Your Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"             # Your Service Account Email
+# Test Lab Group emails - now loaded from config
+TEST_LAB_GROUP = TEST_LAB_GROUP_EMAILS
 
 
 def get_access_token():
@@ -38,13 +45,17 @@ def get_access_token():
     Raises:
         Exception: If token acquisition fails.
     """
+    if not is_configured():
+        logger.error("SharePoint configuration is not properly set. Check environment variables.")
+        raise ConfigurationError("Required environment variables are not set")
+    
     # Load existing token cache
     cache = get_token_cache()
 
     # Initialize the MSAL PublicClientApplication
     app = PublicClientApplication(
         CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        authority=AZURE_AUTHORITY,
         token_cache=cache
     )
 
@@ -62,7 +73,7 @@ def get_access_token():
     # If silent acquisition fails, use Device Code Flow
     flow = app.initiate_device_flow(scopes=scopes)
     if "user_code" not in flow:
-        raise Exception("Failed to create device flow. Check your app registration.")
+        raise EmailAuthenticationError("Failed to create device flow. Check your app registration.")
 
     print(flow["message"])  # Instructs the user to authenticate
 
@@ -75,7 +86,7 @@ def get_access_token():
     else:
         error = result.get("error")
         error_description = result.get("error_description")
-        raise Exception(f"Could not obtain access token: {error} - {error_description}")
+        raise EmailAuthenticationError(f"Could not obtain access token: {error} - {error_description}")
 
 def send_email(subject, body, recipient_email, cc_emails=None):
     """
@@ -89,12 +100,12 @@ def send_email(subject, body, recipient_email, cc_emails=None):
 
     # Check if TEST_MODE is enabled
     if getattr(settings, 'TEST_MODE', False):
-        logger.info("TEST_MODE is enabled. Overriding recipient email to cwagner@jlsautomation.com.")
-        recipient_email = 'cwagner@jlsautomation.com'
+        logger.info(f"TEST_MODE is enabled. Overriding recipient email to {TEST_MODE_EMAIL}.")
+        recipient_email = TEST_MODE_EMAIL
         cc_emails = None  # Do not CC Test Lab group in TEST_MODE
 
     # Define the endpoint for sending mail
-    endpoint = f"https://graph.microsoft.com/v1.0/users/{USERNAME}/sendMail"
+    endpoint = f"{GRAPH_API_URL}/users/{USERNAME}/sendMail"
 
     # Set up the headers with the access token
     headers = {
@@ -126,7 +137,7 @@ def send_email(subject, body, recipient_email, cc_emails=None):
             ] if cc_emails else [],
             "from": {  # Specify the 'from' address
                 "emailAddress": {
-                    "address": "test-engineering@JLSAutomation.com"  # Shared Mailbox Address
+                    "address": EMAIL_SENDER  # Shared Mailbox Address from config
                 }
             }
         }
@@ -137,9 +148,10 @@ def send_email(subject, body, recipient_email, cc_emails=None):
 
     # Check the response status
     if response.status_code == 202:
-        print("Email sent successfully!")
+        logger.info("Email sent successfully!")
     else:
-        print(f"Failed to send email: {response.status_code}, {response.text}")
+        logger.error(f"Failed to send email: {response.status_code}, {response.text}")
+        raise EmailSendError(f"Failed to send email: HTTP {response.status_code} - {response.text}")
 
 def generate_email(full_name):
     # List of common suffixes to ignore
@@ -161,7 +173,7 @@ def generate_email(full_name):
     last_name = parts[-1]
 
     # Construct the email address
-    email = f"{first_name[0].lower()}{last_name.lower()}@jlsautomation.com"
+    email = f"{first_name[0].lower()}{last_name.lower()}@{EMAIL_DOMAIN}"
     return email
 
 def get_rsm_email(rsm_full_name):
@@ -177,4 +189,4 @@ def get_rsm_email(rsm_full_name):
         return email
     else:
         # Return a default email or handle the error as needed
-        return 'cwagner@jlsautomation.com'
+        return TEST_MODE_EMAIL  # Use test mode email as fallback

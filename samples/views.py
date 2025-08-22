@@ -1,10 +1,38 @@
 import logging
 import json
 import subprocess
+import os
+import base64
+import pandas as pd
+import qrcode
 from celery import chain
 from datetime import datetime
+from io import BytesIO
+from PIL import Image
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.urls import reverse
+from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
+from django.core.files.base import ContentFile
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from .models import Sample, SampleImage, Opportunity
+from .label_utils import generate_label, generate_qr_code, mm_to_points
+from .tasks import (
+    delete_image_from_sharepoint,
+    update_documentation_excels,
+    restore_documentation_from_archive_task,
+    send_sample_received_email,
+    create_sharepoint_folder_task,
+    create_documentation_on_sharepoint_task,
+    upload_full_size_images_to_sharepoint,
+    find_sample_info_folder_url,
+    export_documentation
+)
+
+# Configure logging
+logger = logging.getLogger('samples')
 
 def view_samples(request):
     # Convert samples to list of dicts, then JSON-encode.
@@ -18,38 +46,6 @@ def view_samples(request):
     return render(request, 'samples/view_sample.html', {
         'samples': json.dumps(samples_list, cls=DjangoJSONEncoder),
     })
-from django.urls import reverse
-from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
-from django.core.files.base import ContentFile
-import os
-from .models import Sample, SampleImage, Opportunity
-from .tasks import (
-    delete_image_from_sharepoint,
-    update_documentation_excels,
-    restore_documentation_from_archive_task,  # ← Add this
-    send_sample_received_email,
-    create_sharepoint_folder_task,
-    create_documentation_on_sharepoint_task,
-    upload_full_size_images_to_sharepoint,
-    find_sample_info_folder_url,
-    export_documentation  # We'll define export_documentation in tasks later
-)
-import pandas as pd
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-import base64
-from PIL import Image
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-from reportlab.platypus import Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from io import BytesIO
-import qrcode
-from django.http import JsonResponse
-
-# Configure logging
-logger = logging.getLogger('samples')
 
 def create_sample(request):
     logger.debug("Entered create_sample view")
@@ -455,120 +451,6 @@ def remove_from_inventory(request):
     logger.error("Invalid request method for remove_from_inventory")
     return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
 
-def generate_qr_code(data):
-    # Create a QR code instance
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    # Add data to the QR code
-    qr.add_data(data)
-    qr.make(fit=True)
-
-    # Create an image from the QR code instance
-    img = qr.make_image(fill_color="black", back_color="white")
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-
-    # Encode the image to base64 string
-    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
-    return img_str
-
-def mm_to_points(mm_value):
-    return mm_value * (72 / 25.4)
-
-
-def generate_label(output_path, qr_data, id_value, date_received, rsm_value, description):
-    label_width = mm_to_points(101.6)
-    label_height = mm_to_points(50.8)
-    c = canvas.Canvas(output_path, pagesize=(label_width, label_height))
-
-    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=1)
-    qr.add_data(qr_data)
-    qr.make(fit=True)
-
-    img = qr.make_image(fill='black', back_color='white')
-    img_buffer = BytesIO()
-    img.save(img_buffer, format='PNG')
-    img_buffer.seek(0)
-    img_reader = ImageReader(img_buffer)
-
-    margin = mm_to_points(5)
-    qr_x = label_width / 2 + margin
-    qr_y = margin
-    qr_width = label_width / 2 - 2 * margin
-    qr_height = label_height - 2 * margin
-
-    c.drawImage(img_reader, qr_x, qr_y, qr_width, qr_height)
-
-    font_bold = "Helvetica-Bold"
-    font_regular = "Helvetica"
-    font_size = mm_to_points(4)
-
-    id_text = "ID: "
-    c.setFont(font_bold, font_size)
-    id_text_width = c.stringWidth(id_text)
-    c.setFont(font_regular, font_size)
-    id_value_width = c.stringWidth(id_value)
-    total_id_text_width = id_text_width + id_value_width
-
-    right_shift_offset = mm_to_points(2)
-    left_half_width = (label_width / 2) - (2 * margin)
-    start_x_id = margin + (left_half_width - total_id_text_width) / 2 + right_shift_offset
-
-    c.setFont(font_bold, font_size)
-    c.drawString(start_x_id, label_height - margin - mm_to_points(2), id_text)
-    c.setFont(font_regular, font_size)
-    c.drawString(start_x_id + id_text_width, label_height - margin - mm_to_points(2), id_value)
-
-    date_text = "Date Received: "
-    c.setFont(font_bold, font_size)
-    date_text_width = c.stringWidth(date_text)
-    c.setFont(font_regular, font_size)
-    date_value_width = c.stringWidth(date_received)
-    total_date_text_width = date_text_width + date_value_width
-
-    start_x_date = margin + (left_half_width - total_date_text_width) / 3 + right_shift_offset
-
-    c.setFont(font_bold, font_size)
-    c.drawString(start_x_date, label_height - margin - mm_to_points(8), date_text)
-    c.setFont(font_regular, font_size)
-    c.drawString(start_x_date + date_text_width, label_height - margin - mm_to_points(8), date_received)
-
-    rsm_text = "RSM: "
-    c.setFont(font_bold, font_size)
-    rsm_text_width = c.stringWidth(rsm_text)
-    c.setFont(font_regular, font_size)
-    rsm_value_width = c.stringWidth(rsm_value)
-    total_rsm_text_width = rsm_text_width + rsm_value_width
-
-    start_x_rsm = margin + (left_half_width - total_rsm_text_width) / 2 + right_shift_offset
-
-    c.setFont(font_bold, font_size)
-    c.drawString(start_x_rsm, label_height - margin - mm_to_points(14), rsm_text)
-    c.setFont(font_regular, font_size)
-    c.drawString(start_x_rsm + rsm_text_width, label_height - margin - mm_to_points(14), rsm_value)
-
-    styles = getSampleStyleSheet()
-    normal_style = styles['Normal']
-    normal_style.fontName = font_regular
-    normal_style.fontSize = font_size
-    normal_style.leading = font_size * 1.2
-    normal_style.alignment = 1
-
-    wrapped_paragraph = Paragraph(description, normal_style)
-    max_text_width = label_width / 2 - 2 * margin
-    text_left = margin
-    text_top = label_height - margin - mm_to_points(20)  # push below RSM
-
-    wrapped_paragraph.wrapOn(c, max_text_width, text_top - margin)
-    wrapped_paragraph.drawOn(c, text_left, text_top - wrapped_paragraph.height)
-
-    c.save()
-
-
 def handle_print_request(request):
     if request.method == 'POST':
         try:
@@ -595,19 +477,7 @@ def handle_print_request(request):
                     logger.error(f"Error retrieving sample: {e}")
                     return JsonResponse({'status': 'error', 'error': 'Error retrieving sample'}, status=500)
 
-                try:
-                    qr_url = request.build_absolute_uri(reverse('manage_sample', args=[sample.unique_id]))
-                    qr_code = generate_qr_code(qr_url)
-                except Exception as e:
-                    logger.error(f"Error generating QR code: {e}")
-                    return JsonResponse({'status': 'error', 'error': 'Failed to generate QR code'}, status=500)
-
                 qr_url = request.build_absolute_uri(reverse('manage_sample', args=[sample.unique_id]))
-                qr_code_img = qrcode.make(qr_url)
-                qr_code_buffer = BytesIO()
-                qr_code_img.save(qr_code_buffer, format='PNG')
-                qr_code_buffer.seek(0)
-
                 output_path = os.path.join(labels_dir, f"label_{sample.unique_id}.pdf")
 
                 qr_data = qr_url

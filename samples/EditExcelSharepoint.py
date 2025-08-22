@@ -1,16 +1,23 @@
 import requests
 from msal import PublicClientApplication
 from samples.token_cache_utils import get_token_cache
+from samples.sharepoint_config import (
+    AZURE_CLIENT_ID as CLIENT_ID,
+    AZURE_TENANT_ID as TENANT_ID,
+    AZURE_USERNAME as USERNAME,
+    AZURE_AUTHORITY,
+    SHAREPOINT_SCOPES,
+    GRAPH_API_URL,
+    is_configured
+)
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Configuration
-
 def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_address):
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{cell_address}')"
     )
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -29,7 +36,7 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
 def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name, start_row=8):
     range_address = f"A{start_row}:B5000"
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
     )
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -57,7 +64,7 @@ def delete_rows_in_workbook(access_token, library_id, file_id, worksheet_name, r
     for row_num in sorted(row_numbers, reverse=True):  # Process rows in reverse order
         range_address = f"A{row_num}:B{row_num}"
         endpoint = (
-            f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+            f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
             f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
         )
         data = {
@@ -112,7 +119,7 @@ def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, s
     logger.debug(f"Calculated range address: {range_address}")
 
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
     )
 
@@ -132,25 +139,26 @@ def append_rows_to_workbook(access_token, library_id, file_id, worksheet_name, s
     else:
         logger.error(f"Failed to append rows: {response.status_code}, {response.text}")
         logger.debug(f"Response content: {response.content}")
-CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"  # Azure AD App Client ID
-TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"  # Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"             # Service Account Email
 
 def get_access_token():
     """
     Acquire an access token using MSAL with a token cache and device code flow.
     """
+    if not is_configured():
+        logger.error("SharePoint configuration is not properly set. Check environment variables.")
+        raise Exception("Configuration error: Required environment variables are not set")
+    
     logger.debug("Attempting to acquire access token.")
     cache = get_token_cache()
 
     app = PublicClientApplication(
         CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        authority=AZURE_AUTHORITY,
         token_cache=cache
     )
 
     # Required scopes for accessing SharePoint/Excel
-    scopes = ["Sites.ReadWrite.All", "Files.ReadWrite.All"]
+    scopes = SHAREPOINT_SCOPES
 
     # Attempt silent token acquisition
     accounts = app.get_accounts(username=USERNAME)
@@ -189,7 +197,7 @@ def find_excel_file(access_token, library_id, opportunity_number):
     """
     logger.debug(f"Finding Excel file for opportunity_number: {opportunity_number}")
     folder_path = f"{opportunity_number}/Samples"
-    endpoint = f"https://graph.microsoft.com/v1.0/drives/{library_id}/root:/{folder_path}:/children"
+    endpoint = f"{GRAPH_API_URL}/drives/{library_id}/root:/{folder_path}:/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)
 
@@ -228,7 +236,7 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
         value (ystr): The value to write to the cell.
     """
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}/workbook/"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}/workbook/"
         f"worksheets/{worksheet_name}/range(address='{cell_address}')"
     )
     headers = {
@@ -247,7 +255,7 @@ def update_cell_value(access_token, library_id, file_id, worksheet_name, cell_ad
 
 def clear_range_in_workbook(access_token, library_id, file_id, worksheet_name, range_address):
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
     )
     headers = {
@@ -278,7 +286,7 @@ def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, 
     logger.debug(f"Calculated range address for update: {range_address}")
 
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
     )
 
@@ -306,7 +314,7 @@ def update_range_in_workbook(access_token, library_id, file_id, worksheet_name, 
     for row_num in sorted(row_numbers, reverse=True):  # Process rows in reverse order
         range_address = f"A{row_num}:B{row_num}"
         endpoint = (
-            f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+            f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
             f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')/clear"
         )
         data = {
@@ -326,7 +334,7 @@ def update_row_in_workbook(access_token, library_id, file_id, worksheet_name, st
     logger.debug(f"Updating row at range: {range_address}")
 
     endpoint = (
-        f"https://graph.microsoft.com/v1.0/drives/{library_id}/items/{file_id}"
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
         f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
     )
 

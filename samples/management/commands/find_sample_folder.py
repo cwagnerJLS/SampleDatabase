@@ -3,8 +3,7 @@ import logging
 from collections import deque
 from django.core.management.base import BaseCommand
 from samples.CreateOppFolderSharepoint import get_access_token
-
-LIBRARY_ID = "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w"
+from samples.sharepoint_config import SALES_ENGINEERING_LIBRARY_ID as LIBRARY_ID, GRAPH_API_URL
 MAX_DEPTH = 3
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ class Command(BaseCommand):
             return
 
         # 4) Retrieve the webUrl for the found folder
-        folder_details_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
+        folder_details_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
         resp = requests.get(folder_details_url, headers=headers)
         if resp.status_code != 200:
             self.stderr.write(f"Failed to get folder details: {resp.status_code} - {resp.text}")
@@ -62,10 +61,10 @@ class Command(BaseCommand):
         for a folder with an exact matching name. Returns the folder ID if found, else None.
         """
         if parent_id:
-            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{parent_id}/children"
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
         else:
             # Root
-            children_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root/children"
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
 
         resp = requests.get(children_url, headers=headers)
         if resp.status_code != 200:
@@ -84,7 +83,7 @@ class Command(BaseCommand):
         ensuring the folder is no more than 'MAX_DEPTH' levels deep from 'start_folder_id'.
         Returns the first matching folder ID found, or None if not found.
         """
-        search_url = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
+        search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
         resp = requests.get(search_url, headers=headers)
         if resp.status_code != 200:
             logger.error(f"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}")

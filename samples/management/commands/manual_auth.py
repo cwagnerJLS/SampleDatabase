@@ -2,20 +2,27 @@ from django.core.management.base import BaseCommand
 import logging
 from msal import PublicClientApplication
 from samples.token_cache_utils import get_token_cache
-
-CLIENT_ID  = "a6122249-68bf-479a-80b8-68583aba0e91"
-TENANT_ID  = "f281e9a3-6598-4ddc-adca-693183c89477"
-USERNAME   = "cwagner@jlsautomation.com"
+from samples.sharepoint_config import (
+    AZURE_CLIENT_ID as CLIENT_ID,
+    AZURE_TENANT_ID as TENANT_ID,
+    AZURE_USERNAME as USERNAME,
+    AZURE_AUTHORITY,
+    SHAREPOINT_SCOPES,
+    is_configured
+)
 
 # identical to the helper we used elsewhere
 def manual_authenticate():
+    if not is_configured():
+        raise Exception("Configuration error: Required environment variables are not set")
+    
     cache = get_token_cache()
     app = PublicClientApplication(
         CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        authority=AZURE_AUTHORITY,
         token_cache=cache,
     )
-    scopes = ["Sites.ReadWrite.All", "Files.ReadWrite.All"]
+    scopes = SHAREPOINT_SCOPES
     accounts = app.get_accounts(username=USERNAME)
     if accounts:
         result = app.acquire_token_silent(scopes, account=accounts[0])

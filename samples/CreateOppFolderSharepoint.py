@@ -4,25 +4,37 @@ import logging
 from msal import PublicClientApplication
 from samples.token_cache_utils import get_token_cache
 from django.conf import settings
+from samples.sharepoint_config import (
+    AZURE_CLIENT_ID as CLIENT_ID,
+    AZURE_TENANT_ID as TENANT_ID,
+    AZURE_USERNAME as USERNAME,
+    AZURE_AUTHORITY,
+    TEST_ENGINEERING_LIBRARY_ID as LIBRARY_ID,
+    SHAREPOINT_SCOPES,
+    GRAPH_API_URL,
+    is_configured
+)
 
 # Define the path to Hyperlinks.csv using BASE_DIR
 HYPERLINKS_CSV_FILE = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
 
 logger = logging.getLogger(__name__)
 
-import os
 import django
-from django.conf import settings
 
 if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
     django.setup()
-# 1) CONFIGURATION CONSTANTS
+
+# Internal SharePoint field names for your custom columns
+FIELD_CUSTOMER = "Customer"
+FIELD_RSM = "RSM"
+FIELD_DESCRIPTION = "_ExtendedDescription"  # 'Description' column is '_ExtendedDescription' internally
 def create_subfolder(access_token, parent_folder_id, subfolder_name):
     """
     Creates a subfolder within the specified parent folder.
     """
-    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
+    url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -37,33 +49,22 @@ def create_subfolder(access_token, parent_folder_id, subfolder_name):
         logger.info(f"Created subfolder '{subfolder_name}' in folder ID {parent_folder_id}")
     else:
         logger.error(f"Error creating subfolder '{subfolder_name}' in folder ID {parent_folder_id}: {resp.status_code}, {resp.text}")
-CLIENT_ID = "a6122249-68bf-479a-80b8-68583aba0e91"      # Azure AD App Client ID
-TENANT_ID = "f281e9a3-6598-4ddc-adca-693183c89477"      # Azure AD Tenant ID
-USERNAME = "cwagner@jlsautomation.com"                 # Service Account Email
-
-# The Drive (document library) ID
-LIBRARY_ID = "b!X3Eb6X7EmkGXMLnZD4j_mJuFfGH0APlLs0IrZrwqabH6SO1yJ5v6TYCHXT-lTWgj"
-
-# Internal SharePoint field names for your custom columns
-FIELD_CUSTOMER = "Customer"
-FIELD_RSM = "RSM"
-FIELD_DESCRIPTION = "_ExtendedDescription"  # 'Description' column is '_ExtendedDescription' internally
-
-# ------------------------------------------------------------
-# 2) TOKEN ACQUISITION
-# ------------------------------------------------------------
 
 def get_access_token():
     """
     Acquire an access token for Microsoft Graph using MSAL device flow.
     """
+    if not is_configured():
+        logger.error("SharePoint configuration is not properly set. Check environment variables.")
+        raise Exception("Configuration error: Required environment variables are not set")
+    
     cache = get_token_cache()
     app = PublicClientApplication(
         client_id=CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{TENANT_ID}",
+        authority=AZURE_AUTHORITY,
         token_cache=cache
     )
-    scopes = ["Sites.ReadWrite.All"]  # Adjust if needed
+    scopes = SHAREPOINT_SCOPES
 
     # Attempt silent token acquisition
     accounts = app.get_accounts(username=USERNAME)
@@ -92,7 +93,7 @@ def search_folder(access_token, folder_name):
     Search for a folder by exact name in the root of the given LIBRARY_ID.
     Returns the folder's item ID if found, else None.
     """
-    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/root/search(q='{folder_name}')"
+    url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/root/search(q='{folder_name}')"
     headers = {"Authorization": f"Bearer {access_token}"}
     resp = requests.get(url, headers=headers)
     if resp.status_code == 200:
@@ -110,7 +111,7 @@ def create_folder(access_token, folder_name):
     Creates a folder in the root of the library. Returns its item ID if successful, else None.
     If the folder name already exists, it fails unless you change conflictBehavior.
     """
-    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/root/children"
+    url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/root/children"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -133,7 +134,7 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
     """
     Updates the custom fields (Customer, RSM, _ExtendedDescription) of the folder's listItem.
     """
-    url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/items/{folder_id}/listItem/fields"
+    url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{folder_id}/listItem/fields"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"

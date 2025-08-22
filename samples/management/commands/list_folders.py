@@ -2,10 +2,9 @@ import requests
 import logging
 from django.core.management.base import BaseCommand
 from samples.CreateOppFolderSharepoint import get_access_token
+from samples.sharepoint_config import SALES_ENGINEERING_LIBRARY_ID as LIBRARY_ID, GRAPH_API_URL
 
 logger = logging.getLogger(__name__)
-
-LIBRARY_ID = "b!AHIiPEiCJkSW7XmvcLmNUCmbMxhox6RHsHtOxuUGv88LSiuU7CeQS5URlOUmuH5w"
 
 class Command(BaseCommand):
     help = "Lists all top-level folders in the SharePoint library."
@@ -15,7 +14,7 @@ class Command(BaseCommand):
         headers = {"Authorization": f"Bearer {access_token}"}
 
         # Get all child items in the root of the library
-        root_children_url = f"https://graph.microsoft.com/v1.0/drives/{LIBRARY_ID}/root/children"
+        root_children_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/root/children"
         response = requests.get(root_children_url, headers=headers)
         if response.status_code != 200:
             self.stderr.write(f"Failed to retrieve items: {response.status_code} - {response.text}")

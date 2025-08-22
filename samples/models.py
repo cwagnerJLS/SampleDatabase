@@ -5,49 +5,6 @@ import logging
 from django.utils.deconstruct import deconstructible
 from celery import chain
 
-def delete_documentation_from_sharepoint(opportunity_number):
-    import subprocess
-    import logging
-    logger = logging.getLogger(__name__)
-
-    # Construct the path to the opportunity directory on SharePoint
-    # Remote name is 'TestLabSamples', folders are named after the opportunity number
-    remote_folder_path = f"TestLabSamples:{opportunity_number}"
-
-    # Command to delete the file using rclone
-    try:
-        subprocess.run(['rclone', 'purge', remote_folder_path], check=True)
-        logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
-
-def delete_local_opportunity_folder(opportunity_number):
-    import shutil
-    import logging
-    logger = logging.getLogger(__name__)
-
-    # Clean up thumbnails
-    thumbnail_folder_path = os.path.join(settings.BASE_DIR, 'media', 'Thumbnails', opportunity_number)
-    if os.path.exists(thumbnail_folder_path):
-        try:
-            shutil.rmtree(thumbnail_folder_path)
-            logger.info(f"Deleted local thumbnail folder: {thumbnail_folder_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete local thumbnail folder: {e}")
-    else:
-        logger.warning(f"Local thumbnail folder does not exist: {thumbnail_folder_path}")
-
-    # Clean up full-size images
-    fullsize_folder_path = os.path.join(settings.BASE_DIR, 'media', 'Full Size Images', opportunity_number)
-    if os.path.exists(fullsize_folder_path):
-        try:
-            shutil.rmtree(fullsize_folder_path)
-            logger.info(f"Deleted local full-size image folder: {fullsize_folder_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete local full-size image folder: {e}")
-    else:
-        logger.warning(f"Local full-size image folder does not exist: {fullsize_folder_path}")
-
 # Configure logging
 logger = logging.getLogger(__name__)
 from django.db import models
