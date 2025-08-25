@@ -677,12 +677,12 @@
                 <td class="col-description">${sample.description}</td>
                 <td class="col-id">${sample.unique_id}</td>
                 <td class="col-location">
-                    <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
+                    <select class="location-select" data-sample-id="${sample.unique_id}">
                         ${getStorageLocationOptionsHTML(sample.storage_location || sample.location)}
                     </select>
                 </td>
                 <td class="col-pictures">
-                    <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
+                    <button type="button" class="picture-btn" data-sample-id="${sample.unique_id}">Upload/View</button>
                 </td>
                 <td class="col-documentation">
                     <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
@@ -888,13 +888,13 @@
                 <th class="col-select">
                     <input type="checkbox" id="select-all-select">
                 </th>
-                <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input" onkeyup="filterTable()"></div></th>
-                <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input" onkeyup="filterTable()"></div></th>
+                <th class="col-opportunity"><div class="filter-wrapper"><input type="text" id="opportunityFilter" placeholder="Filter Opportunity" class="filter-input"></div></th>
+                <th class="col-customer"><div class="filter-wrapper"><input type="text" id="customerFilter" placeholder="Filter Customer" class="filter-input"></div></th>
+                <th class="col-rsm"><div class="filter-wrapper"><input type="text" id="rsmFilter" placeholder="Filter RSM" class="filter-input"></div></th>
+                <th class="col-date"><div class="filter-wrapper"><input type="text" id="dateFilter" placeholder="Filter Date" class="filter-input"></div></th>
+                <th class="col-description"><div class="filter-wrapper"><input type="text" id="descriptionFilter" placeholder="Filter Description" class="filter-input"></div></th>
+                <th class="col-id"><div class="filter-wrapper"><input type="text" id="idFilter" placeholder="Filter ID" class="filter-input"></div></th>
+                <th class="col-location"><div class="filter-wrapper"><input type="text" id="locationFilter" placeholder="Filter Location" class="filter-input"></div></th>
                 <th class="col-pictures"></th>
                 <th class="col-documentation"></th>
             </tr>
@@ -1761,41 +1761,65 @@
             // Append all rows at once
             tableBody.appendChild(fragment);
 
-            // Add event listener for individual checkboxes to highlight rows
+            // Consolidated event delegation for all change events
             document.addEventListener('change', function(event) {
-                if (event.target.type === 'checkbox' && event.target.name === 'select_checkbox') {
-                    const row = event.target.closest('tr');
+                const target = event.target;
+                
+                // Handle checkbox selection highlighting
+                if (target.type === 'checkbox' && target.name === 'select_checkbox') {
+                    const row = target.closest('tr');
                     if (row) {
-                        if (event.target.checked) {
+                        if (target.checked) {
                             row.classList.add('selected-row');
                         } else {
                             row.classList.remove('selected-row');
                         }
                     }
                 }
+                // Handle location select changes
+                else if (target.classList.contains('location-select')) {
+                    const sampleId = target.dataset.sampleId;
+                    updateSampleLocation(sampleId, target.value);
+                }
             });
-
-            // Add event listener for expand/collapse buttons
-            document.querySelectorAll('.expand-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const sanitizedOppNum = this.getAttribute('data-opp-num');
+            
+            // Event delegation for filter inputs
+            document.addEventListener('keyup', function(event) {
+                if (event.target.classList.contains('filter-input')) {
+                    filterTable();
+                }
+            });
+            
+            // Consolidated event delegation for all click events
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                
+                // Handle picture upload/view buttons
+                if (target.classList.contains('picture-btn')) {
+                    event.preventDefault();
+                    const sampleId = target.dataset.sampleId;
+                    handlePictureUploadView(sampleId);
+                }
+                // Handle expand/collapse buttons
+                else if (target.classList.contains('expand-button')) {
+                    const sanitizedOppNum = target.getAttribute('data-opp-num');
                     const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                    const isExpanded = this.textContent === '-';
+                    const isExpanded = target.textContent === '-';
 
                     if (isExpanded) {
                         // Collapse
-                        this.textContent = '+';
+                        target.textContent = '+';
                         groupedRows.forEach(row => {
                             row.style.display = 'none';
                         });
                     } else {
                         // Expand
-                        this.textContent = '-';
+                        target.textContent = '-';
                         groupedRows.forEach(row => {
                             row.style.display = '';
                         });
                     }
-                });
+                }
             });
         }); // Properly close the DOMContentLoaded function
 
