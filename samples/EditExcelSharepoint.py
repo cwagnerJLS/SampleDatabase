@@ -5,9 +5,9 @@ from samples.sharepoint_config import (
 )
 from samples.services.auth_service import get_sharepoint_token
 import os
-import logging
+from samples.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__, 'sharepoint')
 
 def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_address):
     endpoint = (

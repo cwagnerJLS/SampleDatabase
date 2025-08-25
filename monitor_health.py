@@ -12,19 +12,18 @@ from datetime import datetime
 import os
 import sys
 
+# Add path for imports
+sys.path.insert(0, '/home/jls/Desktop/SampleDatabase')
+from samples.logging_config import get_logger
+
 # Configuration
 HEALTH_URL = "http://localhost:8000/health/"
 MAX_RETRIES = 3
 RETRY_DELAY = 10  # seconds
 REQUEST_TIMEOUT = 5  # seconds
-LOG_FILE = "/home/jls/Desktop/SampleDatabase/health_monitor.log"
 
 # Setup logging
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging = get_logger(__name__, 'health_monitor')
 
 def check_health():
     """Check if the Django server is healthy."""

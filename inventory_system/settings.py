@@ -98,52 +98,9 @@ STATIC_URL = '/static/'
 
 # Logging configuration
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',  # Ensure the level is set to DEBUG
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'debug.log'),
-            'formatter': 'verbose',
-        },
-        'celery_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'celery.log'),  # Logs will be saved in celery.log
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'samples': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'celery': {
-            'handlers': ['celery_file'],  # Use the celery_file handler
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'samples.tasks': {
-            'handlers': ['celery_file'],
-            'level': 'DEBUG',
-            'propagate': False,  # Prevent duplication of logs
-        },
-    }
-}
+from samples.logging_config import DJANGO_LOGGING_CONFIG
+
+LOGGING = DJANGO_LOGGING_CONFIG
 
 # Celery Configuration Options
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Use Redis as the message broker

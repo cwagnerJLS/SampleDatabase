@@ -17,9 +17,9 @@ from samples.exceptions import (
     EmailSendError,
     ConfigurationError
 )
-import logging
+from .logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__, 'email')
 
 # Nicknames mapping
 NICKNAMES = {

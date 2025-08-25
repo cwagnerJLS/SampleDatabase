@@ -1,5 +1,4 @@
 import os
-import logging
 from django.conf import settings
 from samples.sharepoint_config import (
     TEST_ENGINEERING_LIBRARY_ID as LIBRARY_ID,
@@ -8,11 +7,12 @@ from samples.sharepoint_config import (
 )
 from samples.services.auth_service import get_sharepoint_token
 from samples.utils.sharepoint_api import GraphAPIClient
+from samples.logging_config import get_logger
 
 # Define the path to Hyperlinks.csv using BASE_DIR
 HYPERLINKS_CSV_FILE = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__, 'sharepoint')
 
 import django
 

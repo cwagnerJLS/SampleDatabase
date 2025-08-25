@@ -10,13 +10,13 @@ WorkingDirectory=/home/jls/Desktop/SampleDatabase
 Environment="PATH=/home/jls/Desktop/SampleDatabase/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=/home/jls/Desktop/SampleDatabase/venv/bin/celery -A inventory_system multi start worker \
     --pidfile=/home/jls/Desktop/SampleDatabase/celery_%n.pid \
-    --logfile=/home/jls/Desktop/SampleDatabase/celery_%n.log \
+    --logfile=/home/jls/Desktop/SampleDatabase/logs/celery_%n.log \
     --loglevel=info
 ExecStop=/home/jls/Desktop/SampleDatabase/venv/bin/celery -A inventory_system multi stopwait worker \
     --pidfile=/home/jls/Desktop/SampleDatabase/celery_%n.pid
 ExecReload=/home/jls/Desktop/SampleDatabase/venv/bin/celery -A inventory_system multi restart worker \
     --pidfile=/home/jls/Desktop/SampleDatabase/celery_%n.pid \
-    --logfile=/home/jls/Desktop/SampleDatabase/celery_%n.log \
+    --logfile=/home/jls/Desktop/SampleDatabase/logs/celery_%n.log \
     --loglevel=info
 
 # Restart configuration

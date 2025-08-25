@@ -75,10 +75,8 @@ def cleanup_local_backups(folder, days=7):
 
 if __name__ == "__main__":
     # Setup logging
-    logging.basicConfig(
-        filename='/home/jls/Desktop/SampleDatabase/backup.log',
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+    from samples.logging_config import get_logger
+    global logging
+    logging = get_logger(__name__, 'backup')
 
     backup_database()

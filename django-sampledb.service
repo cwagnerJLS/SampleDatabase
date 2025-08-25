@@ -20,8 +20,8 @@ StartLimitInterval=60
 StartLimitBurst=3
 
 # Logging
-StandardOutput=append:/home/jls/Desktop/SampleDatabase/django.log
-StandardError=append:/home/jls/Desktop/SampleDatabase/django_error.log
+StandardOutput=append:/home/jls/Desktop/SampleDatabase/logs/django.log
+StandardError=append:/home/jls/Desktop/SampleDatabase/logs/django_error.log
 
 [Install]
 WantedBy=multi-user.target
