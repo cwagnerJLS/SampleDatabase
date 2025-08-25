@@ -702,9 +702,41 @@
         const csrftoken = '{{ csrf_token }}';
         const excelData = {{ excel_data|safe }};
         const samples = {{ samples|safe }};
+        
+        // Configuration constants
+        const CONFIG = {
+            STORAGE_LOCATIONS: [
+                "Test Lab Fridge",
+                "Test Lab Freezer", 
+                "Walk-in Fridge",
+                "Walk-in Freezer",
+                "Dry Food Storage",
+                "Empty Case Storage"
+            ],
+            SHAREPOINT_BASE_URL: "https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/",
+            DEFAULT_LOCATION: "Choose a location",
+            POLLING: {
+                MAX_ATTEMPTS: 10,
+                INTERVAL_TIME: 2000 // milliseconds
+            },
+            THUMBNAIL: {
+                WIDTH: 120,
+                GAP: 10,
+                MIN_MODAL_WIDTH: 600
+            }
+        };
 
         function downloadDocumentation(sampleId) {
             window.location.href = '/download_documentation/' + sampleId + '/';
+        }
+        
+        // Helper function to generate storage location options HTML
+        function getStorageLocationOptionsHTML(currentLocation) {
+            let html = `<option value="${CONFIG.DEFAULT_LOCATION}" ${!currentLocation || currentLocation === CONFIG.DEFAULT_LOCATION ? "selected" : ""}>${CONFIG.DEFAULT_LOCATION}</option>`;
+            CONFIG.STORAGE_LOCATIONS.forEach(location => {
+                html += `<option value="${location}" ${currentLocation === location ? "selected" : ""}>${location}</option>`;
+            });
+            return html;
         }
 
         function showPrevImage(event) {
@@ -958,8 +990,8 @@
     <script>
         function pollForFullSizeImages(sampleId, imageIds) {
             var attempts = 0;
-            var maxAttempts = 10; // Number of polling attempts
-            var intervalTime = 2000; // Interval between attempts in milliseconds (2 seconds)
+            var maxAttempts = CONFIG.POLLING.MAX_ATTEMPTS;
+            var intervalTime = CONFIG.POLLING.INTERVAL_TIME;
 
             var interval = setInterval(function() {
                 attempts++;
@@ -1393,7 +1425,7 @@
                     const rsm = document.getElementById('rsm').value;
                     const opportunityNumber = document.getElementById('opportunity_number').value;
                     const description = document.getElementById('description').value;
-                    const location = "Choose a location"; // Default location
+                    const location = CONFIG.DEFAULT_LOCATION;
 
                     const formData = new FormData();
                     formData.append('csrfmiddlewaretoken', csrftoken);
@@ -1430,20 +1462,14 @@
                                     <td class="col-id">${sample.unique_id}</td>
                                     <td class="col-location">
                                         <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
-                                            <option value="Choose a location" ${sample.location === "Choose a location" ? "selected" : ""}>Choose a location</option>
-                                            <option value="Test Lab Fridge">Test Lab Fridge</option>
-                                            <option value="Test Lab Freezer">Test Lab Freezer</option>
-                                            <option value="Walk-in Fridge">Walk-in Fridge</option>
-                                            <option value="Walk-in Freezer">Walk-in Freezer</option>
-                                            <option value="Dry Food Storage">Dry Food Storage</option>
-                                            <option value="Empty Case Storage">Empty Case Storage</option>
+                                            ${getStorageLocationOptionsHTML(sample.location)}
                                         </select>
                                     </td>
                                     <td class="col-pictures">
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
                                     </td>
                                     <td class="col-documentation">
-                                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                                        <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
                                     </td>
                                     </td>
                                 `;
@@ -1793,20 +1819,14 @@
                         <td class="col-id">${sample.unique_id}</td>
                         <td class="col-location">
                             <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
-                                <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                                <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                                <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                                <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                                <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
-                                <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
+                                ${getStorageLocationOptionsHTML(sample.storage_location)}
                             </select>
                         </td>
                         <td class="col-pictures">
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                         </td>
                         <td class="col-documentation">
-                            <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                            <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
                         </td>
                     `;
                     tableBody.appendChild(newRow);
@@ -1846,20 +1866,14 @@
                             <td class="col-id">${sample.unique_id}</td>
                             <td class="col-location">
                                 <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                    <option value="" ${!sample.storage_location ? "selected" : ""}>Choose a location</option>
-                                    <option value="Test Lab Fridge" ${sample.storage_location === "Test Lab Fridge" ? "selected" : ""}>Test Lab Fridge</option>
-                                    <option value="Test Lab Freezer" ${sample.storage_location === "Test Lab Freezer" ? "selected" : ""}>Test Lab Freezer</option>
-                                    <option value="Walk-in Fridge" ${sample.storage_location === "Walk-in Fridge" ? "selected" : ""}>Walk-in Fridge</option>
-                                    <option value="Walk-in Freezer" ${sample.storage_location === "Walk-in Freezer" ? "selected" : ""}>Walk-in Freezer</option>
-                                    <option value="Dry Food Storage" ${sample.storage_location === "Dry Food Storage" ? "selected" : ""}>Dry Food Storage</option>
-                                    <option value="Empty Case Storage" ${sample.storage_location === "Empty Case Storage" ? "selected" : ""}>Empty Case Storage</option>
+                                    ${getStorageLocationOptionsHTML(sample.storage_location)}
                                 </select>
                             </td>
                             <td class="col-pictures">
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
                             </td>
                             <td class="col-documentation">
-                                <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                                <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);
@@ -2004,10 +2018,10 @@
             // Clear existing thumbnails
             thumbnailsContainer.innerHTML = '';
 
-            const thumbnailWidth = 120; // Width of each thumbnail including padding/margin
-            const gap = 10;             // Gap between thumbnails
+            const thumbnailWidth = CONFIG.THUMBNAIL.WIDTH;
+            const gap = CONFIG.THUMBNAIL.GAP;
             const maxModalWidth = window.innerWidth * 0.9; // 90% of viewport width as max
-            const minModalWidth = 600;  // Set your desired minimum modal width here
+            const minModalWidth = CONFIG.THUMBNAIL.MIN_MODAL_WIDTH;
 
             // Determine the number of thumbnails per row that can fit within maxModalWidth
             const thumbnailsPerRow = Math.floor((maxModalWidth + gap) / (thumbnailWidth + gap)) || 1;
