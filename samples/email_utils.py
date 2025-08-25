@@ -2,21 +2,15 @@ import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'inventory_system.settings')
 import requests
 from django.conf import settings
-from msal import PublicClientApplication
-from samples.token_cache_utils import get_token_cache
 from samples.sharepoint_config import (
-    AZURE_CLIENT_ID as CLIENT_ID,
-    AZURE_TENANT_ID as TENANT_ID,
-    AZURE_USERNAME as USERNAME,
-    AZURE_AUTHORITY,
     EMAIL_SENDER,
     EMAIL_DOMAIN,
     TEST_MODE_EMAIL,
     TEST_LAB_GROUP_EMAILS,
-    EMAIL_SCOPES,
     GRAPH_API_URL,
     is_configured
 )
+from samples.services.auth_service import get_email_token
 from samples.exceptions import (
     EmailAuthenticationError,
     EmailSendError,
@@ -45,48 +39,8 @@ def get_access_token():
     Raises:
         Exception: If token acquisition fails.
     """
-    if not is_configured():
-        logger.error("SharePoint configuration is not properly set. Check environment variables.")
-        raise ConfigurationError("Required environment variables are not set")
-    
-    # Load existing token cache
-    cache = get_token_cache()
-
-    # Initialize the MSAL PublicClientApplication
-    app = PublicClientApplication(
-        CLIENT_ID,
-        authority=AZURE_AUTHORITY,
-        token_cache=cache
-    )
-
-    # Define the scopes required
-    scopes = ["Mail.Send"]
-
-    # Attempt to acquire token silently
-    accounts = app.get_accounts(username=USERNAME)
-    if accounts:
-        result = app.acquire_token_silent(scopes, account=accounts[0])
-        if result and "access_token" in result:
-            print("Access token acquired from cache.")
-            return result["access_token"]
-
-    # If silent acquisition fails, use Device Code Flow
-    flow = app.initiate_device_flow(scopes=scopes)
-    if "user_code" not in flow:
-        raise EmailAuthenticationError("Failed to create device flow. Check your app registration.")
-
-    print(flow["message"])  # Instructs the user to authenticate
-
-    # Poll for the access token
-    result = app.acquire_token_by_device_flow(flow)  # This function blocks until authentication is complete
-
-    if "access_token" in result:
-        print("Access token acquired via Device Code Flow.")
-        return result["access_token"]
-    else:
-        error = result.get("error")
-        error_description = result.get("error_description")
-        raise EmailAuthenticationError(f"Could not obtain access token: {error} - {error_description}")
+    # Use the centralized authentication service
+    return get_email_token()
 
 def send_email(subject, body, recipient_email, cc_emails=None):
     """

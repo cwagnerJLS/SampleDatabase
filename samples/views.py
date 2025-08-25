@@ -32,6 +32,7 @@ from .utils.responses import (
     method_not_allowed_response,
     server_error_response
 )
+from .utils.date_utils import format_date_for_display
 from .tasks import (
     delete_image_from_sharepoint,
     update_documentation_excels,
@@ -51,10 +52,9 @@ def view_samples(request):
     # Convert samples to list of dicts, then JSON-encode.
     samples_list = list(Sample.objects.all().values())
 
-    # If you need to format date fields, do so here.
+    # Format date fields for display
     for entry in samples_list:
-        if entry['date_received']:
-            entry['date_received'] = entry['date_received'].strftime('%Y-%m-%d')
+        entry['date_received'] = format_date_for_display(entry.get('date_received'))
 
     return render(request, 'samples/view_sample.html', {
         'samples': json.dumps(samples_list, cls=DjangoJSONEncoder),
@@ -182,7 +182,7 @@ def create_sample(request):
                     ),
                     send_sample_received_email.si(
                         rsm_full_name,
-                        date_received.strftime('%Y-%m-%d'),
+                        format_date_for_display(date_received),
                         opportunity_number,
                         customer,
                         total_quantity
@@ -198,7 +198,7 @@ def create_sample(request):
                 'created_samples': [
                     {
                         'unique_id': sample.unique_id,
-                        'date_received': sample.date_received.strftime('%Y-%m-%d'),
+                        'date_received': format_date_for_display(sample.date_received),
                         'customer': sample.customer,
                         'rsm': sample.rsm,
                         'opportunity_number': sample.opportunity_number,
@@ -249,8 +249,7 @@ def create_sample(request):
 
         # Convert date_received to string format for JSON serialization
         for sample in samples:
-            if isinstance(sample['date_received'], datetime):
-                sample['date_received'] = sample['date_received'].strftime('%Y-%m-%d')
+            sample['date_received'] = format_date_for_display(sample.get('date_received'))
 
         logger.debug(f"Samples List: {samples}")
 
@@ -466,7 +465,7 @@ def handle_print_request(request):
 
                 qr_data = qr_url
                 id_value = str(sample.unique_id)
-                date_received = sample.date_received.strftime('%Y-%m-%d')
+                date_received = format_date_for_display(sample.date_received)
                 rsm_value = sample.rsm
                 description = sample.description
 

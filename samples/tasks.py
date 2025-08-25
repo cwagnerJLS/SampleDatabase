@@ -4,6 +4,8 @@ from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
 import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils.file_utils import create_documentation_on_sharepoint
+from .utils.date_utils import format_date_for_display
+from .utils.rclone_utils import get_rclone_manager, delete_from_sharepoint, copy_to_sharepoint, purge_sharepoint_folder
 import subprocess
 import shutil
 import os
@@ -59,25 +61,11 @@ def create_documentation_on_sharepoint_task(opportunity_number):
 def delete_image_from_sharepoint(full_size_image_name, opportunity_number):
     logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
     if full_size_image_name:
-        try:
-            sharepoint_image_path = f"TestLabSamples:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
-            rclone_executable = settings.RCLONE_EXECUTABLE
-            logger.info(f"Using rclone executable at: {rclone_executable}")
-            result = subprocess.run(
-                [rclone_executable, 'delete', sharepoint_image_path],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=os.environ
-            )
-            if result.stdout:
-                logger.debug(f"rclone stdout: {result.stdout}")
-            if result.stderr:
-                logger.error(f"rclone stderr: {result.stderr}")
-            logger.info(f"Deleted image from SharePoint: {sharepoint_image_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete image from SharePoint: {e}")
-            logger.exception(e)
+        sharepoint_image_path = f"TestLabSamples:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
+        if delete_from_sharepoint(sharepoint_image_path):
+            logger.info(f"Successfully deleted image from SharePoint: {sharepoint_image_path}")
+        else:
+            logger.error(f"Failed to delete image from SharePoint: {sharepoint_image_path}")
     else:
         logger.error("No full_size_image_name provided to delete_image_from_sharepoint task")
 
@@ -192,7 +180,7 @@ def update_documentation_excels(opportunity_number=None):
                 for sample_id in sorted(sample_ids):
                     try:
                         sample = Sample.objects.get(unique_id=sample_id)
-                        date_received = sample.date_received.strftime('%Y-%m-%d')
+                        date_received = format_date_for_display(sample.date_received)
                         rows_to_write.append([sample_id, date_received])
                     except Sample.DoesNotExist:
                         logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")
@@ -209,7 +197,7 @@ def update_documentation_excels(opportunity_number=None):
                     for sample_id in sorted(ids_to_add):
                         try:
                             sample = Sample.objects.get(unique_id=sample_id)
-                            date_received = sample.date_received.strftime('%Y-%m-%d')
+                            date_received = format_date_for_display(sample.date_received)
                             rows_to_write.append([sample_id, date_received])
                         except Sample.DoesNotExist:
                             logger.warning(f"Sample with unique_id {sample_id} does not exist. Skipping.")

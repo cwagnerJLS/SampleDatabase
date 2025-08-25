@@ -1,15 +1,9 @@
 import requests
-from msal import PublicClientApplication
-from samples.token_cache_utils import get_token_cache
 from samples.sharepoint_config import (
-    AZURE_CLIENT_ID as CLIENT_ID,
-    AZURE_TENANT_ID as TENANT_ID,
-    AZURE_USERNAME as USERNAME,
-    AZURE_AUTHORITY,
-    SHAREPOINT_SCOPES,
     GRAPH_API_URL,
     is_configured
 )
+from samples.services.auth_service import get_sharepoint_token
 import os
 import logging
 
@@ -144,42 +138,11 @@ def get_access_token():
     """
     Acquire an access token using MSAL with a token cache and device code flow.
     """
-    if not is_configured():
-        logger.error("SharePoint configuration is not properly set. Check environment variables.")
-        raise Exception("Configuration error: Required environment variables are not set")
-    
+    # Use the centralized authentication service
     logger.debug("Attempting to acquire access token.")
-    cache = get_token_cache()
-
-    app = PublicClientApplication(
-        CLIENT_ID,
-        authority=AZURE_AUTHORITY,
-        token_cache=cache
-    )
-
-    # Required scopes for accessing SharePoint/Excel
-    scopes = SHAREPOINT_SCOPES
-
-    # Attempt silent token acquisition
-    accounts = app.get_accounts(username=USERNAME)
-    if accounts:
-        result = app.acquire_token_silent(scopes, account=accounts[0])
-        if result and "access_token" in result:
-            return result["access_token"]
-
-    # If silent acquisition fails, initiate device code flow
-    flow = app.initiate_device_flow(scopes=scopes)
-    if "user_code" not in flow:
-        raise Exception("Device flow initiation failed. Check your app registration.")
-
-    print(flow["message"])
-    result = app.acquire_token_by_device_flow(flow)
-
-    if "access_token" in result:
-        logger.debug("Access token acquired successfully.")
-        return result["access_token"]
-
-    raise Exception("Authentication failed.")
+    token = get_sharepoint_token()
+    logger.debug("Access token acquired successfully.")
+    return token
 
 def find_excel_file(access_token, library_id, opportunity_number):
     """

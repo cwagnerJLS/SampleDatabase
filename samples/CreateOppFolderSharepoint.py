@@ -1,19 +1,13 @@
 import os
 import requests
 import logging
-from msal import PublicClientApplication
-from samples.token_cache_utils import get_token_cache
 from django.conf import settings
 from samples.sharepoint_config import (
-    AZURE_CLIENT_ID as CLIENT_ID,
-    AZURE_TENANT_ID as TENANT_ID,
-    AZURE_USERNAME as USERNAME,
-    AZURE_AUTHORITY,
     TEST_ENGINEERING_LIBRARY_ID as LIBRARY_ID,
-    SHAREPOINT_SCOPES,
     GRAPH_API_URL,
     is_configured
 )
+from samples.services.auth_service import get_sharepoint_token
 
 # Define the path to Hyperlinks.csv using BASE_DIR
 HYPERLINKS_CSV_FILE = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
@@ -54,36 +48,8 @@ def get_access_token():
     """
     Acquire an access token for Microsoft Graph using MSAL device flow.
     """
-    if not is_configured():
-        logger.error("SharePoint configuration is not properly set. Check environment variables.")
-        raise Exception("Configuration error: Required environment variables are not set")
-    
-    cache = get_token_cache()
-    app = PublicClientApplication(
-        client_id=CLIENT_ID,
-        authority=AZURE_AUTHORITY,
-        token_cache=cache
-    )
-    scopes = SHAREPOINT_SCOPES
-
-    # Attempt silent token acquisition
-    accounts = app.get_accounts(username=USERNAME)
-    if accounts:
-        result = app.acquire_token_silent(scopes, account=accounts[0])
-        if result and "access_token" in result:
-            return result["access_token"]
-
-    # Fallback to device flow
-    flow = app.initiate_device_flow(scopes=scopes)
-    if "user_code" not in flow:
-        raise Exception("Device flow initiation failed. Check your app registration.")
-
-    print(flow["message"])
-    result = app.acquire_token_by_device_flow(flow)
-    if "access_token" in result:
-        return result["access_token"]
-
-    raise Exception("Authentication failed.")
+    # Use the centralized authentication service
+    return get_sharepoint_token()
 
 # ------------------------------------------------------------
 # 3) FOLDER OPERATIONS
