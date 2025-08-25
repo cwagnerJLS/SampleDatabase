@@ -663,6 +663,60 @@
             });
             return html;
         }
+        
+        // Template function for sample table row
+        function createSampleRowHTML(sample) {
+            return `
+                <td class="col-select">
+                    <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
+                </td>
+                <td class="col-opportunity">${sample.opportunity_number}</td>
+                <td class="col-customer">${sample.customer}</td>
+                <td class="col-rsm">${sample.rsm}</td>
+                <td class="col-date">${sample.date_received}</td>
+                <td class="col-description">${sample.description}</td>
+                <td class="col-id">${sample.unique_id}</td>
+                <td class="col-location">
+                    <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
+                        ${getStorageLocationOptionsHTML(sample.storage_location || sample.location)}
+                    </select>
+                </td>
+                <td class="col-pictures">
+                    <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
+                </td>
+                <td class="col-documentation">
+                    <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
+                </td>
+            `;
+        }
+        
+        // Template function for group header row
+        function createGroupRowHTML(oppNum, customer, rsm, count) {
+            const sanitizedOppNum = sanitizeOppNum(oppNum);
+            return `
+                <td class="col-select">
+                    <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
+                </td>
+                <td class="col-opportunity">${oppNum}</td>
+                <td class="col-customer">${customer}</td>
+                <td class="col-rsm">${rsm}</td>
+                <td colspan="6">(${count} entries)</td>
+            `;
+        }
+        
+        // Helper function to clean up empty groups
+        function cleanupEmptyGroups(affectedGroups) {
+            affectedGroups.forEach(oppNum => {
+                const sanitizedOppNum = sanitizeOppNum(oppNum);
+                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                if (remainingRows.length === 0) {
+                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
+                    if (groupRow) {
+                        groupRow.parentNode.removeChild(groupRow);
+                    }
+                }
+            });
+        }
 
         function showPrevImage(event) {
             event.stopPropagation(); // Prevent event bubbling
@@ -792,17 +846,7 @@
                                 }
                             });
 
-                            affectedGroups.forEach(oppNum => {
-                                const sanitizedOppNum = sanitizeOppNum(oppNum);
-                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                                if (remainingRows.length === 0) {
-                                    // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                    if (groupRow) {
-                                        groupRow.parentNode.removeChild(groupRow);
-                                    }
-                                }
-                            });
+                            cleanupEmptyGroups(affectedGroups);
 
                             // Uncheck the "Select All" checkbox
                             document.getElementById('select-all-select').checked = false;
@@ -1149,18 +1193,8 @@
                         // Labels have been generated successfully
 
                         // Here you would send this data to your printer
-                        // For each affected group, check if any entries remain
-                        affectedGroups.forEach(oppNum => {
-                            const sanitizedOppNum = sanitizeOppNum(oppNum);
-                            const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                            if (remainingRows.length === 0) {
-                                // No more entries in the group, remove the group row
-                                const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                if (groupRow) {
-                                    groupRow.parentNode.removeChild(groupRow);
-                                }
-                            }
-                        });
+                        // Clean up any empty groups
+                        cleanupEmptyGroups(affectedGroups);
 
                     } else {
                         console.error('Error generating labels:', data.error);
@@ -1224,18 +1258,8 @@
                                 row.parentNode.removeChild(row); // Remove the row from the table
                             });
 
-                            // For each affected group, check if any entries remain
-                            affectedGroups.forEach(oppNum => {
-                                const sanitizedOppNum = sanitizeOppNum(oppNum);
-                                const remainingRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
-                                if (remainingRows.length === 0) {
-                                    // No more entries in the group, remove the group row
-                                    const groupRow = document.querySelector(`.group-row[data-opp-num="${sanitizedOppNum}"]`);
-                                    if (groupRow) {
-                                        groupRow.parentNode.removeChild(groupRow);
-                                    }
-                                }
-                            });
+                            // Clean up any empty groups
+                            cleanupEmptyGroups(affectedGroups);
 
                             selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
                             console.log('Entries deleted successfully.');
@@ -1375,29 +1399,7 @@
                         if (data.status === 'success') {
                             data.created_samples.forEach(sample => {
                                 const newRow = document.createElement('tr');
-                                newRow.innerHTML = `
-                                    <td class="col-select">
-                                        <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
-                                    </td>
-                                    <td class="col-opportunity">${sample.opportunity_number}</td>
-                                    <td class="col-customer">${sample.customer}</td>
-                                    <td class="col-rsm">${sample.rsm}</td>
-                                    <td class="col-date">${sample.date_received}</td>
-                                    <td class="col-description">${sample.description}</td>
-                                    <td class="col-id">${sample.unique_id}</td>
-                                    <td class="col-location">
-                                        <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation('${sample.unique_id}', this.value)">
-                                            ${getStorageLocationOptionsHTML(sample.location)}
-                                        </select>
-                                    </td>
-                                    <td class="col-pictures">
-                                        <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">Upload/View</button>
-                                    </td>
-                                    <td class="col-documentation">
-                                        <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
-                                    </td>
-                                    </td>
-                                `;
+                                newRow.innerHTML = createSampleRowHTML(sample);
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
                             });
                             console.log('Sample saved successfully.');
@@ -1732,75 +1734,23 @@
                     // If only one entry, display it as usual
                     const sample = group[0];
                     const newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td class="col-select">
-                            <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
-                        </td>
-                        <td class="col-opportunity">${sample.opportunity_number}</td>
-                        <td class="col-customer">${sample.customer}</td>
-                        <td class="col-rsm">${sample.rsm}</td>
-                        <td class="col-date">${sample.date_received}</td>
-                        <td class="col-description">${sample.description}</td>
-                        <td class="col-id">${sample.unique_id}</td>
-                        <td class="col-location">
-                            <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                ${getStorageLocationOptionsHTML(sample.storage_location)}
-                            </select>
-                        </td>
-                        <td class="col-pictures">
-                            <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
-                        </td>
-                        <td class="col-documentation">
-                            <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
-                        </td>
-                    `;
+                    newRow.innerHTML = createSampleRowHTML(sample);
                     tableBody.appendChild(newRow);
                 } else {
                     // Create a group row without a select box and with a '+' button
-                    const sanitizedOppNum = sanitizeOppNum(oppNum); // Sanitize oppNum
+                    const sanitizedOppNum = sanitizeOppNum(oppNum);
                     const groupRow = document.createElement('tr');
                     groupRow.classList.add('group-row');
-                    groupRow.setAttribute('data-opp-num', sanitizedOppNum); // Use sanitizedOppNum
-                    groupRow.innerHTML = `
-                        <td class="col-select">
-                            <button type="button" class="expand-button" data-opp-num="${sanitizedOppNum}">+</button>
-                        </td>
-                        <td class="col-opportunity">${oppNum}</td>
-                        <td class="col-customer">${groupCustomer}</td>
-                        <td class="col-rsm">${groupRsm}</td>
-                        <td colspan="6"> <!-- Increased colspan by 1 -->
-                            (${group.length} entries)
-                        </td>
-                    `;
+                    groupRow.setAttribute('data-opp-num', sanitizedOppNum);
+                    groupRow.innerHTML = createGroupRowHTML(oppNum, groupCustomer, groupRsm, group.length);
                     tableBody.appendChild(groupRow);
 
                     // Add rows for each sample in the group, initially hidden
                     group.forEach(sample => {
                         const sampleRow = document.createElement('tr');
-                        sampleRow.classList.add('grouped-row', `group-${sanitizedOppNum}`); // Use sanitizedOppNum
+                        sampleRow.classList.add('grouped-row', `group-${sanitizedOppNum}`);
                         sampleRow.style.display = 'none'; // Initially hidden
-                        sampleRow.innerHTML = `
-                            <td class="col-select">
-                                <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
-                            </td>
-                            <td class="col-opportunity">${sample.opportunity_number}</td>
-                            <td class="col-customer">${sample.customer}</td>
-                            <td class="col-rsm">${sample.rsm}</td>
-                            <td class="col-date">${sample.date_received}</td>
-                            <td class="col-description">${sample.description}</td>
-                            <td class="col-id">${sample.unique_id}</td>
-                            <td class="col-location">
-                                <select data-sample-id="${sample.unique_id}" onchange="updateSampleLocation(${JSON.stringify(sample.unique_id)}, this.value)">
-                                    ${getStorageLocationOptionsHTML(sample.storage_location)}
-                                </select>
-                            </td>
-                            <td class="col-pictures">
-                                <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">Upload/View</button>
-                            </td>
-                            <td class="col-documentation">
-                                <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
-                            </td>
-                        `;
+                        sampleRow.innerHTML = createSampleRowHTML(sample);
                         tableBody.appendChild(sampleRow);
                     });
                 }
