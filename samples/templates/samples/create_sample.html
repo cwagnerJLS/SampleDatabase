@@ -717,6 +717,60 @@
                 }
             });
         }
+        
+        // Utility function to get selected sample IDs
+        function getSelectedSampleIds() {
+            const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
+            return Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+        }
+        
+        // Utility function to get affected groups from selected checkboxes
+        function getAffectedGroups(selectedCheckboxes) {
+            const affectedGroups = new Set();
+            selectedCheckboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const oppNumCell = row.querySelector('.col-opportunity');
+                if (oppNumCell) {
+                    const oppNum = oppNumCell.textContent.trim();
+                    affectedGroups.add(oppNum);
+                }
+            });
+            return affectedGroups;
+        }
+        
+        // Utility function to create FormData with CSRF token
+        function createFormDataWithCSRF(data = {}) {
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrftoken);
+            for (const [key, value] of Object.entries(data)) {
+                if (typeof value === 'object' && !Array.isArray(value)) {
+                    formData.append(key, JSON.stringify(value));
+                } else if (Array.isArray(value)) {
+                    formData.append(key, JSON.stringify(value));
+                } else {
+                    formData.append(key, value);
+                }
+            }
+            return formData;
+        }
+        
+        // Utility function for fetch with standard error handling
+        function fetchWithErrorHandling(url, options) {
+            return fetch(url, {
+                ...options,
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    ...options.headers
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            });
+        }
 
         function showPrevImage(event) {
             event.stopPropagation(); // Prevent event bubbling
@@ -1102,7 +1156,7 @@
             // Submit Print function
             window.submitPrint = function() {
                 const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                const idsToPrint = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+                const idsToPrint = getSelectedSampleIds();
 
                 if (idsToPrint.length === 0) {
                     return;
@@ -1110,17 +1164,8 @@
 
                 console.log(`Proceeding to print ${idsToPrint.length} entries.`);
 
-                // Define affectedGroups as a Set to keep track of affected opportunity numbers
-                const affectedGroups = new Set();
-                // Collect the opportunity numbers of the selected samples
-                selectedCheckboxes.forEach(checkbox => {
-                    const row = checkbox.closest('tr');
-                    const oppNumCell = row.querySelector('.col-opportunity');
-                    if (oppNumCell) {
-                        const oppNum = oppNumCell.textContent.trim();
-                        affectedGroups.add(oppNum);
-                    }
-                });
+                // Get affected groups for cleanup
+                const affectedGroups = getAffectedGroups(selectedCheckboxes);
 
                 fetch("{% url 'handle_print_request' %}", {
                     method: 'POST',
@@ -1168,7 +1213,7 @@
             // Delete selected entries
             document.getElementById('delete-all-button').addEventListener('click', function() {
                 const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                const idsToDelete = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+                const idsToDelete = getSelectedSampleIds();
 
                 if (idsToDelete.length === 0) {
                     alert('No entries selected for deletion.');
@@ -1176,21 +1221,10 @@
                 }
 
                 if (confirm('Are you sure you want to delete the selected entries?')) {
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('ids', JSON.stringify(idsToDelete));
+                    const formData = createFormDataWithCSRF({ ids: idsToDelete });
 
-                    // Define affectedGroups
-                    const affectedGroups = new Set();
-
-                    selectedCheckboxes.forEach(checkbox => {
-                        const row = checkbox.closest('tr');
-                        const oppNumCell = row.querySelector('.col-opportunity');
-                        if (oppNumCell) {
-                            const oppNum = oppNumCell.textContent.trim();
-                            affectedGroups.add(oppNum);
-                        }
-                    });
+                    // Get affected groups for cleanup
+                    const affectedGroups = getAffectedGroups(selectedCheckboxes);
 
                     fetch("{% url 'delete_samples' %}", {
                         method: 'POST',
@@ -1793,7 +1827,7 @@
         // Functions that should be globally accessible
         function removeFromInventory() {
             const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-            const idsToRemove = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+            const idsToRemove = getSelectedSampleIds();
 
             if (idsToRemove.length === 0) {
                 alert('No entries selected to remove from inventory.');
@@ -1804,19 +1838,12 @@
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('csrfmiddlewaretoken', csrftoken);
-            formData.append('ids', JSON.stringify(idsToRemove));
+            const formData = createFormDataWithCSRF({ ids: idsToRemove });
 
-            fetch("{% url 'remove_from_inventory' %}", {
+            fetchWithErrorHandling("{% url 'remove_from_inventory' %}", {
                 method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrftoken
-                },
-                credentials: 'same-origin'
+                body: formData
             })
-            .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
                     // Remove the rows from the table
@@ -1826,16 +1853,7 @@
                     });
 
                     // Update group rows if necessary
-                    const affectedGroups = new Set();
-                    selectedCheckboxes.forEach(checkbox => {
-                        const row = checkbox.closest('tr');
-                        const oppNumCell = row.querySelector('.col-opportunity');
-                        if (oppNumCell) {
-                            const oppNum = oppNumCell.textContent.trim();
-                            affectedGroups.add(oppNum);
-                        }
-                    });
-
+                    const affectedGroups = getAffectedGroups(selectedCheckboxes);
                     cleanupEmptyGroups(affectedGroups);
 
                     // Uncheck the "Select All" checkbox
