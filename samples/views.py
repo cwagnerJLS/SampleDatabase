@@ -25,6 +25,13 @@ from .sharepoint_config import (
     get_apps_database_path,
     THUMBNAIL_SIZE
 )
+from .utils.responses import (
+    error_response,
+    success_response,
+    not_found_response,
+    method_not_allowed_response,
+    server_error_response
+)
 from .tasks import (
     delete_image_from_sharepoint,
     update_documentation_excels,
@@ -62,7 +69,7 @@ def create_sample(request):
             if 'clear_db' in request.POST:
                 logger.debug("Clearing database")
                 Sample.objects.all().delete()
-                return JsonResponse({'status': 'success', 'message': 'Database cleared'})
+                return success_response(message='Database cleared')
 
             # Retrieve data from POST request
             customer = request.POST.get('customer')
@@ -78,7 +85,7 @@ def create_sample(request):
                 date_received = datetime.strptime(date_received, '%Y-%m-%d').date()
             except ValueError as e:
                 logger.error(f"Invalid data format: {e}")
-                return JsonResponse({'status': 'error', 'error': 'Invalid data format'})
+                return error_response('Invalid data format')
 
             location = "Choose a location"
             logger.debug(f"Received data: customer={customer}, rsm={rsm_full_name}, opportunity_number={opportunity_number}, "
@@ -187,8 +194,7 @@ def create_sample(request):
 
             # Removed separate call to update_documentation_excels
 
-            return JsonResponse({
-                'status': 'success',
+            return success_response(data={
                 'created_samples': [
                     {
                         'unique_id': sample.unique_id,
@@ -204,7 +210,7 @@ def create_sample(request):
 
         except Exception as e:
             logger.error(f"Error in create_sample view: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            return server_error_response(str(e))
 
     logger.debug("Rendering create_sample page")
 
@@ -225,7 +231,7 @@ def create_sample(request):
         apps_database_path = get_apps_database_path()
         if not os.path.exists(apps_database_path):
             logger.error(f"Excel file not found at {apps_database_path}")
-            return JsonResponse({'status': 'error', 'error': 'Excel file not found'}, status=500)
+            return server_error_response('Excel file not found')
 
 
         # Read the Excel database
@@ -258,7 +264,7 @@ def create_sample(request):
 
     except Exception as e:
         logger.error(f"Error rendering create_sample page: {e}")
-        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+        return server_error_response(str(e))
 
 def upload_files(request):
     if request.method == 'POST' and request.FILES:
@@ -270,7 +276,7 @@ def upload_files(request):
             sample = Sample.objects.get(unique_id=sample_id)
         except Sample.DoesNotExist:
             logger.error("Sample not found with ID: %s", sample_id)
-            return JsonResponse({'status': 'error', 'error': 'Sample not found'})
+            return not_found_response('Sample')
 
         image_urls = []
         image_ids = []  # Initialize the list to collect image IDs
@@ -286,7 +292,7 @@ def upload_files(request):
                 # Validate file type
                 if not file.content_type.startswith('image/'):
                     logger.error("Invalid file type: %s", file.content_type)
-                    return JsonResponse({'status': 'error', 'error': 'Invalid file type. Only images are allowed.'})
+                    return error_response('Invalid file type. Only images are allowed.')
 
                 # Open the uploaded image
                 image = Image.open(file)
@@ -329,18 +335,17 @@ def upload_files(request):
 
         except Exception as e:
             logger.exception("Error processing files: %s", e)
-            return JsonResponse({'status': 'error', 'error': 'Error processing files.'}, status=500)
+            return server_error_response('Error processing files.')
 
         logger.info("Files uploaded successfully for Sample ID %s", sample_id)
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Files uploaded successfully.',
-            'images': image_urls,
-            'image_ids': image_ids  # Include image IDs in the response
-        })
+        return success_response(
+            message='Files uploaded successfully.',
+            images=image_urls,
+            image_ids=image_ids  # Include image IDs in the response
+        )
 
     logger.error("Invalid request method: %s", request.method)
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method.'}, status=405)
+    return method_not_allowed_response()
 
 def update_sample_location(request):
     if request.method == 'POST':
@@ -361,7 +366,7 @@ def update_sample_location(request):
                     sample.audit = audit
                     sample.save()
 
-                return JsonResponse({'status': 'success', 'message': 'Locations updated successfully for selected samples'})
+                return success_response(message='Locations updated successfully for selected samples')
             else:
                 # Updating a single sample
                 sample_id = int(request.POST.get('sample_id'))
@@ -375,20 +380,20 @@ def update_sample_location(request):
                 sample.audit = audit
                 sample.save()
 
-                return JsonResponse({'status': 'success', 'message': 'Location updated successfully for sample'})
+                return success_response(message='Location updated successfully for sample')
 
         except Sample.DoesNotExist:
             logger.error("Sample not found")
-            return JsonResponse({'status': 'error', 'error': 'Sample not found'}, status=404)
+            return not_found_response('Sample')
         except ValueError as e:
             logger.error(f"Invalid data provided: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Invalid data provided'}, status=400)
+            return error_response('Invalid data provided')
         except Exception as e:
             logger.error(f"Error in update_sample_location: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            return server_error_response(str(e))
 
     logger.error("Invalid request method for update_sample_location")
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+    return method_not_allowed_response()
 
 def remove_from_inventory(request):
     if request.method == 'POST':
@@ -419,16 +424,16 @@ def remove_from_inventory(request):
             # Call the update_documentation_excels task
             update_documentation_excels.delay()
 
-            return JsonResponse({'status': 'success'})
+            return success_response()
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON data: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+            return error_response('Invalid JSON data')
         except Exception as e:
             logger.error(f"Error removing samples from inventory: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            return server_error_response(str(e))
 
     logger.error("Invalid request method for remove_from_inventory")
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+    return method_not_allowed_response()
 
 def handle_print_request(request):
     if request.method == 'POST':
@@ -436,7 +441,7 @@ def handle_print_request(request):
             data = json.loads(request.body)
             ids_to_print = data.get('ids', [])
             if not ids_to_print:
-                return JsonResponse({'status': 'error', 'error': 'No sample IDs provided'}, status=400)
+                return error_response('No sample IDs provided')
 
             # Use the first sample_id to determine the labels directory
             sample = Sample.objects.get(unique_id=ids_to_print[0])
@@ -444,17 +449,17 @@ def handle_print_request(request):
             os.makedirs(labels_dir, exist_ok=True)
 
             if not ids_to_print:
-                return JsonResponse({'status': 'error', 'error': 'No sample IDs provided'}, status=400)
+                return error_response('No sample IDs provided')
 
             for sample_id in ids_to_print:
                 try:
                     sample = Sample.objects.get(unique_id=sample_id)
                 except Sample.DoesNotExist:
                     logger.error(f"Sample with ID {sample_id} does not exist")
-                    return JsonResponse({'status': 'error', 'error': f'Sample with ID {sample_id} does not exist'}, status=404)
+                    return not_found_response('Sample', sample_id)
                 except Exception as e:
                     logger.error(f"Error retrieving sample: {e}")
-                    return JsonResponse({'status': 'error', 'error': 'Error retrieving sample'}, status=500)
+                    return server_error_response('Error retrieving sample')
 
                 qr_url = request.build_absolute_uri(reverse('manage_sample', args=[sample.unique_id]))
                 output_path = os.path.join(labels_dir, f"label_{sample.unique_id}.pdf")
@@ -472,16 +477,16 @@ def handle_print_request(request):
                     subprocess.run(['lpr', output_path], check=True)
                 except subprocess.CalledProcessError as e:
                     logger.error(f"Error printing label for sample {sample_id}: {e}")
-                    return JsonResponse({'status': 'error', 'error': f'Failed to print label for sample {sample_id}'}, status=500)
+                    return server_error_response(f'Failed to print label for sample {sample_id}')
 
-            return JsonResponse({'status': 'success'})
+            return success_response()
         except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+            return error_response('Invalid JSON data')
         except Exception as e:
             logger.error(f"Error in handle_print_request: {e}")
-            return JsonResponse({'status': 'error', 'error': 'An unexpected error occurred'}, status=500)
+            return server_error_response('An unexpected error occurred')
     else:
-        return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+        return method_not_allowed_response()
 
 def manage_sample(request, sample_id):
     # Retrieve the sample or return a 404 error if not found
@@ -509,7 +514,7 @@ def manage_sample(request, sample_id):
             return redirect('manage_sample', sample_id=sample.unique_id)
         except Exception as e:
             logger.error(f"Error updating sample {sample_id}: {e}")
-            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+            return server_error_response(str(e))
 
     # For GET requests, render the template with the sample data
     return render(request, 'samples/manage_sample.html', {'sample': sample})
@@ -520,10 +525,10 @@ def export_documentation_view(request):
         opportunity_number = data.get('opportunity_number', None)
         if opportunity_number:
             export_documentation.delay(opportunity_number)
-            return JsonResponse({'status': 'success'})
+            return success_response()
         else:
-            return JsonResponse({'status': 'error', 'error': 'No opportunity number'}, status=400)
-    return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+            return error_response('No opportunity number')
+    return method_not_allowed_response()
 
 def get_sample_images(request):
     sample_id = request.GET.get('sample_id')
@@ -539,9 +544,9 @@ def get_sample_images(request):
             }
             for image in images
         ]
-        return JsonResponse({'status': 'success', 'images': image_data})
+        return success_response(data={'images': image_data})
     except Sample.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Sample not found'})
+        return not_found_response('Sample')
 
 @csrf_exempt  # Add this if you're not using CSRF tokens properly
 @require_POST
@@ -557,12 +562,12 @@ def delete_sample_image(request):
 
         # Delete the local file + DB record
         image.delete()
-        return JsonResponse({'status': 'success'})
+        return success_response()
     except SampleImage.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Image not found'})
+        return not_found_response('Image')
     except Exception as e:
         logger.error(f"Error deleting image {image_id}: {e}")
-        return JsonResponse({'status': 'error', 'error': 'An error occurred while deleting the image'})
+        return server_error_response('An error occurred while deleting the image')
 
 def delete_samples(request):
     if request.method == 'POST':
@@ -576,29 +581,29 @@ def delete_samples(request):
 
             logger.debug(f"Deleted samples with IDs: {ids}")
 
-            return JsonResponse({'status': 'success'})
+            return success_response()
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON data: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Invalid JSON data'}, status=400)
+            return error_response('Invalid JSON data')
         except Sample.DoesNotExist as e:
             logger.error(f"Sample not found: {e}")
-            return JsonResponse({'status': 'error', 'error': 'Sample not found'}, status=404)
+            return not_found_response('Sample')
         except Exception as e:
             logger.error(f"Error deleting samples: {e}")
-            return JsonResponse({'status': 'error', 'error': 'An unexpected error occurred'}, status=500)
+            return server_error_response('An unexpected error occurred')
     else:
         logger.error("Invalid request method for delete_samples")
-        return JsonResponse({'status': 'error', 'error': 'Invalid request method'}, status=405)
+        return method_not_allowed_response()
 def handle_405(request, exception=None):
-    return JsonResponse({'status': 'error', 'error': 'Method Not Allowed'}, status=405)
+    return method_not_allowed_response()
 def handle_400(request, exception=None):
-    return JsonResponse({'status': 'error', 'error': 'Bad Request'}, status=400)
+    return error_response('Bad Request')
 
 def handle_403(request, exception=None):
-    return JsonResponse({'status': 'error', 'error': 'Forbidden'}, status=403)
+    return error_response('Forbidden', status=403)
 
 def handle_404(request, exception=None):
-    return JsonResponse({'status': 'error', 'error': 'Not Found'}, status=404)
+    return error_response('Not Found', status=404)
 
 def handle_500(request):
-    return JsonResponse({'status': 'error', 'error': 'Server Error'}, status=500)
+    return server_error_response('Server Error')

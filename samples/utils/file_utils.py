@@ -3,7 +3,7 @@ from django.conf import settings
 import pandas as pd
 import subprocess
 import logging
-from .sharepoint_config import get_documentation_template_path
+from ..sharepoint_config import get_documentation_template_path
 
 def create_documentation_on_sharepoint(opportunity_number):
     logger = logging.getLogger(__name__)
