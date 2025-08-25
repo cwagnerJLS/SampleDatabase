@@ -750,7 +750,7 @@
     </script>
 
     <!-- Full-Size Image Modal -->
-    <div id="fullSizeModal" class="modal" style="display: none;" onclick="closeFullSizeModal(event)">
+    <div id="fullSizeModal" class="modal" style="display: none;">
         <!-- The content will be dynamically generated in JavaScript -->
     </div>
 
@@ -793,75 +793,9 @@
         </div>
 
         <div class="button-container">
-            <button type="button" onclick="validateAndShowModal()">Add Sample</button>
+            <button type="button" id="add-sample-button">Add Sample</button>
             <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
-            <script>
-                // Event listener for the "Remove From Inventory" button
-                document.getElementById('remove-from-inventory-button').addEventListener('click', function() {
-                    removeFromInventory();
-                });
-
-                function removeFromInventory() {
-                    const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
-                    const idsToRemove = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
-
-                    if (idsToRemove.length === 0) {
-                        alert('No entries selected to remove from inventory.');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to remove the selected entries from inventory?')) {
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    formData.append('csrfmiddlewaretoken', csrftoken);
-                    formData.append('ids', JSON.stringify(idsToRemove));
-
-                    fetch("{% url 'remove_from_inventory' %}", {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRFToken': csrftoken
-                        },
-                        credentials: 'same-origin'  // Include cookies
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // Remove the rows from the table
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                row.parentNode.removeChild(row);
-                            });
-
-                            // Update group rows if necessary
-                            const affectedGroups = new Set();
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                const oppNumCell = row.querySelector('.col-opportunity');
-                                if (oppNumCell) {
-                                    const oppNum = oppNumCell.textContent.trim();
-                                    affectedGroups.add(oppNum);
-                                }
-                            });
-
-                            cleanupEmptyGroups(affectedGroups);
-
-                            // Uncheck the "Select All" checkbox
-                            document.getElementById('select-all-select').checked = false;
-
-                            console.log('Entries removed from inventory successfully.');
-                        } else {
-                            console.error('Error removing entries from inventory:', data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-                }
-            </script>
-            <button type="button" onclick="resetFilters()">Reset</button>
+            <button type="button" id="reset-filters-button">Reset</button>
             <button type="button" id="print-all-button">Print</button>
             <button type="button" id="export-all-button">Export</button>
             <button type="button" id="delete-all-button">Delete</button>
@@ -911,7 +845,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>Add Sample</h2>
-                    <span class="close" onclick="closeAddSampleModal()">&times;</span>
+                    <span class="close modal-close" data-modal="addSampleModal">&times;</span>
                 </div>
                 <div class="modal-body add-sample-modal">
                     <form id="addSampleForm" onsubmit="submitForm(event); return false;">
@@ -927,7 +861,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="submit">Submit</button>
-                            <button type="button" onclick="closeAddSampleModal()">Cancel</button>
+                            <button type="button" class="modal-close" data-modal="addSampleModal">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -941,7 +875,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>Upload/View Images</h2>
-                    <span class="close" onclick="closeUploadModal()">&times;</span>
+                    <span class="close modal-close" data-modal="uploadModal">&times;</span>
                 </div>
                 <div class="modal-body">
                     <!-- Thumbnails Container -->
@@ -949,7 +883,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="selectFiles()">Upload</button>
-                    <button type="button" onclick="closeUploadModal()">Done</button>
+                    <button type="button" class="modal-close" data-modal="uploadModal">Done</button>
                 </div>
             </div>
         </div>
@@ -1096,6 +1030,21 @@
             // Event listener for the print button
             document.getElementById('print-all-button').addEventListener('click', function() {
                 submitPrint();
+            });
+            
+            // Event listener for the add sample button
+            document.getElementById('add-sample-button').addEventListener('click', function() {
+                validateAndShowModal();
+            });
+            
+            // Event listener for the remove from inventory button
+            document.getElementById('remove-from-inventory-button').addEventListener('click', function() {
+                removeFromInventory();
+            });
+            
+            // Event listener for the reset filters button
+            document.getElementById('reset-filters-button').addEventListener('click', function() {
+                resetFilters();
             });
 
             // Event listener for the export button
@@ -1794,8 +1743,17 @@
             document.addEventListener('click', function(event) {
                 const target = event.target;
                 
+                // Handle modal close buttons
+                if (target.classList.contains('modal-close')) {
+                    const modalId = target.dataset.modal;
+                    if (modalId === 'addSampleModal') {
+                        closeAddSampleModal();
+                    } else if (modalId === 'uploadModal') {
+                        closeUploadModal();
+                    }
+                }
                 // Handle picture upload/view buttons
-                if (target.classList.contains('picture-btn')) {
+                else if (target.classList.contains('picture-btn')) {
                     event.preventDefault();
                     const sampleId = target.dataset.sampleId;
                     handlePictureUploadView(sampleId);
@@ -1821,9 +1779,78 @@
                     }
                 }
             });
+            
+            // Handle full-size modal clicks
+            document.getElementById('fullSizeModal').addEventListener('click', function(event) {
+                // Only close if clicked outside the modal content
+                const modalContent = this.querySelector('.modal-content');
+                if (modalContent && !modalContent.contains(event.target)) {
+                    closeFullSizeModal(event);
+                }
+            });
         }); // Properly close the DOMContentLoaded function
 
         // Functions that should be globally accessible
+        function removeFromInventory() {
+            const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
+            const idsToRemove = Array.from(selectedCheckboxes).map(checkbox => checkbox.value);
+
+            if (idsToRemove.length === 0) {
+                alert('No entries selected to remove from inventory.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to remove the selected entries from inventory?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrftoken);
+            formData.append('ids', JSON.stringify(idsToRemove));
+
+            fetch("{% url 'remove_from_inventory' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove the rows from the table
+                    selectedCheckboxes.forEach(checkbox => {
+                        const row = checkbox.closest('tr');
+                        row.parentNode.removeChild(row);
+                    });
+
+                    // Update group rows if necessary
+                    const affectedGroups = new Set();
+                    selectedCheckboxes.forEach(checkbox => {
+                        const row = checkbox.closest('tr');
+                        const oppNumCell = row.querySelector('.col-opportunity');
+                        if (oppNumCell) {
+                            const oppNum = oppNumCell.textContent.trim();
+                            affectedGroups.add(oppNum);
+                        }
+                    });
+
+                    cleanupEmptyGroups(affectedGroups);
+
+                    // Uncheck the "Select All" checkbox
+                    document.getElementById('select-all-select').checked = false;
+
+                    console.log('Entries removed from inventory successfully.');
+                } else {
+                    console.error('Error removing entries from inventory:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+        }
+        
         function handlePictureUploadView(sampleId) {
             currentSampleId = sampleId;
             // Open the modal
