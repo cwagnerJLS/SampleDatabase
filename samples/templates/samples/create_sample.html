@@ -1577,15 +1577,18 @@
 
             const groupsToShow = new Set();
             window.filterTable = function() {
-                const idFilter = document.getElementById('idFilter').value.toLowerCase();
-                const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
-                const customerFilter = document.getElementById('customerFilter').value.toLowerCase();
-                const rsmFilter = document.getElementById('rsmFilter').value.toLowerCase();
-                const opportunityFilter = document.getElementById('opportunityFilter').value.toLowerCase();
-                const descriptionFilter = document.getElementById('descriptionFilter').value.toLowerCase();
-                const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
+                // Cache filter values
+                const filters = {
+                    id: document.getElementById('idFilter').value.toLowerCase(),
+                    date: document.getElementById('dateFilter').value.toLowerCase(),
+                    customer: document.getElementById('customerFilter').value.toLowerCase(),
+                    rsm: document.getElementById('rsmFilter').value.toLowerCase(),
+                    opportunity: document.getElementById('opportunityFilter').value.toLowerCase(),
+                    description: document.getElementById('descriptionFilter').value.toLowerCase(),
+                    location: document.getElementById('locationFilter').value.toLowerCase()
+                };
 
-                const filtersApplied = idFilter || dateFilter || customerFilter || rsmFilter || opportunityFilter || descriptionFilter || locationFilter;
+                const filtersApplied = Object.values(filters).some(f => f !== '');
 
                 const table = document.getElementById('samplesTable');
                 const tr = table.getElementsByTagName('tr');
@@ -1605,32 +1608,30 @@
                         let groupHasMatch = false;
 
                         groupedRows.forEach(childRow => {
-                            const tdOpportunity = childRow.getElementsByTagName('td')[1];
-                            const tdCustomer = childRow.getElementsByTagName('td')[2];
-                            const tdRsm = childRow.getElementsByTagName('td')[3];
-                            const tdDate = childRow.getElementsByTagName('td')[4];
-                            const tdDescription = childRow.getElementsByTagName('td')[5];
-                            const tdId = childRow.getElementsByTagName('td')[6];
-                            const tdLocation = childRow.getElementsByTagName('td')[7];
+                            const cells = childRow.getElementsByTagName('td');
+                            if (cells.length >= 8) {
+                                // Cache cell text content
+                                const rowData = {
+                                    opportunity: (cells[1].textContent || '').toLowerCase(),
+                                    customer: (cells[2].textContent || '').toLowerCase(),
+                                    rsm: (cells[3].textContent || '').toLowerCase(),
+                                    date: (cells[4].textContent || '').toLowerCase(),
+                                    description: (cells[5].textContent || '').toLowerCase(),
+                                    id: (cells[6].textContent || '').toLowerCase(),
+                                    location: (cells[7].textContent || '').toLowerCase()
+                                };
 
-                            if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
-                                const idValue = tdId.textContent || tdId.innerText;
-                                const dateValue = tdDate.textContent || tdDate.innerText;
-                                const customerValue = tdCustomer.textContent || tdCustomer.innerText;
-                                const rsmValue = tdRsm.textContent || tdRsm.innerText;
-                                const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
-                                const descriptionValue = tdDescription.textContent || tdDescription.innerText;
-                                const locationValue = tdLocation.textContent || tdLocation.innerText;
+                                // Check if row matches all filters
+                                const matches = 
+                                    rowData.id.includes(filters.id) &&
+                                    rowData.date.includes(filters.date) &&
+                                    rowData.customer.includes(filters.customer) &&
+                                    rowData.rsm.includes(filters.rsm) &&
+                                    rowData.opportunity.includes(filters.opportunity) &&
+                                    rowData.description.includes(filters.description) &&
+                                    rowData.location.includes(filters.location);
 
-                                if (
-                                    idValue.toLowerCase().indexOf(idFilter) > -1 &&
-                                    dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
-                                    customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
-                                    rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
-                                    opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
-                                    descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
-                                    locationValue.toLowerCase().indexOf(locationFilter) > -1
-                                ) {
+                                if (matches) {
                                     groupHasMatch = true;
                                     childRow.style.display = ''; // Show matching child rows
                                 } else {
@@ -1660,32 +1661,30 @@
                     }
 
                     // Process rows that are not part of a group (if any)
-                    const tdOpportunity = row.getElementsByTagName('td')[1];
-                    const tdCustomer = row.getElementsByTagName('td')[2];
-                    const tdRsm = row.getElementsByTagName('td')[3];
-                    const tdDate = row.getElementsByTagName('td')[4];
-                    const tdDescription = row.getElementsByTagName('td')[5];
-                    const tdId = row.getElementsByTagName('td')[6];
-                    const tdLocation = row.getElementsByTagName('td')[7];
+                    const cells = row.getElementsByTagName('td');
+                    if (cells.length >= 8) {
+                        // Cache cell text content
+                        const rowData = {
+                            opportunity: (cells[1].textContent || '').toLowerCase(),
+                            customer: (cells[2].textContent || '').toLowerCase(),
+                            rsm: (cells[3].textContent || '').toLowerCase(),
+                            date: (cells[4].textContent || '').toLowerCase(),
+                            description: (cells[5].textContent || '').toLowerCase(),
+                            id: (cells[6].textContent || '').toLowerCase(),
+                            location: (cells[7].textContent || '').toLowerCase()
+                        };
 
-                    if (tdId && tdDate && tdCustomer && tdRsm && tdOpportunity && tdDescription && tdLocation) {
-                        const idValue = tdId.textContent || tdId.innerText;
-                        const dateValue = tdDate.textContent || tdDate.innerText;
-                        const customerValue = tdCustomer.textContent || tdCustomer.innerText;
-                        const rsmValue = tdRsm.textContent || tdRsm.innerText;
-                        const opportunityValue = tdOpportunity.textContent || tdOpportunity.innerText;
-                        const descriptionValue = tdDescription.textContent || tdDescription.innerText;
-                        const locationValue = tdLocation.textContent || tdLocation.innerText;
+                        // Check if row matches all filters
+                        const matches = 
+                            rowData.id.includes(filters.id) &&
+                            rowData.date.includes(filters.date) &&
+                            rowData.customer.includes(filters.customer) &&
+                            rowData.rsm.includes(filters.rsm) &&
+                            rowData.opportunity.includes(filters.opportunity) &&
+                            rowData.description.includes(filters.description) &&
+                            rowData.location.includes(filters.location);
 
-                        if (
-                            idValue.toLowerCase().indexOf(idFilter) > -1 &&
-                            dateValue.toLowerCase().indexOf(dateFilter) > -1 &&
-                            customerValue.toLowerCase().indexOf(customerFilter) > -1 &&
-                            rsmValue.toLowerCase().indexOf(rsmFilter) > -1 &&
-                            opportunityValue.toLowerCase().indexOf(opportunityFilter) > -1 &&
-                            descriptionValue.toLowerCase().indexOf(descriptionFilter) > -1 &&
-                            locationValue.toLowerCase().indexOf(locationFilter) > -1
-                        ) {
+                        if (matches) {
                             row.style.display = '';
                         } else {
                             row.style.display = 'none';
@@ -1721,6 +1720,9 @@
             // Clear the existing table body
             const tableBody = document.querySelector('#samplesTable tbody');
             tableBody.innerHTML = '';
+            
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
 
             // Iterate over each group
             Object.keys(groupedSamples).forEach(oppNum => {
@@ -1735,7 +1737,7 @@
                     const sample = group[0];
                     const newRow = document.createElement('tr');
                     newRow.innerHTML = createSampleRowHTML(sample);
-                    tableBody.appendChild(newRow);
+                    fragment.appendChild(newRow);
                 } else {
                     // Create a group row without a select box and with a '+' button
                     const sanitizedOppNum = sanitizeOppNum(oppNum);
@@ -1743,7 +1745,7 @@
                     groupRow.classList.add('group-row');
                     groupRow.setAttribute('data-opp-num', sanitizedOppNum);
                     groupRow.innerHTML = createGroupRowHTML(oppNum, groupCustomer, groupRsm, group.length);
-                    tableBody.appendChild(groupRow);
+                    fragment.appendChild(groupRow);
 
                     // Add rows for each sample in the group, initially hidden
                     group.forEach(sample => {
@@ -1751,10 +1753,13 @@
                         sampleRow.classList.add('grouped-row', `group-${sanitizedOppNum}`);
                         sampleRow.style.display = 'none'; // Initially hidden
                         sampleRow.innerHTML = createSampleRowHTML(sample);
-                        tableBody.appendChild(sampleRow);
+                        fragment.appendChild(sampleRow);
                     });
                 }
             });
+            
+            // Append all rows at once
+            tableBody.appendChild(fragment);
 
             // Add event listener for individual checkboxes to highlight rows
             document.addEventListener('change', function(event) {
