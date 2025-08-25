@@ -3,6 +3,7 @@
 <head>
     {% load static %}
     <title>Test Lab Samples</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
     <!-- Include jQuery and other libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
@@ -256,8 +257,8 @@
         .add-sample-modal .modal-form-group.quantity-group {
             margin-top: 10px; /* Adjust this value to move the field further down or up */
         }
-        .selected-row {
-            background-color: #baf7ba; /* Light green color */
+        #samplesTable tr.selected-row td {
+            background-color: #d4f5d4 !important; /* Lighter green color */
         }
 
         /* Apply light blue background to the filtering row */
@@ -1059,9 +1060,6 @@
             return oppNum.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
         }
 
-        // Declare selectAllSelectCheckbox at the global scope
-        const selectAllSelectCheckbox = document.getElementById('select-all-select');
-
         document.addEventListener("DOMContentLoaded", function() {
             // Initialize variables
             const csrftoken = '{{ csrf_token }}';
@@ -1069,6 +1067,9 @@
             const todayDate = new Date().toISOString().split('T')[0];
             let isPopulating = false; // Flag to prevent recursive triggering
             let currentSampleId = null; // For image uploads
+            
+            // Get the select all checkbox element
+            const selectAllSelectCheckbox = document.getElementById('select-all-select');
 
             // Initialize Select2 for dropdowns with search capability
             $('#customer, #rsm, #opportunity_number').select2({
@@ -1288,21 +1289,20 @@
                 }
             });
 
-            // Select All functionality with row highlighting
-            selectAllSelectCheckbox.addEventListener('change', function() {
-                const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
-                visibleSampleRows.forEach(function(row) {
-                    const checkbox = row.querySelector('input[name="select_checkbox"]');
-                    if (checkbox) {
-                        checkbox.checked = this.checked;
-                        if (this.checked) {
-                            row.classList.add('selected-row');
-                        } else {
-                            row.classList.remove('selected-row');
+            // Select All functionality - just check/uncheck boxes and let the change event handle highlighting
+            if (selectAllSelectCheckbox) {
+                selectAllSelectCheckbox.addEventListener('change', function() {
+                    const visibleSampleRows = document.querySelectorAll('#samplesTable tbody tr:not([style*="display: none"]):not(.group-row)');
+                    visibleSampleRows.forEach(function(row) {
+                        const checkbox = row.querySelector('input[name="select_checkbox"]');
+                        if (checkbox) {
+                            checkbox.checked = this.checked;
+                            // Trigger the change event to handle highlighting
+                            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                         }
-                    }
-                }, this);
-            });
+                    }, this);
+                });
+            }
 
             // Update Sample Location function
             window.updateSampleLocation = function(sampleId, location) {
@@ -1691,15 +1691,16 @@
                             const expandButton = row.querySelector('.expand-button');
                             if (filtersApplied) {
                                 expandButton.textContent = '-'; // Expand group if filters are applied
-                                groupedRows.forEach(childRow => {
-                                    childRow.style.display = ''; // Show matching child rows
-                                });
+                                // Child rows are already properly shown/hidden in the loop above
                             } else {
                                 expandButton.textContent = '+';
                                 groupedRows.forEach(childRow => {
                                     childRow.style.display = 'none'; // Keep child rows hidden when no filters
                                 });
                             }
+                        } else {
+                            // Hide the group row if no children match the filter
+                            row.style.display = 'none';
                         }
 
                         continue; // Move to the next row
@@ -1863,6 +1864,20 @@
                         `;
                         tableBody.appendChild(sampleRow);
                     });
+                }
+            });
+
+            // Add event listener for individual checkboxes to highlight rows
+            document.addEventListener('change', function(event) {
+                if (event.target.type === 'checkbox' && event.target.name === 'select_checkbox') {
+                    const row = event.target.closest('tr');
+                    if (row) {
+                        if (event.target.checked) {
+                            row.classList.add('selected-row');
+                        } else {
+                            row.classList.remove('selected-row');
+                        }
+                    }
                 }
             });
 
