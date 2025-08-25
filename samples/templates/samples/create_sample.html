@@ -304,6 +304,19 @@
             margin-top: 20px;
             justify-content: center;  /* Center the buttons horizontally */
             width: 100%;
+            /* Make it sticky */
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: #FFFFFF;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        /* Add shadow when scrolled */
+        .button-container.scrolled {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .button-container button {
@@ -845,16 +858,16 @@
             </div>
             <input type="hidden" id="apps_eng" name="apps_eng" value="">
         </div>
-
-        <div class="button-container">
-            <button type="button" id="add-sample-button">Add Sample</button>
-            <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
-            <button type="button" id="reset-filters-button">Reset</button>
-            <button type="button" id="print-all-button">Print</button>
-            <button type="button" id="export-all-button">Export</button>
-            <button type="button" id="delete-all-button">Delete</button>
-        </div>
     </form>
+    
+    <div class="button-container" data-form="sampleForm">
+        <button type="button" id="add-sample-button">Add Sample</button>
+        <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
+        <button type="button" id="reset-filters-button">Reset</button>
+        <button type="button" id="print-all-button">Print</button>
+        <button type="button" id="export-all-button">Export</button>
+        <button type="button" id="delete-all-button">Delete</button>
+    </div>
 
     <!-- The Table for displaying samples -->
     <div class="table-responsive">
@@ -2057,6 +2070,18 @@
             document.getElementById('uploadModal').style.display = 'none';
             currentSampleId = null;
         }
+        
+        // Add shadow to sticky button container when scrolled
+        window.addEventListener('scroll', function() {
+            const buttonContainer = document.querySelector('.button-container');
+            if (buttonContainer) {
+                if (window.scrollY > 50) {
+                    buttonContainer.classList.add('scrolled');
+                } else {
+                    buttonContainer.classList.remove('scrolled');
+                }
+            }
+        });
     </script>
 </body>
 </html>
