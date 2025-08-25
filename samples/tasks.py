@@ -6,7 +6,6 @@ from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils.file_utils import create_documentation_on_sharepoint
 from .utils.date_utils import format_date_for_display
 from .utils.rclone_utils import get_rclone_manager, delete_from_sharepoint, copy_to_sharepoint, purge_sharepoint_folder
-import subprocess
 import shutil
 import os
 from django.conf import settings
@@ -29,6 +28,8 @@ from .EditExcelSharepoint import (
     update_range_in_workbook,
     delete_rows_in_workbook
 )
+from samples.utils.sharepoint_api import GraphAPIClient, ExcelAPIClient
+from samples.utils.rclone_utils import get_rclone_manager
 
 logger = logging.getLogger(__name__)
 
@@ -430,8 +431,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
     logger.info(f"Celery worker PATH environment variable: {path_env}")
 
     # Specify the full path to rclone
-    rclone_executable = settings.RCLONE_EXECUTABLE
-    logger.info(f"Using rclone executable at: {rclone_executable}")
+    # Rclone operations are now handled by RcloneManager
 
     # Add the for loop to iterate over sample_image_ids
     for sample_image_id in sample_image_ids:
@@ -448,19 +448,13 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
             logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
 
             # Copy the full-size image to SharePoint
-            result = subprocess.run(
-                [rclone_executable, 'copyto', source_path, destination_path],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=os.environ
-            )
-            if result.stdout:
-                logger.debug(f"rclone stdout: {result.stdout}")
-            if result.stderr:
-                logger.error(f"rclone stderr: {result.stderr}")
-
-            logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
+            rclone = get_rclone_manager()
+            success = rclone.copy(source_path, destination_path)
+            
+            if success:
+                logger.info(f"Copied full-size image {sample_image_id} to SharePoint: {destination_path}")
+            else:
+                raise Exception(f"Failed to copy image to SharePoint")
 
         except Exception as e:
             logger.error(f"Failed to upload image {sample_image_id} to SharePoint: {e}")
@@ -473,30 +467,17 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
 
     # Specify the full path to rclone
-    rclone_executable = settings.RCLONE_EXECUTABLE
-    logger.info(f"Using rclone executable at: {rclone_executable}")
+    # Rclone operations are now handled by RcloneManager
 
-    # Command to delete the folder using rclone
+    # Delete the folder using rclone
     try:
-        result = subprocess.run(
-            [rclone_executable, 'purge', remote_folder_path],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ
-        )
-        if result.stdout:
-            logger.debug(f"rclone stdout: {result.stdout}")
-        if result.stderr:
-            logger.error(f"rclone stderr: {result.stderr}")
-        logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to delete opportunity directory from SharePoint: {e}")
-        if e.stdout:
-            logger.error(f"rclone stdout: {e.stdout}")
-        if e.stderr:
-            logger.error(f"rclone stderr: {e.stderr}")
-        logger.exception(e)
+        rclone = get_rclone_manager()
+        success = rclone.purge(remote_folder_path)
+        
+        if success:
+            logger.info(f"Deleted opportunity directory from SharePoint: {remote_folder_path}")
+        else:
+            logger.error(f"Failed to delete opportunity directory from SharePoint")
     except Exception as e:
         logger.error(f"An unexpected error occurred in delete_documentation_from_sharepoint_task: {e}")
         logger.exception(e)
@@ -508,32 +489,22 @@ def move_documentation_to_archive_task(opportunity_number):
     logger.info(f"Starting move_documentation_to_archive_task for opportunity {opportunity_number}")
 
     # Specify the full path to rclone executable
-    rclone_executable = settings.RCLONE_EXECUTABLE
-    logger.info(f"Using rclone executable at: {rclone_executable}")
+    # Rclone operations are now handled by RcloneManager
     remote_folder_path = f"TestLabSamples:{opportunity_number}"
     archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
 
-    # Command to move the folder using rclone
+    # Move the folder using rclone
     try:
-        logger.info(f"Attempting to move {remote_folder_path} to {archive_folder_path}/{opportunity_number}")
-        result = subprocess.run(
-            [
-                rclone_executable,
-                'moveto',
-                remote_folder_path,
-                archive_folder_path
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ
-        )
-        if result.stdout:
-            logger.debug(f"rclone stdout: {result.stdout}")
-        if result.stderr:
-            logger.error(f"rclone stderr: {result.stderr}")
-        logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}")
-    except subprocess.CalledProcessError as e:
+        logger.info(f"Attempting to move {remote_folder_path} to {archive_folder_path}")
+        
+        rclone = get_rclone_manager()
+        success = rclone.move(remote_folder_path, archive_folder_path)
+        
+        if success:
+            logger.info(f"Moved opportunity directory to archive: {remote_folder_path} -> {archive_folder_path}")
+        else:
+            logger.error(f"Failed to move opportunity directory to archive")
+    except Exception as e:
         logger.error(f"Failed to move opportunity directory to archive: {e}")
 @shared_task
 def restore_documentation_from_archive_task(opportunity_number):
@@ -541,37 +512,21 @@ def restore_documentation_from_archive_task(opportunity_number):
 
     logger.info(f"Starting restore_documentation_from_archive_task for opportunity {opportunity_number}")
 
-    # Specify the full path to rclone executable
-    rclone_executable = settings.RCLONE_EXECUTABLE
+    # Rclone operations are now handled by RcloneManager
     archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
     main_folder_path = f"TestLabSamples:{opportunity_number}"
 
-    # Command to move the folder back using rclone
+    # Move the folder back using rclone
     try:
         logger.info(f"Attempting to move {archive_folder_path} back to {main_folder_path}")
-        result = subprocess.run(
-            [
-                rclone_executable,
-                'moveto',
-                archive_folder_path,
-                main_folder_path
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-            env=os.environ
-        )
-        if result.stdout:
-            logger.debug(f"rclone stdout: {result.stdout}")
-        if result.stderr:
-            logger.error(f"rclone stderr: {result.stderr}")
-        logger.info(f"Restored opportunity directory from archive: {archive_folder_path} -> {main_folder_path}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to restore opportunity directory from archive: {e}")
-        if e.stdout:
-            logger.error(f"rclone stdout: {e.stdout}")
-        if e.stderr:
-            logger.error(f"rclone stderr: {e.stderr}")
+        
+        rclone = get_rclone_manager()
+        success = rclone.move(archive_folder_path, main_folder_path)
+        
+        if success:
+            logger.info(f"Restored opportunity directory from archive: {archive_folder_path} -> {main_folder_path}")
+        else:
+            logger.error(f"Failed to restore opportunity directory from archive")
     except Exception as e:
         logger.error(f"An unexpected error occurred in restore_documentation_from_archive_task: {e}")
         logger.exception(e)
@@ -616,7 +571,7 @@ def export_documentation(opportunity_number):
         if not access_token:
             logger.error("Failed to acquire access token; aborting.")
             return
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        # Headers are now handled internally by GraphAPIClient
 
         def find_folder_by_name(drive_id, parent_id, folder_name):
             """
@@ -628,12 +583,12 @@ def export_documentation(opportunity_number):
             else:
                 children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
 
-            resp = requests.get(children_url, headers=headers)
-            if resp.status_code != 200:
-                logger.error(f"Failed listing child items under {parent_id}: {resp.text}")
+            result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
+            if not result:
+                logger.error(f"Failed listing child items under {parent_id}")
                 return None
 
-            for item in resp.json().get("value", []):
+            for item in result.get("value", []):
                 if item.get("name", "").strip().lower() == folder_name.strip().lower() and "folder" in item:
                     return item["id"]
             return None
@@ -641,11 +596,11 @@ def export_documentation(opportunity_number):
         def list_children(drive_id, folder_id):
             """List files under the given folder_id."""
             children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{folder_id}/children"
-            resp = requests.get(children_url, headers=headers)
-            if resp.status_code != 200:
-                logger.error(f"Failed listing child items under {folder_id}: {resp.text}")
+            result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
+            if not result:
+                logger.error(f"Failed listing child items under {folder_id}")
                 return []
-            return resp.json().get("value", [])
+            return result.get("value", [])
 
         # 1) Find the folder for this opportunity
         opp_folder_id = find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, opportunity_number)
@@ -677,20 +632,20 @@ def export_documentation(opportunity_number):
             # ──────────────────────────────────────────────────────────────────────────────
             # ADD THIS BLOCK to remove existing file with the same name from destination:
             destination_children_url = f"{GRAPH_API_URL}/drives/{SALES_ENGINEERING_LIBRARY_ID}/items/{sample_info_folder_id}/children"
-            dest_resp = requests.get(destination_children_url, headers=headers)
-            if dest_resp.status_code == 200:
-                for existing_item in dest_resp.json().get("value", []):
+            dest_result = GraphAPIClient.get(destination_children_url, access_token, raise_on_error=False)
+            if dest_result:
+                for existing_item in dest_result.get("value", []):
                     if existing_item.get("name") and existing_item["name"].lower() == file_name.lower():
                         existing_file_id = existing_item["id"]
                         delete_url = f"{GRAPH_API_URL}/drives/{SALES_ENGINEERING_LIBRARY_ID}/items/{existing_file_id}"
                         logger.info(f"Deleting existing file '{file_name}' from destination to allow overwrite.")
-                        del_resp = requests.delete(delete_url, headers=headers)
-                        if del_resp.status_code == 204:
+                        del_result = GraphAPIClient.delete(delete_url, access_token, raise_on_error=False)
+                        if del_result is not None:
                             logger.info("Existing file deleted successfully.")
                         else:
-                            logger.warning(f"Failed to delete existing file. Status: {del_resp.status_code}, {del_resp.text}")
+                            logger.warning("Failed to delete existing file.")
             else:
-                logger.warning(f"Failed to check destination files: {dest_resp.status_code}, {dest_resp.text}")
+                logger.warning("Failed to check destination files")
             # ──────────────────────────────────────────────────────────────────────────────
         for file_item in files_to_copy:
             if "folder" in file_item:
@@ -711,15 +666,14 @@ def export_documentation(opportunity_number):
             }
 
             logger.info(f"Copying '{file_name}' to folder ID {sample_info_folder_id} ...")
-            copy_resp = requests.post(copy_endpoint, json=copy_body, headers=headers)
-            if copy_resp.status_code not in [200, 202]:
-                logger.error(
-                    f"Failed copy for {file_name}: {copy_resp.status_code} {copy_resp.text}"
-                )
+            copy_result = GraphAPIClient.post(copy_endpoint, access_token, json_data=copy_body, raise_on_error=False)
+            if copy_result is None:
+                logger.error(f"Failed copy for {file_name}")
                 continue
 
-            # If copy is async (202), you could poll "Location" header. Simple approach: just wait a moment.
-            if copy_resp.status_code == 202:
+            # If copy is async (202), GraphAPIClient handles status codes internally
+            # We just check if the request was successful
+            if copy_result:
                 time.sleep(1)
                 logger.info(f"Request accepted for '{file_name}', continuing...")
 
@@ -742,31 +696,31 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
     import requests
     from .models import Opportunity
 
-    def find_folder_by_name(drive_id, parent_id, folder_name, headers):
+    def find_folder_by_name(drive_id, parent_id, folder_name, access_token):
         if parent_id:
             children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
         else:
             children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
 
-        resp = requests.get(children_url, headers=headers)
-        if resp.status_code != 200:
-            logger.error(f"Failed to get children for folder {parent_id}: {resp.status_code}, {resp.text}")
+        result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
+        if not result:
+            logger.error(f"Failed to get children for folder {parent_id}")
             return None
 
-        items = resp.json().get("value", [])
+        items = result.get("value", [])
         for item in items:
             if "folder" in item and item.get("name", "").strip().lower() == folder_name.strip().lower():
                 return item["id"]
         return None
 
-    def find_folder_containing(drive_id, start_folder_id, substring, headers):
+    def find_folder_containing(drive_id, start_folder_id, substring, access_token):
         search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
-        resp = requests.get(search_url, headers=headers)
-        if resp.status_code != 200:
-            logger.error(f"Failed to search within folder {start_folder_id}: {resp.status_code}, {resp.text}")
+        result = GraphAPIClient.get(search_url, access_token, raise_on_error=False)
+        if not result:
+            logger.error(f"Failed to search within folder {start_folder_id}")
             return None
 
-        items = resp.json().get('value', [])
+        items = result.get('value', [])
         MAX_DEPTH = 3
         for item in items:
             if 'folder' not in item:
@@ -787,41 +741,39 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
             logger.error("Failed to acquire access token.")
             return
 
-        headers = {"Authorization": f"Bearer {access_token}"}
+        # Headers are now handled internally by GraphAPIClient
 
         letter_folder_name = customer_name[0].upper() if customer_name else "#"
         logger.debug(f"Looking for letter folder: {letter_folder_name}")
-        letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, headers)
+        letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, access_token)
         if not letter_folder_id:
             logger.warning(f"Letter folder '{letter_folder_name}' not found in library.")
             logger.warning(f"Could not find letter folder for {letter_folder_name}")
             return
 
-        opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, headers)
+        opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, access_token)
         if not opp_folder_id:
             logger.warning(f"Opportunity folder containing '{opportunity_number}' not found.")
             logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
-        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], headers)
+        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], access_token)
         if not info_folder_id:
             logger.warning(f"'1 Info' folder not found in opportunity folder.")
             logger.warning(f"Could not find '1 Info' folder")
             return
 
-        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], headers)
+        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], access_token)
         if not sample_info_folder_id:
             logger.warning(f"'Sample Info' folder not found in '1 Info' folder.")
             logger.warning(f"Could not find 'Sample Info' folder")
             return
 
         folder_details_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
-        resp = requests.get(folder_details_url, headers=headers)
-        if resp.status_code != 200:
-            logger.warning(f"Failed to get folder details: {resp.status_code} - {resp.text}")
+        folder_data = GraphAPIClient.get(folder_details_url, access_token, raise_on_error=False)
+        if not folder_data:
+            logger.warning("Failed to get folder details")
             return
-
-        folder_data = resp.json()
         web_url = folder_data.get("webUrl", "")
         if web_url:
             logger.info(f"Found 'Sample Info' folder at: {web_url}")

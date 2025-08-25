@@ -1022,6 +1022,9 @@
                     fetch("{% url 'create_sample' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     }).then(response => response.json())
                     .then(data => {

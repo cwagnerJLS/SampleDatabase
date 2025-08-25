@@ -1,13 +1,14 @@
 import os
 from django.conf import settings
 import pandas as pd
-import subprocess
 import logging
 from ..sharepoint_config import get_documentation_template_path
+from .rclone_utils import get_rclone_manager
+
+logger = logging.getLogger(__name__)
 
 def create_documentation_on_sharepoint(opportunity_number):
-    logger = logging.getLogger(__name__)
-
+    """Copy documentation template to SharePoint for the opportunity."""
     # Construct the path to the documentation file on SharePoint
     remote_file_path = f"TestLabSamples:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
     
@@ -20,31 +21,21 @@ def create_documentation_on_sharepoint(opportunity_number):
         logger.error(error_message)
         raise Exception(error_message)
 
-    # Command to copy the template file to the new location using rclone
-    # Command to copy the template file to the new location using rclone
-    command = [
-        '/usr/bin/rclone', 'copyto',  # Use the full path to rclone
+    # Use the RcloneManager to copy the file
+    rclone = get_rclone_manager()
+    success = rclone.copy(
         template_file_path,
         remote_file_path,
-        '--ignore-size',
-        '--ignore-checksum'
-    ]
-
-    logger.debug(f"Running command: {' '.join(command)}")
-
-    try:
-        result = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
+        ignore_size=True,
+        ignore_checksum=True
+    )
+    
+    if success:
         logger.info(f"Copied documentation template to SharePoint: {remote_file_path}")
-        logger.debug(f"Command output: {result.stdout}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to copy documentation template to SharePoint: {e.stderr}")
-        raise Exception(f"Failed to copy documentation template: {e.stderr}")
+    else:
+        error_message = f"Failed to copy documentation template to SharePoint: {remote_file_path}"
+        logger.error(error_message)
+        raise Exception(error_message)
 
 def read_excel_data(file_path):
     df = pd.read_excel(file_path)

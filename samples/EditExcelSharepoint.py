@@ -48,8 +48,6 @@ def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name
         print(f"Failed to get existing IDs: {response.status_code}, {response.text}")
     return existing_ids
 
-import re
-
 def delete_rows_in_workbook(access_token, library_id, file_id, worksheet_name, row_numbers):
     headers = {
         "Authorization": f"Bearer {access_token}",

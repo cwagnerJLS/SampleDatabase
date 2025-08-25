@@ -1,5 +1,4 @@
 import os
-import requests
 import logging
 from django.conf import settings
 from samples.sharepoint_config import (
@@ -8,6 +7,7 @@ from samples.sharepoint_config import (
     is_configured
 )
 from samples.services.auth_service import get_sharepoint_token
+from samples.utils.sharepoint_api import GraphAPIClient
 
 # Define the path to Hyperlinks.csv using BASE_DIR
 HYPERLINKS_CSV_FILE = os.path.join(settings.BASE_DIR, 'Hyperlinks.csv')
@@ -29,20 +29,16 @@ def create_subfolder(access_token, parent_folder_id, subfolder_name):
     Creates a subfolder within the specified parent folder.
     """
     url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{parent_folder_id}/children"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
     data = {
         "name": subfolder_name,
         "folder": {},
         "@microsoft.graph.conflictBehavior": "fail"
     }
-    resp = requests.post(url, headers=headers, json=data)
-    if resp.status_code in (200, 201):
+    result = GraphAPIClient.post(url, access_token, json_data=data, raise_on_error=False)
+    if result:
         logger.info(f"Created subfolder '{subfolder_name}' in folder ID {parent_folder_id}")
     else:
-        logger.error(f"Error creating subfolder '{subfolder_name}' in folder ID {parent_folder_id}: {resp.status_code}, {resp.text}")
+        logger.error(f"Error creating subfolder '{subfolder_name}' in folder ID {parent_folder_id}")
 
 def get_access_token():
     """
@@ -60,16 +56,15 @@ def search_folder(access_token, folder_name):
     Returns the folder's item ID if found, else None.
     """
     url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/root/search(q='{folder_name}')"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 200:
-        items = resp.json().get("value", [])
+    result = GraphAPIClient.get(url, access_token, raise_on_error=False)
+    if result:
+        items = result.get("value", [])
         for item in items:
             # Check if it's a folder with the exact matching name
             if item.get("name", "").strip().lower() == folder_name.strip().lower() and "folder" in item:
                 return item["id"]
     else:
-        logger.error(f"Search folder error: {resp.status_code}, {resp.text}")
+        logger.error(f"Search folder error")
     return None
 
 def create_folder(access_token, folder_name):
@@ -78,21 +73,16 @@ def create_folder(access_token, folder_name):
     If the folder name already exists, it fails unless you change conflictBehavior.
     """
     url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/root/children"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
     data = {
         "name": folder_name,
         "folder": {},
         "@microsoft.graph.conflictBehavior": "fail"
     }
-    resp = requests.post(url, headers=headers, json=data)
-    if resp.status_code in (200, 201):
-        folder_item = resp.json()
-        return folder_item["id"]
+    result = GraphAPIClient.post(url, access_token, json_data=data, raise_on_error=False)
+    if result:
+        return result.get("id")
     else:
-        error_message = f"Error creating folder '{folder_name}': {resp.status_code}, {resp.text}"
+        error_message = f"Error creating folder '{folder_name}'"
         logger.error(error_message)
         raise Exception(error_message)
 
@@ -101,20 +91,16 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
     Updates the custom fields (Customer, RSM, _ExtendedDescription) of the folder's listItem.
     """
     url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{folder_id}/listItem/fields"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
     data = {
         FIELD_CUSTOMER: customer,
         FIELD_RSM: rsm,
         FIELD_DESCRIPTION: description
     }
-    resp = requests.patch(url, headers=headers, json=data)
-    if resp.status_code == 200:
+    result = GraphAPIClient.patch(url, access_token, json_data=data, raise_on_error=False)
+    if result:
         logger.info(f"Updated SharePoint fields for folder ID {folder_id}")
     else:
-        logger.error(f"Error updating folder fields ID {folder_id}: {resp.status_code}, {resp.text}")
+        logger.error(f"Error updating folder fields ID {folder_id}")
 
 
 def create_sharepoint_folder(opportunity_number, customer, rsm, description):

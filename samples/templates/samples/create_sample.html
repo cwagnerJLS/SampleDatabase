@@ -809,6 +809,9 @@
                     fetch("{% url 'remove_from_inventory' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     })
                     .then(response => response.json())
@@ -1251,6 +1254,9 @@
                     fetch("{% url 'delete_samples' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     }).then(response => response.json())
                     .then(data => {
@@ -1315,6 +1321,9 @@
                     fetch("{% url 'update_sample_location' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     })
                     .then(response => response.json())
@@ -1346,6 +1355,9 @@
                     fetch("{% url 'update_sample_location' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     })
                     .then(response => response.json())
@@ -1397,6 +1409,9 @@
                     fetch("{% url 'create_sample' %}", {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
                         credentials: 'same-origin'  // Include cookies
                     }).then(response => response.json())
                     .then(data => {

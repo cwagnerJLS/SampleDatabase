@@ -8,6 +8,7 @@ from samples.sharepoint_config import (
     TEST_MODE_EMAIL,
     TEST_LAB_GROUP_EMAILS,
     GRAPH_API_URL,
+    AZURE_USERNAME,
     is_configured
 )
 from samples.services.auth_service import get_email_token
@@ -50,7 +51,9 @@ def send_email(subject, body, recipient_email, cc_emails=None):
         body (str): HTML content of the email.
         recipient_email (str): Recipient's email address.
     """
+    logger.info(f"send_email called with subject: {subject}, recipient: {recipient_email}")
     access_token = get_access_token()
+    logger.info(f"Got access token: {access_token[:20]}..." if access_token else "No token received")
 
     # Check if TEST_MODE is enabled
     if getattr(settings, 'TEST_MODE', False):
@@ -59,7 +62,7 @@ def send_email(subject, body, recipient_email, cc_emails=None):
         cc_emails = None  # Do not CC Test Lab group in TEST_MODE
 
     # Define the endpoint for sending mail
-    endpoint = f"{GRAPH_API_URL}/users/{USERNAME}/sendMail"
+    endpoint = f"{GRAPH_API_URL}/users/{AZURE_USERNAME}/sendMail"
 
     # Set up the headers with the access token
     headers = {
@@ -98,7 +101,9 @@ def send_email(subject, body, recipient_email, cc_emails=None):
     }
 
     # Send the POST request to the Graph API
+    logger.info(f"Sending POST request to {endpoint}")
     response = requests.post(endpoint, headers=headers, json=email_msg)
+    logger.info(f"Response status code: {response.status_code}")
 
     # Check the response status
     if response.status_code == 202:
