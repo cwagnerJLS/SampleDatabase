@@ -2254,12 +2254,19 @@
                 const thead = originalTable.querySelector('thead');
                 const theadRect = thead.getBoundingClientRect();
                 const buttonContainer = document.querySelector('.button-container');
-                const buttonHeight = buttonContainer ? buttonContainer.offsetHeight : 0;
                 
-                // Show sticky header when original header scrolls out of view
-                if (theadRect.bottom < buttonHeight) {
-                    stickyContainer.style.display = 'block';
-                    syncColumnWidths(); // Resync widths when showing
+                if (!buttonContainer || !thead) return;
+                
+                // Get the actual bottom position of the button container
+                const buttonRect = buttonContainer.getBoundingClientRect();
+                
+                // Show sticky header when the top of the original header meets the bottom of the button container
+                // This creates a seamless transition
+                if (theadRect.top <= buttonRect.bottom) {
+                    if (stickyContainer.style.display !== 'block') {
+                        stickyContainer.style.display = 'block';
+                        syncColumnWidths(); // Resync widths when showing
+                    }
                 } else {
                     stickyContainer.style.display = 'none';
                 }
