@@ -364,7 +364,7 @@
         .modal {
             display: none;
             position: fixed;
-            z-index: 10;
+            z-index: 2000;  /* Higher than sticky containers (1000) */
             left: 0;
             top: 0;
             width: 100%;
@@ -389,6 +389,44 @@
             width: auto;           /* Allow the width to adjust automatically */
             min-width: 600px;      /* Set the desired minimum width */
             max-width: 90%;        /* Set the maximum width (90% of viewport) */
+        }
+
+        /* Loading placeholder styles */
+        .thumbnail-placeholder {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 5px;
+            overflow: hidden;
+            display: inline-block;
+            position: relative;
+            margin: 5px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .thumbnail-placeholder::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ddd;
+            border-top-color: #999;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
         /* General modal content (non-fullsize) */
@@ -979,11 +1017,22 @@
                     <span class="close modal-close" data-modal="uploadModal">&times;</span>
                 </div>
                 <div class="modal-body">
+                    <!-- Progress Container -->
+                    <div id="uploadProgressContainer" style="display: none; margin-bottom: 20px;">
+                        <div style="margin-bottom: 10px;">
+                            <span id="uploadStatusText">Uploading...</span>
+                            <span id="uploadPercentage" style="float: right;">0%</span>
+                        </div>
+                        <div style="background-color: #f0f0f0; border-radius: 4px; overflow: hidden; height: 20px;">
+                            <div id="uploadProgressBar" style="background-color: #4CAF50; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <div id="uploadFileInfo" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
+                    </div>
                     <!-- Thumbnails Container -->
                     <div id="thumbnailsContainer"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" onclick="selectFiles()">Upload</button>
+                    <button type="button" id="uploadButton" onclick="selectFiles()">Upload</button>
                     <button type="button" class="modal-close" data-modal="uploadModal">Done</button>
                 </div>
             </div>
@@ -1069,23 +1118,8 @@
             if (fullSizeModal) {
                 fullSizeModal.style.display = 'none';
                 fullSizeModal.innerHTML = ''; // Optionally clear the modal content
-            }
-        }
 
-        function closeFullSizeModal(event) {
-            if (event) {
-                // Only close if clicked outside the modal content
-                const modalContent = document.querySelector('#fullSizeModal .modal-content');
-                if (modalContent && modalContent.contains(event.target)) {
-                    return;
-                }
-            }
-            const fullSizeModal = document.getElementById('fullSizeModal');
-            if (fullSizeModal) {
-                fullSizeModal.style.display = 'none';
-                fullSizeModal.innerHTML = ''; // Optionally clear the modal content
-
-                // Add this line to remove the keydown event listener
+                // Remove the keydown event listener
                 document.removeEventListener('keydown', handleKeyDown);
             } else {
                 console.error('Modal container not found in the DOM.');
@@ -1966,44 +2000,109 @@
 
         function uploadFiles(files, sampleId) {
             const formData = new FormData();
+            let totalSize = 0;
             for (let i = 0; i < files.length; i++) {
                 formData.append('files', files[i]);
+                totalSize += files[i].size;
             }
             formData.append('sample_id', sampleId);
 
-            fetch("{% url 'upload_files' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrftoken
-                },
-                credentials: 'same-origin'  // Include cookies in the request
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // The files were uploaded successfully; no alert needed.
-                    handlePictureUploadView(sampleId);
-                    // Start polling for full-size images
-                    var uploadedImageIds = data.image_ids;
-                    pollForFullSizeImages(sampleId, uploadedImageIds);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (error.error) {
-                    alert('Error: ' + error.error);
-                } else {
-                    alert('An unexpected error occurred.');
+            // Show progress container and update file info
+            const progressContainer = document.getElementById('uploadProgressContainer');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const percentageText = document.getElementById('uploadPercentage');
+            const statusText = document.getElementById('uploadStatusText');
+            const fileInfo = document.getElementById('uploadFileInfo');
+            const uploadButton = document.getElementById('uploadButton');
+            const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+            
+            progressContainer.style.display = 'block';
+            uploadButton.disabled = true;
+            
+            // Update file info
+            const fileCount = files.length;
+            const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
+            fileInfo.textContent = `Uploading ${fileCount} file${fileCount > 1 ? 's' : ''} (${sizeInMB} MB)`;
+            
+            // Add loading placeholders for expected thumbnails
+            const existingThumbnails = thumbnailsContainer.innerHTML;
+            let placeholders = '';
+            for (let i = 0; i < fileCount; i++) {
+                placeholders += '<div class="thumbnail-placeholder"></div>';
+            }
+            thumbnailsContainer.innerHTML = existingThumbnails + placeholders;
+
+            // Use XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    percentageText.textContent = percentComplete + '%';
+                    
+                    if (percentComplete === 100) {
+                        statusText.textContent = 'Processing thumbnails...';
+                    }
                 }
             });
+            
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.status === 'success') {
+                            statusText.textContent = 'Upload complete!';
+                            progressBar.style.backgroundColor = '#4CAF50';
+                            
+                            // Refresh the view with actual thumbnails
+                            setTimeout(() => {
+                                progressContainer.style.display = 'none';
+                                progressBar.style.width = '0%';
+                                percentageText.textContent = '0%';
+                                statusText.textContent = 'Uploading...';
+                                progressBar.style.backgroundColor = '#4CAF50';
+                                uploadButton.disabled = false;
+                                
+                                handlePictureUploadView(sampleId);
+                                // Start polling for full-size images
+                                var uploadedImageIds = data.image_ids;
+                                pollForFullSizeImages(sampleId, uploadedImageIds);
+                            }, 500);
+                        } else {
+                            throw new Error(data.error || 'Upload failed');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing response:', error);
+                        statusText.textContent = 'Upload failed!';
+                        progressBar.style.backgroundColor = '#f44336';
+                        alert('Error: ' + error.message);
+                        uploadButton.disabled = false;
+                        // Remove placeholders on error
+                        thumbnailsContainer.innerHTML = existingThumbnails;
+                    }
+                } else {
+                    statusText.textContent = 'Upload failed!';
+                    progressBar.style.backgroundColor = '#f44336';
+                    alert('Upload failed with status: ' + xhr.status);
+                    uploadButton.disabled = false;
+                    // Remove placeholders on error
+                    thumbnailsContainer.innerHTML = existingThumbnails;
+                }
+            });
+            
+            xhr.addEventListener('error', function() {
+                statusText.textContent = 'Upload failed!';
+                progressBar.style.backgroundColor = '#f44336';
+                alert('Network error occurred during upload');
+                uploadButton.disabled = false;
+                // Remove placeholders on error
+                thumbnailsContainer.innerHTML = existingThumbnails;
+            });
+            
+            xhr.open('POST', "{% url 'upload_files' %}");
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+            xhr.send(formData);
         }
 
         function displayThumbnails(imageDataArray) {
