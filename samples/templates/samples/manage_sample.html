@@ -2,119 +2,491 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Manage Sample {{ sample.unique_id }}</title>
     <style>
-        /* Your existing CSS styles */
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-            background-color: #f4f4f4;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        select, button, input[type="text"], textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        button {
-            background-color: #007bff;
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+        
+        .container {
+            background: white;
+            min-height: 100vh;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 0 40px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .sample-id {
+            background: rgba(255,255,255,0.2);
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        .status-message {
+            margin: 0;
+            padding: 15px 20px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .info-group {
+            margin-bottom: 18px;
+        }
+        
+        .info-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .info-value {
             font-size: 16px;
-            border: none;
-            cursor: pointer;
+            color: #2c3e50;
+            line-height: 1.4;
         }
-        button:hover {
-            background-color: #0056b3;
+        
+        .action-section {
+            margin-top: 30px;
         }
-        .submit-btn {
-            margin-top: 20px;
+        
+        .action-group {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .action-group.active {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        .action-label {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        select {
             width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            color: #2c3e50;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 20px;
+            padding-right: 45px;
+            transition: all 0.3s ease;
         }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
         .toggle-button {
-            background-color: white;
-            color: black;
-            border: 1px solid #ccc;
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
         }
+        
+        .toggle-button:active {
+            transform: scale(0.98);
+        }
+        
         .toggle-button.toggled {
-            background-color: #007bff;
+            background: #28a745;
             color: white;
+            border-color: #28a745;
+        }
+        
+        .toggle-button.toggled::after {
+            content: '✓';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+        }
+        
+        .danger-zone {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f8f9fa;
+        }
+        
+        .danger-zone-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .danger-zone-title {
+            font-size: 14px;
+            color: #dc3545;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .remove-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 600;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            background: white;
+            color: #dc3545;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .remove-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .remove-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .remove-btn.confirm-mode {
+            background: #dc3545;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        .confirm-text {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            border-radius: 8px;
+            color: #c53030;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .confirm-text.visible {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .updating {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .updating::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+        }
+        
+        .updating .loading-spinner {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 500px) {
+            .container {
+                box-shadow: none;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Manage Sample {{ sample.unique_id }}</h1>
-
-    <form method="POST" action="">
-        {% csrf_token %}
-
-        <div class="form-group">
-            <label for="date_received">Date Received:</label>
-            <input type="text" id="date_received" name="date_received" value="{{ sample.date_received }}" readonly>
+    <div class="container">
+        <div class="header">
+            <h1>Manage Sample</h1>
+            <div class="sample-id">{{ sample.unique_id }}</div>
         </div>
-
-        <div class="form-group">
-            <label for="customer">Customer:</label>
-            <input type="text" id="customer" name="customer" value="{{ sample.customer }}" readonly>
+        
+        <div id="status-message" class="status-message"></div>
+        
+        <div class="content">
+            <div class="info-section">
+                <div class="info-group">
+                    <div class="info-label">Date Received</div>
+                    <div class="info-value">{{ sample.date_received }}</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Customer</div>
+                    <div class="info-value">{{ sample.customer }}</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">RSM</div>
+                    <div class="info-value">{{ sample.rsm }}</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Opportunity Number</div>
+                    <div class="info-value">{{ sample.opportunity_number }}</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Description</div>
+                    <div class="info-value">{{ sample.description }}</div>
+                </div>
+            </div>
+            
+            <div class="action-section">
+                <form method="POST" action="" id="sample-form">
+                    {% csrf_token %}
+                    
+                    <div class="action-group">
+                        <label class="action-label" for="location">Storage Location</label>
+                        <select id="location" name="location">
+                            <option value="Choose a Location" {% if not sample.storage_location or sample.storage_location == "Choose a Location" %}selected{% endif %}>Choose a Location</option>
+                            <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
+                            <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
+                            <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
+                            <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
+                            <option value="Dry Food Storage" {% if sample.storage_location == "Dry Food Storage" %}selected{% endif %}>Dry Food Storage</option>
+                            <option value="Empty Case Storage" {% if sample.storage_location == "Empty Case Storage" %}selected{% endif %}>Empty Case Storage</option>
+                        </select>
+                    </div>
+                    
+                    <div class="action-group">
+                        <label class="action-label" for="audit-toggle">Audit Status</label>
+                        <button type="button" id="audit-toggle" class="toggle-button" aria-pressed="false">
+                            <span class="button-text">Mark as Audited</span>
+                        </button>
+                        <input type="hidden" id="audit" name="audit" value="false">
+                    </div>
+                    
+                    <div class="danger-zone">
+                        <button type="button" id="remove-from-inventory" class="remove-btn">
+                            Remove from Inventory
+                        </button>
+                        <div id="confirm-text" class="confirm-text">
+                            Click again to confirm removal. This action cannot be undone.
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="rsm">RSM:</label>
-            <input type="text" id="rsm" name="rsm" value="{{ sample.rsm }}" readonly>
+        
+        <div class="loading-spinner">
+            <div class="spinner"></div>
         </div>
-
-        <div class="form-group">
-            <label for="opportunity_number">Opportunity Number:</label>
-            <input type="text" id="opportunity_number" name="opportunity_number" value="{{ sample.opportunity_number }}" readonly>
-        </div>
-
-        <div class="form-group">
-            <label for="description">Description:</label>
-            <textarea id="description" name="description" readonly>{{ sample.description }}</textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="location">Location:</label>
-            <select id="location" name="location">
-                <option value="" {% if not sample.storage_location %}selected{% endif %}>-- Select Location --</option>
-                <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
-                <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
-                <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
-                <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
-                <option value="remove">Remove from Location</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="audit-toggle">Audit:</label>
-            <button type="button" id="audit-toggle" class="toggle-button" aria-pressed="false">Audit</button>
-            <input type="hidden" id="audit" name="audit" value="false">
-        </div>
-
-        <button type="submit" class="submit-btn">Submit</button>
-    </form>
+    </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const auditToggle = document.getElementById('audit-toggle');
             const auditInput = document.getElementById('audit');
+            const locationSelect = document.getElementById('location');
+            const statusMessage = document.getElementById('status-message');
+            const removeBtn = document.getElementById('remove-from-inventory');
+            const confirmText = document.getElementById('confirm-text');
+            const sampleId = '{{ sample.unique_id }}';
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            let removeClickCount = 0;
+            let removeTimeout;
 
+            // Function to show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + type;
+                statusMessage.style.display = 'block';
+                
+                // Auto-hide after 3 seconds
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            // Function to update sample via AJAX
+            function updateSample(data) {
+                document.body.classList.add('updating');
+                
+                fetch(`/manage_sample/${sampleId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showStatus('Updated successfully', 'success');
+                        
+                        // Add active effect to changed element
+                        if (data.location) {
+                            locationSelect.parentElement.classList.add('active');
+                            setTimeout(() => {
+                                locationSelect.parentElement.classList.remove('active');
+                            }, 500);
+                        }
+                    } else {
+                        showStatus('Update failed', 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('Connection error', 'error');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    document.body.classList.remove('updating');
+                });
+            }
+
+            // Handle location change
+            locationSelect.addEventListener('change', function() {
+                updateSample({
+                    'location': this.value,
+                    'audit': auditInput.value
+                });
+            });
+
+            // Handle audit toggle
             auditToggle.addEventListener('click', function() {
                 auditToggle.classList.toggle('toggled');
                 const isToggled = auditToggle.classList.contains('toggled');
                 auditInput.value = isToggled ? 'true' : 'false';
                 auditToggle.setAttribute('aria-pressed', isToggled);
+                
+                // Update button text
+                const buttonText = auditToggle.querySelector('.button-text');
+                buttonText.textContent = isToggled ? 'Audited' : 'Mark as Audited';
+                
+                // Add active effect
+                auditToggle.parentElement.classList.add('active');
+                setTimeout(() => {
+                    auditToggle.parentElement.classList.remove('active');
+                }, 500);
+                
+                // Update immediately when toggled
+                updateSample({
+                    'location': locationSelect.value,
+                    'audit': auditInput.value
+                });
             });
 
             // Set the audit button state based on the initial value
@@ -122,9 +494,77 @@
             const isInitiallyToggled = (auditInitialValue === 'true');
             if (isInitiallyToggled) {
                 auditToggle.classList.add('toggled');
+                auditToggle.querySelector('.button-text').textContent = 'Audited';
             }
             auditInput.value = isInitiallyToggled ? 'true' : 'false';
             auditToggle.setAttribute('aria-pressed', isInitiallyToggled);
+
+            // Handle Remove from Inventory with two-step confirmation
+            removeBtn.addEventListener('click', function() {
+                removeClickCount++;
+                
+                if (removeClickCount === 1) {
+                    // First click - show confirmation
+                    removeBtn.classList.add('confirm-mode');
+                    removeBtn.textContent = 'Click Again to Confirm';
+                    confirmText.classList.add('visible');
+                    
+                    // Reset after 5 seconds if no second click
+                    removeTimeout = setTimeout(() => {
+                        resetRemoveButton();
+                    }, 5000);
+                } else if (removeClickCount === 2) {
+                    // Second click - perform removal
+                    clearTimeout(removeTimeout);
+                    
+                    document.body.classList.add('updating');
+                    
+                    const formData = new FormData();
+                    formData.append('ids', JSON.stringify([sampleId]));
+                    formData.append('csrfmiddlewaretoken', csrfToken);
+
+                    fetch('/remove_from_inventory/', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showStatus('Sample removed from inventory', 'success');
+                            removeBtn.textContent = 'Removed';
+                            removeBtn.disabled = true;
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 1500);
+                        } else {
+                            showStatus('Failed to remove sample', 'error');
+                            document.body.classList.remove('updating');
+                            resetRemoveButton();
+                        }
+                    })
+                    .catch(error => {
+                        showStatus('Connection error', 'error');
+                        console.error('Error:', error);
+                        document.body.classList.remove('updating');
+                        resetRemoveButton();
+                    });
+                }
+            });
+            
+            function resetRemoveButton() {
+                removeClickCount = 0;
+                removeBtn.classList.remove('confirm-mode');
+                removeBtn.textContent = 'Remove from Inventory';
+                confirmText.classList.remove('visible');
+                clearTimeout(removeTimeout);
+            }
+            
+            // Reset remove button if user clicks elsewhere
+            document.addEventListener('click', function(event) {
+                if (removeClickCount === 1 && !removeBtn.contains(event.target)) {
+                    resetRemoveButton();
+                }
+            });
         });
     </script>
 </body>

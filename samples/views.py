@@ -500,7 +500,7 @@ def manage_sample(request, sample_id):
 
             # Update sample fields
             if location:
-                if location == "remove":
+                if location == "Choose a Location":
                     sample.storage_location = None
                 else:
                     sample.storage_location = location
@@ -509,10 +509,16 @@ def manage_sample(request, sample_id):
             sample.save()
             logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
 
-            # Redirect back to the same page after POST to prevent resubmission
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', ''):
+                return JsonResponse({'status': 'success', 'message': 'Sample updated successfully'})
+            
+            # Regular form submission - redirect back to the same page
             return redirect('manage_sample', sample_id=sample.unique_id)
         except Exception as e:
             logger.error(f"Error updating sample {sample_id}: {e}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', ''):
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
             return server_error_response(str(e))
 
     # For GET requests, render the template with the sample data
