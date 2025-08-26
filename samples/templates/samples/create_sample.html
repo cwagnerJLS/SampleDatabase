@@ -318,6 +318,33 @@
         .button-container.scrolled {
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
+        
+        /* Sticky header container for cloned table headers */
+        .sticky-header-container {
+            position: sticky;
+            top: 54px; /* Position below button container (adjust based on actual button height) */
+            z-index: 999;
+            background-color: #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #ddd;
+            overflow-x: auto; /* Allow horizontal scroll if needed */
+            overflow-y: hidden;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Cloned table should inherit all styles from original */
+        #clonedTableWrapper {
+            width: 100%;
+        }
+        
+        /* Ensure cloned table headers have correct styling */
+        #clonedHeaderTable th {
+            background-color: #EAF2F8 !important; /* Force the light blue background */
+            color: #000000 !important;
+            border: 1px solid #DDD !important;
+        }
+        
 
         .button-container button {
             flex: 1 1 120px;          /* Make buttons flexible with a minimum width */
@@ -867,6 +894,13 @@
         <button type="button" id="print-all-button">Print</button>
         <button type="button" id="export-all-button">Export</button>
         <button type="button" id="delete-all-button">Delete</button>
+    </div>
+
+    <!-- Sticky cloned header container (hidden by default) -->
+    <div id="stickyHeaderContainer" class="sticky-header-container" style="display: none;">
+        <div id="clonedTableWrapper">
+            <!-- Cloned table will be inserted here by JavaScript -->
+        </div>
     </div>
 
     <!-- The Table for displaying samples -->
@@ -2082,6 +2116,205 @@
                 }
             }
         });
+        
+        // Clone and sync table headers for sticky behavior
+        function initializeStickyHeaders() {
+            const originalTable = document.getElementById('samplesTable');
+            const stickyContainer = document.getElementById('stickyHeaderContainer');
+            const clonedWrapper = document.getElementById('clonedTableWrapper');
+            
+            if (!originalTable || !stickyContainer || !clonedWrapper) return;
+            
+            // Create a perfect clone of the table structure
+            function createPerfectClone() {
+                // Clone the table with attributes
+                const clonedTable = originalTable.cloneNode(false);
+                clonedTable.id = 'clonedHeaderTable';
+                
+                // Copy all attributes except id
+                for (let attr of originalTable.attributes) {
+                    if (attr.name !== 'id') {
+                        clonedTable.setAttribute(attr.name, attr.value);
+                    }
+                }
+                
+                // Clone only the thead
+                const originalThead = originalTable.querySelector('thead');
+                const clonedThead = originalThead.cloneNode(true);
+                clonedTable.appendChild(clonedThead);
+                
+                // Add empty tbody to maintain table structure
+                const emptyTbody = document.createElement('tbody');
+                clonedTable.appendChild(emptyTbody);
+                
+                // Clear wrapper and add cloned table
+                clonedWrapper.innerHTML = '';
+                clonedWrapper.appendChild(clonedTable);
+                
+                return clonedTable;
+            }
+            
+            const clonedTable = createPerfectClone();
+            
+            // Function to sync exact column widths using getComputedStyle
+            function syncColumnWidths() {
+                const originalCells = originalTable.querySelectorAll('thead tr:first-child th');
+                const clonedCells = clonedTable.querySelectorAll('thead tr:first-child th');
+                
+                // First, copy the table's computed width and ALL styles
+                const tableStyle = window.getComputedStyle(originalTable);
+                clonedTable.style.width = tableStyle.width;
+                clonedTable.style.tableLayout = tableStyle.tableLayout;
+                clonedTable.style.borderCollapse = tableStyle.borderCollapse;
+                clonedTable.style.borderSpacing = tableStyle.borderSpacing;
+                
+                // Then copy each cell's exact computed width and ALL relevant styles
+                originalCells.forEach((cell, index) => {
+                    if (clonedCells[index]) {
+                        const cellStyle = window.getComputedStyle(cell);
+                        
+                        // Copy all sizing and styling
+                        clonedCells[index].style.width = cellStyle.width;
+                        clonedCells[index].style.minWidth = cellStyle.minWidth;
+                        clonedCells[index].style.maxWidth = cellStyle.maxWidth;
+                        clonedCells[index].style.padding = cellStyle.padding;
+                        clonedCells[index].style.boxSizing = cellStyle.boxSizing;
+                        clonedCells[index].style.border = cellStyle.border;
+                        clonedCells[index].style.backgroundColor = cellStyle.backgroundColor;
+                        clonedCells[index].style.color = cellStyle.color;
+                    }
+                });
+                
+                // Also copy styles to filter row cells
+                const originalFilterCells = originalTable.querySelectorAll('thead tr:nth-child(2) th');
+                const clonedFilterCells = clonedTable.querySelectorAll('thead tr:nth-child(2) th');
+                
+                originalFilterCells.forEach((cell, index) => {
+                    if (clonedFilterCells[index]) {
+                        const cellStyle = window.getComputedStyle(cell);
+                        clonedFilterCells[index].style.width = originalCells[index] ? window.getComputedStyle(originalCells[index]).width : cellStyle.width;
+                        clonedFilterCells[index].style.padding = cellStyle.padding;
+                        clonedFilterCells[index].style.backgroundColor = cellStyle.backgroundColor;
+                        clonedFilterCells[index].style.border = cellStyle.border;
+                    }
+                });
+                
+                // Sync scroll position
+                const tableContainer = originalTable.parentElement;
+                if (tableContainer && tableContainer.scrollLeft) {
+                    stickyContainer.scrollLeft = tableContainer.scrollLeft;
+                }
+            }
+            
+            // Sync input values and events between original and cloned headers
+            function syncInputs() {
+                // Get all filter inputs from both tables
+                const originalInputs = originalTable.querySelectorAll('thead input, thead select');
+                const clonedInputs = clonedTable.querySelectorAll('thead input, thead select');
+                
+                originalInputs.forEach((input, index) => {
+                    if (clonedInputs[index]) {
+                        // Sync initial values
+                        clonedInputs[index].value = input.value;
+                        
+                        // Mirror events from clone to original
+                        clonedInputs[index].addEventListener('input', function() {
+                            input.value = this.value;
+                            // Trigger the input event on the original
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                        });
+                        
+                        clonedInputs[index].addEventListener('change', function() {
+                            if (this.type === 'checkbox') {
+                                input.checked = this.checked;
+                            } else {
+                                input.value = this.value;
+                            }
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                        
+                        // Mirror events from original to clone
+                        input.addEventListener('input', function() {
+                            clonedInputs[index].value = this.value;
+                        });
+                        
+                        input.addEventListener('change', function() {
+                            if (this.type === 'checkbox') {
+                                clonedInputs[index].checked = this.checked;
+                            } else {
+                                clonedInputs[index].value = this.value;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Handle scroll to show/hide sticky header
+            function handleStickyHeaderScroll() {
+                const thead = originalTable.querySelector('thead');
+                const theadRect = thead.getBoundingClientRect();
+                const buttonContainer = document.querySelector('.button-container');
+                const buttonHeight = buttonContainer ? buttonContainer.offsetHeight : 0;
+                
+                // Show sticky header when original header scrolls out of view
+                if (theadRect.bottom < buttonHeight) {
+                    stickyContainer.style.display = 'block';
+                    syncColumnWidths(); // Resync widths when showing
+                } else {
+                    stickyContainer.style.display = 'none';
+                }
+            }
+            
+            // Initialize with a small delay to ensure table is rendered
+            setTimeout(function() {
+                syncColumnWidths();
+                syncInputs();
+            }, 100);
+            
+            // Add scroll listener
+            window.addEventListener('scroll', handleStickyHeaderScroll);
+            
+            // Sync horizontal scroll between original and sticky tables
+            const originalContainer = originalTable.parentElement;
+            if (originalContainer) {
+                originalContainer.addEventListener('scroll', function() {
+                    if (stickyContainer.style.display !== 'none') {
+                        stickyContainer.scrollLeft = this.scrollLeft;
+                    }
+                });
+                
+                stickyContainer.addEventListener('scroll', function() {
+                    originalContainer.scrollLeft = this.scrollLeft;
+                });
+            }
+            
+            // Resync widths on window resize
+            window.addEventListener('resize', function() {
+                if (stickyContainer.style.display !== 'none') {
+                    syncColumnWidths();
+                }
+            });
+            
+            // Also sync when table data changes
+            const observer = new MutationObserver(function(mutations) {
+                if (stickyContainer.style.display !== 'none') {
+                    syncColumnWidths();
+                }
+            });
+            
+            // Observe the original table body for changes
+            const tbody = originalTable.querySelector('tbody');
+            if (tbody) {
+                observer.observe(tbody, { childList: true, subtree: true });
+            }
+        }
+        
+        // Initialize sticky headers when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeStickyHeaders);
+        } else {
+            initializeStickyHeaders();
+        }
     </script>
 </body>
 </html>
