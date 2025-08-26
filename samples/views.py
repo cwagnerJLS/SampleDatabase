@@ -155,6 +155,10 @@ def create_sample(request):
                         quantity=1,  # Each entry represents a single unit
                         apps_eng=apps_eng
                     )
+                    # Set initial location tracking if location is provided
+                    if location:
+                        sample.update_location_tracking()
+                        sample.save()
                     created_samples.append(sample)
                 logger.debug(f"Created samples: {created_samples}")
 
@@ -358,11 +362,24 @@ def update_sample_location(request):
                 samples = Sample.objects.filter(unique_id__in=ids)
 
                 for sample in samples:
+                    # Track if location changed
+                    old_location = sample.storage_location
+                    
                     if location == "remove":
                         sample.storage_location = None
                     else:
                         sample.storage_location = location
-                    sample.audit = audit
+                    
+                    # Update location tracking if location changed
+                    if old_location != sample.storage_location:
+                        sample.update_location_tracking()
+                    
+                    # Handle audit action
+                    if audit and not sample.audit:
+                        sample.perform_audit()
+                    elif not audit:
+                        sample.audit = False
+                    
                     sample.save()
 
                 return success_response(message='Locations updated successfully for selected samples')
@@ -371,12 +388,24 @@ def update_sample_location(request):
                 sample_id = int(request.POST.get('sample_id'))
                 sample = Sample.objects.get(unique_id=sample_id)
 
+                # Track if location changed
+                old_location = sample.storage_location
+                
                 if location == "remove":
                     sample.storage_location = None
                 else:
                     sample.storage_location = location
-
-                sample.audit = audit
+                
+                # Update location tracking if location changed
+                if old_location != sample.storage_location:
+                    sample.update_location_tracking()
+                
+                # Handle audit action
+                if audit and not sample.audit:
+                    sample.perform_audit()
+                elif not audit:
+                    sample.audit = False
+                
                 sample.save()
 
                 return success_response(message='Location updated successfully for sample')
@@ -498,14 +527,26 @@ def manage_sample(request, sample_id):
             location = request.POST.get('location')
             audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
 
+            # Track if location changed
+            old_location = sample.storage_location
+            
             # Update sample fields
             if location:
                 if location == "Choose a Location":
                     sample.storage_location = None
                 else:
                     sample.storage_location = location
-
-            sample.audit = audit
+            
+            # Update location tracking if location changed
+            if old_location != sample.storage_location:
+                sample.update_location_tracking()
+            
+            # Handle audit action
+            if audit and not sample.audit:
+                sample.perform_audit()
+            elif not audit:
+                sample.audit = False
+            
             sample.save()
             logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
 

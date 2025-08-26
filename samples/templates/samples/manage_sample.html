@@ -69,6 +69,65 @@
             color: #721c24;
         }
         
+        .audit-status {
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .audit-status.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            color: #856404;
+            border-bottom: 2px solid #ffc107;
+        }
+        
+        .audit-status.overdue {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border-bottom: 2px solid #dc3545;
+            animation: pulse 2s infinite;
+        }
+        
+        .audit-status.ok {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border-bottom: 2px solid #28a745;
+        }
+        
+        .audit-status-title {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .audit-status-detail {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+        
         .content {
             padding: 20px;
         }
@@ -326,6 +385,12 @@
         
         <div id="status-message" class="status-message"></div>
         
+        <!-- Audit Status Display -->
+        <div id="audit-status" class="audit-status">
+            <div class="audit-status-title">Audit Required</div>
+            <div class="audit-status-detail">This item needs to be audited</div>
+        </div>
+        
         <div class="content">
             <div class="info-section">
                 <div class="info-group">
@@ -352,6 +417,34 @@
                     <div class="info-label">Description</div>
                     <div class="info-value">{{ sample.description }}</div>
                 </div>
+                
+                {% if sample.storage_location %}
+                <div class="info-group">
+                    <div class="info-label">Current Location</div>
+                    <div class="info-value">{{ sample.storage_location }}</div>
+                </div>
+                
+                {% if sample.location_assigned_date %}
+                <div class="info-group">
+                    <div class="info-label">In Location Since</div>
+                    <div class="info-value">{{ sample.location_assigned_date|date:"M d, Y g:i A" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if sample.audit_due_date %}
+                <div class="info-group">
+                    <div class="info-label">Audit Due</div>
+                    <div class="info-value">{{ sample.audit_due_date|date:"M d, Y" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if sample.last_audit_date %}
+                <div class="info-group">
+                    <div class="info-label">Last Audited</div>
+                    <div class="info-value">{{ sample.last_audit_date|date:"M d, Y g:i A" }}</div>
+                </div>
+                {% endif %}
+                {% endif %}
             </div>
             
             <div class="action-section">
@@ -402,12 +495,54 @@
             const auditInput = document.getElementById('audit');
             const locationSelect = document.getElementById('location');
             const statusMessage = document.getElementById('status-message');
+            const auditStatusDiv = document.getElementById('audit-status');
             const removeBtn = document.getElementById('remove-from-inventory');
             const confirmText = document.getElementById('confirm-text');
             const sampleId = '{{ sample.unique_id }}';
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             let removeClickCount = 0;
             let removeTimeout;
+            
+            // Audit status data from Django
+            const auditDueDate = {% if sample.audit_due_date %}"{{ sample.audit_due_date|date:'Y-m-d' }}"{% else %}null{% endif %};
+            const daysUntilAudit = {% if sample.days_until_audit is not None %}{{ sample.days_until_audit }}{% else %}null{% endif %};
+            
+            // Function to update audit status display
+            function updateAuditStatus() {
+                if (!auditDueDate || !locationSelect.value || locationSelect.value === 'Choose a Location') {
+                    auditStatusDiv.style.display = 'none';
+                    return;
+                }
+                
+                const titleElement = auditStatusDiv.querySelector('.audit-status-title');
+                const detailElement = auditStatusDiv.querySelector('.audit-status-detail');
+                
+                if (daysUntilAudit !== null) {
+                    if (daysUntilAudit < 0) {
+                        // Overdue
+                        auditStatusDiv.className = 'audit-status overdue';
+                        titleElement.textContent = '⚠️ Audit Overdue';
+                        const daysOverdue = Math.abs(daysUntilAudit);
+                        detailElement.textContent = `This item is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue for audit`;
+                        auditStatusDiv.style.display = 'block';
+                    } else if (daysUntilAudit <= 7) {
+                        // Warning - due soon
+                        auditStatusDiv.className = 'audit-status warning';
+                        titleElement.textContent = '⏰ Audit Due Soon';
+                        detailElement.textContent = `Audit due in ${daysUntilAudit} day${daysUntilAudit !== 1 ? 's' : ''} (${new Date(auditDueDate).toLocaleDateString()})`;
+                        auditStatusDiv.style.display = 'block';
+                    } else {
+                        // OK - not due yet
+                        auditStatusDiv.className = 'audit-status ok';
+                        titleElement.textContent = '✓ Audit Status OK';
+                        detailElement.textContent = `Next audit due: ${new Date(auditDueDate).toLocaleDateString()} (${daysUntilAudit} days)`;
+                        auditStatusDiv.style.display = 'block';
+                    }
+                }
+            }
+            
+            // Initialize audit status display
+            updateAuditStatus();
 
             // Function to show status message
             function showStatus(message, type) {
@@ -463,6 +598,10 @@
                     'location': this.value,
                     'audit': auditInput.value
                 });
+                // Reload page after a short delay to get new audit dates
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             });
 
             // Handle audit toggle
@@ -487,6 +626,13 @@
                     'location': locationSelect.value,
                     'audit': auditInput.value
                 });
+                
+                // Reload page if marking as audited to get new audit dates
+                if (isToggled) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
             });
 
             // Set the audit button state based on the initial value

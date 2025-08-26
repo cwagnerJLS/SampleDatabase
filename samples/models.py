@@ -2,6 +2,8 @@ import os
 import re
 import random
 import logging
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.utils.deconstruct import deconstructible
 from celery import chain
 
@@ -78,6 +80,67 @@ class Sample(models.Model):
     description = models.TextField(default="No description")
     audit = models.BooleanField(default=False)
     apps_eng = models.CharField(max_length=255, blank=True, null=True, default="")
+    
+    # Audit tracking fields
+    location_assigned_date = models.DateTimeField(blank=True, null=True)
+    audit_due_date = models.DateField(blank=True, null=True)
+    last_audit_date = models.DateTimeField(blank=True, null=True)
+
+    def calculate_audit_due_date(self, from_date=None):
+        """Calculate audit due date based on storage location"""
+        if not self.storage_location:
+            return None
+            
+        if from_date is None:
+            from_date = timezone.now()
+            
+        # Define audit periods for each location type
+        audit_periods = {
+            'Test Lab Fridge': timedelta(weeks=3),
+            'Walk-in Fridge': timedelta(weeks=3),
+            'Test Lab Freezer': timedelta(weeks=8),
+            'Walk-in Freezer': timedelta(weeks=8),
+            'Dry Food Storage': timedelta(weeks=8),
+            'Empty Case Storage': timedelta(weeks=8),
+        }
+        
+        period = audit_periods.get(self.storage_location)
+        if period:
+            return (from_date + period).date()
+        return None
+
+    def update_location_tracking(self):
+        """Update location tracking dates when location changes"""
+        if self.storage_location:
+            # Set location assigned date to now
+            self.location_assigned_date = timezone.now()
+            # Calculate audit due date
+            self.audit_due_date = self.calculate_audit_due_date()
+        else:
+            # Clear dates if no location
+            self.location_assigned_date = None
+            self.audit_due_date = None
+
+    def perform_audit(self):
+        """Mark sample as audited and reset audit due date"""
+        self.last_audit_date = timezone.now()
+        self.audit = True
+        # Reset audit due date from today
+        if self.storage_location:
+            self.audit_due_date = self.calculate_audit_due_date()
+
+    def is_audit_overdue(self):
+        """Check if audit is overdue"""
+        if not self.audit_due_date:
+            return False
+        return timezone.now().date() > self.audit_due_date
+
+    def days_until_audit(self):
+        """Calculate days until audit is due (negative if overdue)"""
+        if not self.audit_due_date:
+            return None
+        delta = self.audit_due_date - timezone.now().date()
+        return delta.days
 
     def save(self, *args, **kwargs):
         # Get existing sample IDs from the Opportunity
