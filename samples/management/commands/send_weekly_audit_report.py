@@ -13,10 +13,11 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from samples.models import Sample, SampleImage, Opportunity
 from samples.email_utils import send_email
-from samples.sharepoint_config import TEST_MODE_EMAIL
+from samples.sharepoint_config import TEST_MODE_EMAIL, INTERNAL_TEST_LAB_EMAILS
 from samples.EditExcelSharepoint import (
     get_existing_ids_with_rows,
     get_cell_value,
+    get_range_values,
     find_excel_file
 )
 from samples.services.auth_service import get_sharepoint_token
@@ -147,36 +148,46 @@ class Command(BaseCommand):
                     # Use the standard worksheet name
                     worksheet_name = "Sheet1"  # Default worksheet name
                     
-                    # Get existing IDs with their row numbers from column A
-                    existing_ids = get_existing_ids_with_rows(
-                        access_token, library_id, file_id, worksheet_name, start_row=8
+                    # OPTIMIZED: Get ALL data (columns A, B, C) in ONE API call
+                    all_data = get_range_values(
+                        access_token, library_id, file_id, worksheet_name, "A8:C5000"
                     )
                     
-                    # For each ID found in column A, check if column C is empty
-                    for sample_id, row_num in existing_ids.items():
-                        # Check if column C is empty for this row
-                        cell_value = get_cell_value(
-                            access_token, library_id, file_id, worksheet_name, f"C{row_num}"
-                        )
+                    # Process all rows in memory (no more API calls!)
+                    excel_samples = {}
+                    for idx, row in enumerate(all_data):
+                        if not row or len(row) == 0 or not row[0]:  # Skip empty rows
+                            continue
                         
-                        # If column C is empty or None, documentation is incomplete
-                        if not cell_value or (isinstance(cell_value, str) and cell_value.strip() == ''):
-                            # Find the sample and add to incomplete list
+                        row_num = 8 + idx
+                        sample_id = str(row[0]).strip()
+                        
+                        # Check if column C has data
+                        has_documentation = len(row) > 2 and row[2] and str(row[2]).strip()
+                        
+                        excel_samples[sample_id] = {
+                            'row': row_num,
+                            'documented': bool(has_documentation)
+                        }
+                    
+                    # Check for incomplete documentation
+                    for sample_id, info in excel_samples.items():
+                        if not info['documented']:
                             try:
                                 sample = Sample.objects.get(unique_id=sample_id)
                                 incomplete.append({
                                     'sample': sample,
                                     'opportunity': opportunity_number,
-                                    'row': row_num
+                                    'row': info['row']
                                 })
-                                logger.debug(f"Sample {sample_id} in row {row_num} has no data in column C")
+                                logger.debug(f"Sample {sample_id} in row {info['row']} has no data in column C")
                             except Sample.DoesNotExist:
                                 logger.warning(f"Sample {sample_id} in Excel but not in database")
                     
                     # Also check if any samples in database are missing from Excel
                     db_samples = Sample.objects.filter(opportunity_number=opportunity_number)
                     for sample in db_samples:
-                        if str(sample.unique_id) not in existing_ids:
+                        if str(sample.unique_id) not in excel_samples:
                             incomplete.append({
                                 'sample': sample,
                                 'opportunity': opportunity_number,
@@ -338,9 +349,15 @@ class Command(BaseCommand):
         else:
             html += "<p class='no-data'>No audits due in the next 7 days</p>"
         
-        # No Location Section
+        # No Location Section - Grouped by Opportunity
         html += "<h2>📍 Samples Without Storage Location</h2>"
         if data['no_location']:
+            # Group samples by opportunity number
+            from collections import defaultdict
+            grouped_by_opp = defaultdict(list)
+            for sample in data['no_location']:
+                grouped_by_opp[sample.opportunity_number].append(sample)
+            
             html += """
             <table>
                 <tr>
@@ -351,23 +368,33 @@ class Command(BaseCommand):
                     <th>Description</th>
                 </tr>
             """
-            for sample in data['no_location']:
-                html += f"""
-                <tr>
-                    <td>{sample.unique_id}</td>
-                    <td>{sample.customer}</td>
-                    <td>{sample.opportunity_number}</td>
-                    <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
-                    <td>{sample.description[:50]}{'...' if len(sample.description) > 50 else ''}</td>
-                </tr>
-                """
+            
+            # Sort opportunities for consistent display
+            for opportunity in sorted(grouped_by_opp.keys()):
+                samples = grouped_by_opp[opportunity]
+                for sample in samples:
+                    html += f"""
+                    <tr>
+                        <td>{sample.unique_id}</td>
+                        <td>{sample.customer}</td>
+                        <td>{sample.opportunity_number}</td>
+                        <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
+                        <td>{sample.description[:50]}{'...' if len(sample.description) > 50 else ''}</td>
+                    </tr>
+                    """
             html += "</table>"
         else:
             html += "<p class='no-data'>All samples have assigned storage locations</p>"
         
-        # No Images Section
+        # No Images Section - Grouped by Opportunity
         html += "<h2>📷 Samples Without Images</h2>"
         if data['no_images']:
+            # Group samples by opportunity number
+            from collections import defaultdict
+            grouped_by_opp = defaultdict(list)
+            for sample in data['no_images']:
+                grouped_by_opp[sample.opportunity_number].append(sample)
+            
             html += """
             <table>
                 <tr>
@@ -378,23 +405,33 @@ class Command(BaseCommand):
                     <th>RSM</th>
                 </tr>
             """
-            for sample in data['no_images']:
-                html += f"""
-                <tr>
-                    <td>{sample.unique_id}</td>
-                    <td>{sample.customer}</td>
-                    <td>{sample.opportunity_number}</td>
-                    <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
-                    <td>{sample.rsm}</td>
-                </tr>
-                """
+            
+            # Sort opportunities for consistent display
+            for opportunity in sorted(grouped_by_opp.keys()):
+                samples = grouped_by_opp[opportunity]
+                for sample in samples:
+                    html += f"""
+                    <tr>
+                        <td>{sample.unique_id}</td>
+                        <td>{sample.customer}</td>
+                        <td>{sample.opportunity_number}</td>
+                        <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
+                        <td>{sample.rsm}</td>
+                    </tr>
+                    """
             html += "</table>"
         else:
             html += "<p class='no-data'>All samples have images uploaded</p>"
         
-        # Incomplete Documentation Section
+        # Incomplete Documentation Section - Grouped by Opportunity
         html += "<h2>📝 Samples with Incomplete Excel Documentation</h2>"
         if data['incomplete_documentation']:
+            # Group samples by opportunity number
+            from collections import defaultdict
+            grouped_by_opp = defaultdict(list)
+            for item in data['incomplete_documentation']:
+                grouped_by_opp[item['opportunity']].append(item)
+            
             html += """
             <table>
                 <tr>
@@ -405,17 +442,21 @@ class Command(BaseCommand):
                     <th>Date Received</th>
                 </tr>
             """
-            for item in data['incomplete_documentation']:
-                sample = item['sample']
-                html += f"""
-                <tr>
-                    <td>{sample.unique_id}</td>
-                    <td>{sample.customer}</td>
-                    <td>{item['opportunity']}</td>
-                    <td>{'Row ' + str(item['row']) if isinstance(item['row'], int) else item['row']}</td>
-                    <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
-                </tr>
-                """
+            
+            # Sort opportunities for consistent display
+            for opportunity in sorted(grouped_by_opp.keys()):
+                items = grouped_by_opp[opportunity]
+                for item in items:
+                    sample = item['sample']
+                    html += f"""
+                    <tr>
+                        <td>{sample.unique_id}</td>
+                        <td>{sample.customer}</td>
+                        <td>{item['opportunity']}</td>
+                        <td>{'Row ' + str(item['row']) if isinstance(item['row'], int) else item['row']}</td>
+                        <td>{sample.date_received.strftime('%m/%d/%Y')}</td>
+                    </tr>
+                    """
             html += "</table>"
         else:
             html += "<p class='no-data'>All samples have complete Excel documentation</p>"
@@ -433,21 +474,25 @@ class Command(BaseCommand):
         return html
 
     def send_report_email(self, html_content):
-        """Send the audit report email"""
+        """Send the audit report email to Internal Test Lab members"""
         subject = f"Weekly Sample Audit Report - {timezone.now().strftime('%B %d, %Y')}"
         
-        # Send to TEST_MODE_EMAIL (cwagner@jlsautomation.com)
-        recipient = TEST_MODE_EMAIL
+        # Get Internal Test Lab email recipients
+        recipients = INTERNAL_TEST_LAB_EMAILS
         
-        self.stdout.write(f'Sending report to {recipient}...')
+        self.stdout.write(f'Sending report to Internal Test Lab group ({len(recipients)} recipients)...')
+        self.stdout.write(f'Recipients: {", ".join(recipients)}')
         
+        # Send single email to all recipients
         try:
             send_email(
                 subject=subject,
                 body=html_content,
-                recipient_email=recipient
+                recipient_email=recipients  # Pass list of recipients
             )
-            self.stdout.write(self.style.SUCCESS(f'Report sent to {recipient}'))
+            self.stdout.write(self.style.SUCCESS(f'✓ Report sent to all Internal Test Lab members'))
         except Exception as e:
-            logger.error(f"Failed to send email: {e}")
-            raise
+            logger.error(f"Failed to send audit report email: {e}")
+            self.stdout.write(self.style.ERROR(f'✗ Failed to send report: {e}'))
+        
+        self.stdout.write(self.style.SUCCESS(f'Report distribution complete'))

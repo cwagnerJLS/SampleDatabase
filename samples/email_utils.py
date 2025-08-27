@@ -49,16 +49,24 @@ def send_email(subject, body, recipient_email, cc_emails=None):
     Args:
         subject (str): Subject of the email.
         body (str): HTML content of the email.
-        recipient_email (str): Recipient's email address.
+        recipient_email (str or list): Recipient's email address(es).
+        cc_emails (list): Optional list of CC email addresses.
     """
-    logger.info(f"send_email called with subject: {subject}, recipient: {recipient_email}")
+    # Handle both single recipient and list of recipients
+    if isinstance(recipient_email, list):
+        recipients = recipient_email
+        logger.info(f"send_email called with subject: {subject}, recipients: {recipients}")
+    else:
+        recipients = [recipient_email]
+        logger.info(f"send_email called with subject: {subject}, recipient: {recipient_email}")
+    
     access_token = get_access_token()
     logger.info(f"Got access token: {access_token[:20]}..." if access_token else "No token received")
 
     # Check if TEST_MODE is enabled
     if getattr(settings, 'TEST_MODE', False):
-        logger.info(f"TEST_MODE is enabled. Overriding recipient email to {TEST_MODE_EMAIL}.")
-        recipient_email = TEST_MODE_EMAIL
+        logger.info(f"TEST_MODE is enabled. Overriding recipients to {TEST_MODE_EMAIL}.")
+        recipients = [TEST_MODE_EMAIL]
         cc_emails = None  # Do not CC Test Lab group in TEST_MODE
 
     # Define the endpoint for sending mail
@@ -81,9 +89,9 @@ def send_email(subject, body, recipient_email, cc_emails=None):
             "toRecipients": [
                 {
                     "emailAddress": {
-                        "address": recipient_email
+                        "address": email
                     }
-                }
+                } for email in recipients
             ],
             "ccRecipients": [
                 {

@@ -2,6 +2,7 @@ import logging
 import json
 import subprocess
 import os
+import re
 import base64
 import pandas as pd
 import qrcode
@@ -285,12 +286,29 @@ def upload_files(request):
         image_ids = []  # Initialize the list to collect image IDs
 
         try:
-            # Get the current count of images for the sample
-            existing_images_count = SampleImage.objects.filter(sample=sample).count()
-            image_count = existing_images_count
+            # Get existing image filenames to find used indices
+            existing_images = SampleImage.objects.filter(sample=sample)
+            used_indices = set()
+            
+            # Extract indices from existing filenames
+            for img in existing_images:
+                if img.image and img.image.name:
+                    # Extract index from filename like "3133(2).jpg"
+                    match = re.search(r'\((\d+)\)', img.image.name)
+                    if match:
+                        used_indices.add(int(match.group(1)))
+            
+            # Function to find the first available index
+            def get_next_available_index(used_indices):
+                index = 1
+                while index in used_indices:
+                    index += 1
+                return index
 
             for file in files:
-                image_count += 1  # Increment image count for each new file
+                # Find the first available index for this file
+                next_index = get_next_available_index(used_indices)
+                used_indices.add(next_index)  # Mark this index as used for subsequent files
 
                 # Validate file type
                 if not file.content_type.startswith('image/'):
@@ -314,7 +332,7 @@ def upload_files(request):
                 image_content = ContentFile(thumb_io.read())
 
                 # Generate the filename with ID and index number in parentheses
-                filename = f"{sample.unique_id}({image_count}).jpg"
+                filename = f"{sample.unique_id}({next_index}).jpg"
 
                 # Save the thumbnail image to the model
                 sample_image = SampleImage(sample=sample)

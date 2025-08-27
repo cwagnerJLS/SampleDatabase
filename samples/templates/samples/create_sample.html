@@ -1132,7 +1132,7 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             // Initialize variables
-            const csrftoken = '{{ csrf_token }}';
+            // csrftoken is already defined globally at line 705
             const samples = {{ samples|safe }};
             const todayDate = new Date().toISOString().split('T')[0];
             let isPopulating = false; // Flag to prevent recursive triggering

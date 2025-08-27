@@ -18,7 +18,7 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
     response = requests.get(endpoint, headers=headers)
 
     if response.status_code == 200:
-        logger.info(f"Cell {cell_address} updated successfully.")
+        logger.info(f"Cell {cell_address} read successfully.")
         data = response.json()
         values = data.get('values', [[]])
         if values and values[0]:
@@ -26,6 +26,26 @@ def get_cell_value(access_token, library_id, file_id, worksheet_name, cell_addre
     else:
         print(f"Failed to get cell value: {response.status_code}, {response.text}")
     return None
+
+def get_range_values(access_token, library_id, file_id, worksheet_name, range_address):
+    """
+    Get all values from a specified range in one API call.
+    Returns a 2D array of values.
+    """
+    endpoint = (
+        f"{GRAPH_API_URL}/drives/{library_id}/items/{file_id}"
+        f"/workbook/worksheets/{worksheet_name}/range(address='{range_address}')"
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(endpoint, headers=headers)
+    
+    if response.status_code == 200:
+        logger.info(f"Range {range_address} read successfully.")
+        data = response.json()
+        return data.get('values', [])
+    else:
+        logger.error(f"Failed to get range values: {response.status_code}, {response.text}")
+        return []
 
 def get_existing_ids_with_rows(access_token, library_id, file_id, worksheet_name, start_row=8):
     range_address = f"A{start_row}:B5000"

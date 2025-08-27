@@ -55,6 +55,10 @@ try:
     test_lab_emails_str = get_required_env_var("TEST_LAB_GROUP_EMAILS")
     TEST_LAB_GROUP_EMAILS = [email.strip() for email in test_lab_emails_str.split(',')]
     
+    # Internal Test Lab Emails for Weekly Audit Reports (parse comma-separated list)
+    internal_test_emails_str = get_required_env_var("INTERNAL_TEST_LAB_EMAILS")
+    INTERNAL_TEST_LAB_EMAILS = [email.strip() for email in internal_test_emails_str.split(',')]
+    
 except ValueError as e:
     logger.critical(f"Configuration error: {e}")
     # Set variables to None to allow module import but fail on usage
@@ -68,6 +72,7 @@ except ValueError as e:
     EMAIL_DOMAIN = None
     TEST_MODE_EMAIL = None
     TEST_LAB_GROUP_EMAILS = []
+    INTERNAL_TEST_LAB_EMAILS = []
 
 # SharePoint API Scopes (these are constants, not secrets)
 SHAREPOINT_SCOPES = ["Sites.ReadWrite.All", "Files.ReadWrite.All"]
