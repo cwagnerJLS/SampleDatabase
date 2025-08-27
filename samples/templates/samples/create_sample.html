@@ -930,6 +930,7 @@
         <button type="button" id="remove-from-inventory-button">Remove From Inventory</button>
         <button type="button" id="reset-filters-button">Reset</button>
         <button type="button" id="print-all-button">Print</button>
+        <button type="button" id="audit-button">Audit</button>
         <button type="button" id="export-all-button">Export</button>
         <button type="button" id="delete-all-button">Delete</button>
     </div>
@@ -1180,6 +1181,76 @@
             // Event listener for the reset filters button
             document.getElementById('reset-filters-button').addEventListener('click', function() {
                 resetFilters();
+            });
+
+            // Event listener for the audit button
+            document.getElementById('audit-button').addEventListener('click', function() {
+                const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
+                const idsToAudit = getSelectedSampleIds();
+
+                if (idsToAudit.length === 0) {
+                    alert('No samples selected for audit.');
+                    return;
+                }
+
+                // Optional: Confirm action for large selections
+                let confirmMessage = `Mark ${idsToAudit.length} sample${idsToAudit.length > 1 ? 's' : ''} as audited?`;
+                if (idsToAudit.length > 10) {
+                    confirmMessage += '\n\nNote: Only samples with storage locations will be audited.';
+                }
+
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+
+                const formData = createFormDataWithCSRF({ ids: idsToAudit });
+
+                fetch("{% url 'batch_audit_samples' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Display detailed results
+                        let alertMessage = data.data.message;
+                        
+                        // If some samples were skipped due to no location, provide details
+                        if (data.data.skipped_no_location && data.data.skipped_no_location.length > 0) {
+                            alertMessage += '\n\nSkipped samples (no location): ' + data.data.skipped_no_location.join(', ');
+                        }
+                        
+                        alert(alertMessage);
+                        
+                        // Optionally uncheck the audited samples
+                        if (data.data.audited_count > 0) {
+                            selectedCheckboxes.forEach(checkbox => {
+                                checkbox.checked = false;
+                                const row = checkbox.closest('tr');
+                                row.classList.remove('selected-row');
+                            });
+                            
+                            // Clear the "Select All" checkbox
+                            const selectAllCheckbox = document.getElementById('select-all-select');
+                            if (selectAllCheckbox) {
+                                selectAllCheckbox.checked = false;
+                            }
+                        }
+                        
+                        console.log('Audit completed:', data.data);
+                    } else {
+                        console.error('Audit error:', data.error);
+                        alert('Audit error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('An error occurred while auditing samples.');
+                });
             });
 
             // Event listener for the export button

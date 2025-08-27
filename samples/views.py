@@ -594,6 +594,65 @@ def export_documentation_view(request):
             return error_response('No opportunity number')
     return method_not_allowed_response()
 
+def batch_audit_samples(request):
+    if request.method == 'POST':
+        try:
+            ids = json.loads(request.POST.get('ids', '[]'))
+            
+            if not ids:
+                return error_response('No samples selected for audit')
+            
+            # Track results
+            audited_count = 0
+            skipped_no_location = []
+            errors = []
+            
+            # Process each sample
+            samples = Sample.objects.filter(unique_id__in=ids)
+            for sample in samples:
+                try:
+                    # Can only audit samples with storage location
+                    if not sample.storage_location or sample.storage_location == "Choose a Location":
+                        skipped_no_location.append(str(sample.unique_id))
+                        continue
+                    
+                    # Perform the audit
+                    sample.perform_audit()
+                    sample.save()
+                    audited_count += 1
+                    logger.debug(f"Audited sample {sample.unique_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error auditing sample {sample.unique_id}: {e}")
+                    errors.append(f"Sample {sample.unique_id}: {str(e)}")
+            
+            # Prepare response message
+            message_parts = []
+            if audited_count > 0:
+                message_parts.append(f"Successfully audited {audited_count} sample{'s' if audited_count != 1 else ''}")
+            if skipped_no_location:
+                message_parts.append(f"{len(skipped_no_location)} sample{'s' if len(skipped_no_location) != 1 else ''} skipped (no storage location)")
+            if errors:
+                message_parts.append(f"{len(errors)} error{'s' if len(errors) != 1 else ''} occurred")
+            
+            response_data = {
+                'audited_count': audited_count,
+                'skipped_no_location': skipped_no_location,
+                'errors': errors,
+                'message': '. '.join(message_parts) if message_parts else 'No samples were audited'
+            }
+            
+            return success_response(data=response_data)
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON data: {e}")
+            return error_response('Invalid JSON data')
+        except Exception as e:
+            logger.error(f"Error in batch_audit_samples: {e}")
+            return server_error_response('An unexpected error occurred')
+    else:
+        return method_not_allowed_response()
+
 def get_sample_images(request):
     sample_id = request.GET.get('sample_id')
     try:
