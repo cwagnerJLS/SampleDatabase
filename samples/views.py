@@ -658,15 +658,25 @@ def get_sample_images(request):
     try:
         sample = Sample.objects.get(unique_id=sample_id)
         images = sample.images.all()
-        image_data = [
-            {
+        image_data = []
+        
+        for image in images:
+            # Generate cache-busting timestamp from uploaded_at field
+            cache_buster = f"?v={image.uploaded_at.timestamp()}" if image.uploaded_at else ""
+            
+            # Build URLs with cache busting parameter
+            thumbnail_url = request.build_absolute_uri(image.image.url + cache_buster)
+            full_size_url = None
+            if image.full_size_image:
+                full_size_url = request.build_absolute_uri(image.full_size_image.url + cache_buster)
+            
+            image_data.append({
                 'id': image.id,
                 'filename': os.path.basename(image.image.name),
-                'url': request.build_absolute_uri(image.image.url),
-                'full_size_url': request.build_absolute_uri(image.full_size_image.url) if image.full_size_image else None
-            }
-            for image in images
-        ]
+                'url': thumbnail_url,
+                'full_size_url': full_size_url
+            })
+        
         return success_response(data={'images': image_data})
     except Sample.DoesNotExist:
         return not_found_response('Sample')
