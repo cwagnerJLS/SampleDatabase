@@ -28,7 +28,7 @@ from .EditExcelSharepoint import (
     update_range_in_workbook,
     delete_rows_in_workbook
 )
-from samples.utils.sharepoint_api import GraphAPIClient, ExcelAPIClient
+from samples.utils.sharepoint_api import GraphAPIClient, ExcelAPIClient, FolderAPIClient
 from samples.utils.rclone_utils import get_rclone_manager
 
 logger = logging.getLogger(__name__)
@@ -527,49 +527,20 @@ def export_documentation(opportunity_number):
             return
         # Headers are now handled internally by GraphAPIClient
 
-        def find_folder_by_name(drive_id, parent_id, folder_name):
-            """
-            Helper to locate a child folder by exact name under parent_id.
-            Return the item's ID or None if not found.
-            """
-            if parent_id:
-                children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
-            else:
-                children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
-
-            result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
-            if not result:
-                logger.error(f"Failed listing child items under {parent_id}")
-                return None
-
-            for item in result.get("value", []):
-                if item.get("name", "").strip().lower() == folder_name.strip().lower() and "folder" in item:
-                    return item["id"]
-            return None
-
-        def list_children(drive_id, folder_id):
-            """List files under the given folder_id."""
-            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{folder_id}/children"
-            result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
-            if not result:
-                logger.error(f"Failed listing child items under {folder_id}")
-                return []
-            return result.get("value", [])
-
         # 1) Find the folder for this opportunity
-        opp_folder_id = find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, opportunity_number)
+        opp_folder_id = FolderAPIClient.find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, opportunity_number, access_token)
         if not opp_folder_id:
             logger.warning(f"Opportunity folder '{opportunity_number}' not found in Test Engineering library.")
             return
 
         # 2) Find the 'Samples' subfolder inside that opportunity folder
-        samples_folder_id = find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, opp_folder_id, "Samples")
+        samples_folder_id = FolderAPIClient.find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, opp_folder_id, "Samples", access_token)
         if not samples_folder_id:
             logger.warning(f"No 'Samples' folder found for {opportunity_number} in Test Engineering.")
             return
 
         # 3) List the files in 'Samples'
-        files_to_copy = list_children(TEST_ENGINEERING_LIBRARY_ID, samples_folder_id)
+        files_to_copy = FolderAPIClient.list_children(TEST_ENGINEERING_LIBRARY_ID, samples_folder_id, access_token)
         if not files_to_copy:
             logger.info(f"No files found in 'Samples' folder for {opportunity_number}. Nothing to copy.")
             return
@@ -650,44 +621,6 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
     import requests
     from .models import Opportunity
 
-    def find_folder_by_name(drive_id, parent_id, folder_name, access_token):
-        if parent_id:
-            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
-        else:
-            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
-
-        result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
-        if not result:
-            logger.error(f"Failed to get children for folder {parent_id}")
-            return None
-
-        items = result.get("value", [])
-        for item in items:
-            if "folder" in item and item.get("name", "").strip().lower() == folder_name.strip().lower():
-                return item["id"]
-        return None
-
-    def find_folder_containing(drive_id, start_folder_id, substring, access_token):
-        search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
-        result = GraphAPIClient.get(search_url, access_token, raise_on_error=False)
-        if not result:
-            logger.error(f"Failed to search within folder {start_folder_id}")
-            return None
-
-        items = result.get('value', [])
-        MAX_DEPTH = 3
-        for item in items:
-            if 'folder' not in item:
-                continue
-            parent_path = item.get("parentReference", {}).get("path", "")
-            if ':' in parent_path:
-                path_part = parent_path.split(':', 1)[1]
-                depth = path_part.count('/')
-            else:
-                depth = 0
-            if depth <= MAX_DEPTH:
-                return item['id']
-        return None
 
     try:
         access_token = get_access_token()
@@ -699,32 +632,31 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
 
         letter_folder_name = customer_name[0].upper() if customer_name else "#"
         logger.debug(f"Looking for letter folder: {letter_folder_name}")
-        letter_folder_id = find_folder_by_name(LIBRARY_ID, None, letter_folder_name, access_token)
+        letter_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, None, letter_folder_name, access_token)
         if not letter_folder_id:
             logger.warning(f"Letter folder '{letter_folder_name}' not found in library.")
             logger.warning(f"Could not find letter folder for {letter_folder_name}")
             return
 
-        opp_folder_id = find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, access_token)
+        opp_folder_id = FolderAPIClient.find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, access_token)
         if not opp_folder_id:
             logger.warning(f"Opportunity folder containing '{opportunity_number}' not found.")
             logger.warning(f"Could not find opportunity folder containing {opportunity_number}")
             return
 
-        info_folder_id = find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], access_token)
+        info_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], access_token)
         if not info_folder_id:
             logger.warning(f"'1 Info' folder not found in opportunity folder.")
             logger.warning(f"Could not find '1 Info' folder")
             return
 
-        sample_info_folder_id = find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], access_token)
+        sample_info_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], access_token)
         if not sample_info_folder_id:
             logger.warning(f"'Sample Info' folder not found in '1 Info' folder.")
             logger.warning(f"Could not find 'Sample Info' folder")
             return
 
-        folder_details_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{sample_info_folder_id}"
-        folder_data = GraphAPIClient.get(folder_details_url, access_token, raise_on_error=False)
+        folder_data = FolderAPIClient.get_folder_details(LIBRARY_ID, sample_info_folder_id, access_token)
         if not folder_data:
             logger.warning("Failed to get folder details")
             return

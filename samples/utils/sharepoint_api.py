@@ -260,6 +260,158 @@ class ExcelAPIClient:
         return result is not None
 
 
+class FolderAPIClient:
+    """
+    Client for SharePoint folder operations via Graph API.
+    Centralizes folder navigation and search operations.
+    """
+    
+    @staticmethod
+    def find_folder_by_name(
+        drive_id: str,
+        parent_id: Optional[str],
+        folder_name: str,
+        access_token: str
+    ) -> Optional[str]:
+        """
+        Find a folder by exact name under a parent folder.
+        
+        Args:
+            drive_id: SharePoint drive/library ID
+            parent_id: Parent folder ID (None for root)
+            folder_name: Exact folder name to find
+            access_token: Bearer token for authentication
+        
+        Returns:
+            Folder ID if found, None otherwise
+        """
+        from samples.sharepoint_config import GRAPH_API_URL
+        
+        if parent_id:
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{parent_id}/children"
+        else:
+            children_url = f"{GRAPH_API_URL}/drives/{drive_id}/root/children"
+        
+        result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
+        if not result:
+            logger.error(f"Failed to list children for folder {parent_id or 'root'}")
+            return None
+        
+        # Search for exact folder name match (case-insensitive)
+        for item in result.get("value", []):
+            if "folder" in item and item.get("name", "").strip().lower() == folder_name.strip().lower():
+                return item["id"]
+        
+        return None
+    
+    @staticmethod
+    def find_folder_containing(
+        drive_id: str,
+        start_folder_id: str,
+        substring: str,
+        access_token: str,
+        max_depth: int = 3
+    ) -> Optional[str]:
+        """
+        Search for a folder containing a substring in its name.
+        
+        Args:
+            drive_id: SharePoint drive/library ID
+            start_folder_id: Folder ID to start search from
+            substring: Substring to search for in folder names
+            access_token: Bearer token for authentication
+            max_depth: Maximum folder depth to search
+        
+        Returns:
+            Folder ID if found, None otherwise
+        """
+        from samples.sharepoint_config import GRAPH_API_URL
+        
+        search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
+        result = GraphAPIClient.get(search_url, access_token, raise_on_error=False)
+        
+        if not result:
+            logger.error(f"Failed to search within folder {start_folder_id}")
+            return None
+        
+        items = result.get('value', [])
+        
+        # Filter results by depth and folder type
+        for item in items:
+            if 'folder' not in item:
+                continue
+                
+            # Check depth by counting path separators
+            parent_path = item.get("parentReference", {}).get("path", "")
+            if ':' in parent_path:
+                path_part = parent_path.split(':', 1)[1]
+                depth = path_part.count('/')
+            else:
+                depth = 0
+                
+            if depth <= max_depth:
+                return item['id']
+        
+        return None
+    
+    @staticmethod
+    def list_children(
+        drive_id: str,
+        folder_id: str,
+        access_token: str,
+        folders_only: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        List all children of a folder.
+        
+        Args:
+            drive_id: SharePoint drive/library ID
+            folder_id: Parent folder ID
+            access_token: Bearer token for authentication
+            folders_only: If True, return only folders
+        
+        Returns:
+            List of child items
+        """
+        from samples.sharepoint_config import GRAPH_API_URL
+        
+        children_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{folder_id}/children"
+        result = GraphAPIClient.get(children_url, access_token, raise_on_error=False)
+        
+        if not result:
+            logger.error(f"Failed to list children for folder {folder_id}")
+            return []
+        
+        items = result.get("value", [])
+        
+        if folders_only:
+            return [item for item in items if "folder" in item]
+        
+        return items
+    
+    @staticmethod
+    def get_folder_details(
+        drive_id: str,
+        folder_id: str,
+        access_token: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed information about a folder.
+        
+        Args:
+            drive_id: SharePoint drive/library ID
+            folder_id: Folder ID
+            access_token: Bearer token for authentication
+        
+        Returns:
+            Folder details including webUrl, or None if error
+        """
+        from samples.sharepoint_config import GRAPH_API_URL
+        
+        folder_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{folder_id}"
+        return GraphAPIClient.get(folder_url, access_token, raise_on_error=False)
+
+
 # Convenience functions for backward compatibility
 def get_api_headers(access_token: str) -> Dict[str, str]:
     """Get standard API headers."""
