@@ -1,6 +1,6 @@
 from celery import shared_task
 from django.core.files.base import ContentFile
-from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP
+from .email_utils import send_email, get_rsm_email
 import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils.file_utils import create_documentation_on_sharepoint
@@ -285,120 +285,70 @@ def test_task():
 
 @shared_task
 def send_documentation_completed_email(opportunity_number):
-    from .models import Opportunity, Sample
-    from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP, generate_email
-    import logging
-
-    logger = logging.getLogger(__name__)
+    from .email_utils import send_email, get_opportunity_email_context
+    
+    context = get_opportunity_email_context(opportunity_number)
+    if not context:
+        logger.warning(f"Cannot send documentation completed email for {opportunity_number} - no context available")
+        return
+    
+    subject = f"{opportunity_number} ({context['customer']}) Documentation Completed"
+    body = f"""
+    <html><body>
+        <p>Hello {context['greeting_name']},</p>
+        <p>The sample documentation for opportunity {opportunity_number} ({context['customer']}) is now complete. 
+        You can access it <a href="{context['opportunity'].sample_info_url}">here</a>.</p>
+        <p>-Test Lab</p>
+    </body></html>
+    """
+    
     try:
-        opp = Opportunity.objects.get(opportunity_number=opportunity_number)
-        if not opp.rsm:
-            logger.warning(f"No RSM name for {opportunity_number}; cannot send completed email.")
-            return
-
-        # Gather CC list (similar to send_sample_received_email)
-        apps_eng_values = Sample.objects.filter(opportunity_number=opportunity_number).values_list('apps_eng', flat=True).distinct()
-        cc_list = TEST_LAB_GROUP.copy()
-        for apps_eng_name in apps_eng_values:
-            if apps_eng_name:
-                apps_eng_email = generate_email(apps_eng_name)
-                if apps_eng_email and apps_eng_email not in cc_list:
-                    cc_list.append(apps_eng_email)
-
-        rsm_full_name = opp.rsm
-        first_name = rsm_full_name.split()[0]
-        greeting_name = NICKNAMES.get(rsm_full_name, first_name)
-
-        subject = f"{opportunity_number} ({opp.customer}) Documentation Completed"
-        body = f"""
-        <html><body>
-            <p>Hello {greeting_name},</p>
-            <p>The sample documentation for opportunity {opportunity_number} ({opp.customer}) is now complete. 
-            You can access it <a href="{opp.sample_info_url}">here</a>.</p>
-            <p>-Test Lab</p>
-        </body></html>
-        """
-
-        recipient_email = get_rsm_email(rsm_full_name)
-        if recipient_email:
-            send_email(subject, body, recipient_email, cc_emails=cc_list)
-            logger.info(f"Documentation-completed email sent to {recipient_email} for {opportunity_number}")
-        else:
-            logger.error(f"Unable to generate an email for RSM '{rsm_full_name}'. No email sent.")
-    except Opportunity.DoesNotExist:
-        logger.error(f"No Opportunity found with number {opportunity_number}")
+        send_email(subject, body, context['rsm_email'], cc_emails=context['cc_list'])
+        logger.info(f"Documentation-completed email sent to {context['rsm_email']} for {opportunity_number}")
     except Exception as e:
         logger.error(f"Failed to send 'documentation completed' email: {e}")
 
 @shared_task
 def send_missing_sample_info_folder_email(opportunity_number):
-    from .models import Opportunity, Sample
-    from .email_utils import send_email, get_rsm_email, NICKNAMES, TEST_LAB_GROUP, generate_email
-    import logging
-
-    logger = logging.getLogger(__name__)
+    from .email_utils import send_email, get_opportunity_email_context
+    
+    context = get_opportunity_email_context(opportunity_number)
+    if not context:
+        logger.warning(f"Cannot send missing folder email for {opportunity_number} - no context available")
+        return
+    
+    subject = f"{opportunity_number} ({context['customer']}) Missing Sample Info folder"
+    body = f"""
+    <html><body>
+        <p>Hello {context['greeting_name']},</p>
+        <p>The Sample Info folder for opportunity {opportunity_number} ({context['customer']}) was not found.
+        Please verify that it exists for <strong>{context['customer']}</strong>.</p>
+        <p>-Test Lab</p>
+    </body></html>
+    """
+    
     try:
-        opp = Opportunity.objects.get(opportunity_number=opportunity_number)
-        if not opp.rsm:
-            logger.warning(f"No RSM name for {opportunity_number}; cannot send missing folder email.")
-            return
-
-        # Gather CC list (similar to other email tasks)
-        apps_eng_values = Sample.objects.filter(opportunity_number=opportunity_number).values_list('apps_eng', flat=True).distinct()
-        cc_list = TEST_LAB_GROUP.copy()
-        for apps_eng_name in apps_eng_values:
-            if apps_eng_name:
-                apps_eng_email = generate_email(apps_eng_name)
-                if apps_eng_email and apps_eng_email not in cc_list:
-                    cc_list.append(apps_eng_email)
-
-        rsm_full_name = opp.rsm
-        first_name = rsm_full_name.split()[0]
-        greeting_name = NICKNAMES.get(rsm_full_name, first_name)
-
-        subject = f"{opportunity_number} ({opp.customer}) Missing Sample Info folder"
-        body = f"""
-        <html><body>
-            <p>Hello {greeting_name},</p>
-            <p>The Sample Info folder for opportunity {opportunity_number} ({opp.customer}) was not found.
-            Please verify that it exists for <strong>{opp.customer}</strong>.</p>
-            <p>-Test Lab</p>
-        </body></html>
-        """
-
-        recipient_email = get_rsm_email(rsm_full_name)
-        if recipient_email:
-            send_email(subject, body, recipient_email, cc_emails=cc_list)
-            logger.info(f"Missing Sample Info folder email sent to {recipient_email} for {opportunity_number}")
-        else:
-            logger.error(f"Unable to generate an email for RSM '{rsm_full_name}'. No email sent.")
-    except Opportunity.DoesNotExist:
-        logger.error(f"No Opportunity found with number {opportunity_number}")
+        send_email(subject, body, context['rsm_email'], cc_emails=context['cc_list'])
+        logger.info(f"Missing Sample Info folder email sent to {context['rsm_email']} for {opportunity_number}")
     except Exception as e:
         logger.error(f"Failed to send 'missing sample info folder' email: {e}")
 
 @shared_task
 def send_sample_received_email(rsm_full_name, date_received, opportunity_number, customer, quantity):
+    from .email_utils import send_email, get_rsm_email, get_greeting_name, build_opportunity_cc_list
+    from .models import Opportunity
+    
     try:
-        # Gather distinct engineers for this opportunity
-        from .models import Sample
-        from .email_utils import generate_email
-        apps_eng_values = Sample.objects.filter(opportunity_number=opportunity_number).values_list('apps_eng', flat=True).distinct()
-        cc_list = TEST_LAB_GROUP.copy()  # start with the group list
-        for apps_eng_name in apps_eng_values:
-            if apps_eng_name:
-                apps_eng_email = generate_email(apps_eng_name)
-                if apps_eng_email:
-                    # Only add if not already present in cc_list
-                    if apps_eng_email not in cc_list:
-                        cc_list.append(apps_eng_email)
-        first_name = rsm_full_name.strip().split()[0]
-
-        # Determine the greeting name (use nickname if available)
-        greeting_name = NICKNAMES.get(rsm_full_name, first_name)
+        # Get CC list for this opportunity
+        cc_list = build_opportunity_cc_list(opportunity_number)
+        
+        # Get greeting name
+        greeting_name = get_greeting_name(rsm_full_name)
+        
+        # Build subject
         subject = f'{opportunity_number} ({customer}) Samples Received'
         
-        from .models import Opportunity
+        # Check if Sample Info folder URL exists
         opp = Opportunity.objects.filter(opportunity_number=opportunity_number).first()
         if opp and opp.sample_info_url:
             folder_link = f'<a href="{opp.sample_info_url}">here</a>'
@@ -409,6 +359,8 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
                 "However, the Sample Info folder was not found. Please verify that it exists "
                 "in the Opportunity folder on the Sales Engineering drive."
             )
+        
+        # Build email body
         body = f"""
         <html><body>
             <p>Hello {greeting_name},</p>
@@ -416,14 +368,16 @@ def send_sample_received_email(rsm_full_name, date_received, opportunity_number,
             <p>-Test Lab</p>
         </body></html>
         """
+        
+        # Send email
         recipient_email = get_rsm_email(rsm_full_name)
         if recipient_email:
             send_email(subject, body, recipient_email, cc_emails=cc_list)
-            logger.info(f"Email sent to {recipient_email} regarding samples for opportunity number {opportunity_number}")
+            logger.info(f"Sample received email sent to {recipient_email} for opportunity {opportunity_number}")
         else:
             logger.error(f"Failed to generate email address for RSM '{rsm_full_name}'. Email not sent.")
     except Exception as e:
-        logger.error(f"Failed to send email: {e}")
+        logger.error(f"Failed to send sample received email: {e}")
 @shared_task
 def upload_full_size_images_to_sharepoint(sample_image_ids):
     logger.info(f"Environment variables in Celery worker: {os.environ}")

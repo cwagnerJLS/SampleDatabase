@@ -157,3 +157,75 @@ def get_rsm_email(rsm_full_name):
     else:
         # Return a default email or handle the error as needed
         return TEST_MODE_EMAIL  # Use test mode email as fallback
+
+def build_opportunity_cc_list(opportunity_number):
+    """
+    Build CC list for opportunity emails including apps engineers and test lab group.
+    
+    Args:
+        opportunity_number (str): The opportunity number
+        
+    Returns:
+        list: List of email addresses for CC field
+    """
+    from .models import Sample
+    
+    apps_eng_values = Sample.objects.filter(
+        opportunity_number=opportunity_number
+    ).values_list('apps_eng', flat=True).distinct()
+    
+    cc_list = TEST_LAB_GROUP.copy()
+    for apps_eng_name in apps_eng_values:
+        if apps_eng_name:
+            apps_eng_email = generate_email(apps_eng_name)
+            if apps_eng_email and apps_eng_email not in cc_list:
+                cc_list.append(apps_eng_email)
+    
+    logger.debug(f"Built CC list for opportunity {opportunity_number}: {cc_list}")
+    return cc_list
+
+def get_greeting_name(full_name):
+    """
+    Get the appropriate greeting name (nickname or first name).
+    
+    Args:
+        full_name (str): The person's full name
+        
+    Returns:
+        str: The greeting name to use in emails
+    """
+    if not full_name:
+        return ""
+    
+    first_name = full_name.strip().split()[0] if full_name.strip() else ""
+    return NICKNAMES.get(full_name, first_name)
+
+def get_opportunity_email_context(opportunity_number):
+    """
+    Get common email context for opportunity-based emails.
+    
+    Args:
+        opportunity_number (str): The opportunity number
+        
+    Returns:
+        dict: Context containing opportunity, greeting_name, rsm_email, and cc_list
+        None: If opportunity doesn't exist or has no RSM
+    """
+    from .models import Opportunity
+    
+    try:
+        opp = Opportunity.objects.get(opportunity_number=opportunity_number)
+        if not opp.rsm:
+            logger.warning(f"No RSM name for opportunity {opportunity_number}")
+            return None
+            
+        return {
+            'opportunity': opp,
+            'greeting_name': get_greeting_name(opp.rsm),
+            'rsm_email': get_rsm_email(opp.rsm),
+            'cc_list': build_opportunity_cc_list(opportunity_number),
+            'customer': opp.customer or 'Unknown Customer'
+        }
+    except Opportunity.DoesNotExist:
+        logger.error(f"No Opportunity found with number {opportunity_number}")
+        return None
