@@ -374,6 +374,265 @@
                 box-shadow: none;
             }
         }
+        
+        /* Image Section Styles */
+        .image-section {
+            margin-bottom: 25px;
+        }
+        
+        .image-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .image-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .image-label {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .upload-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .upload-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Scrollable Thumbnail Container */
+        .thumbnail-scroll-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            min-height: 120px;
+            align-items: center;
+        }
+        
+        .thumbnail-scroll-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .thumbnail-scroll-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .thumbnail-scroll-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .thumbnail-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .thumbnail-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            width: 100px;
+            height: 100px;
+        }
+        
+        .thumbnail-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .thumbnail-wrapper img:hover {
+            transform: scale(1.05);
+        }
+        
+        .thumbnail-wrapper .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .thumbnail-wrapper:hover .delete-btn {
+            display: flex;
+        }
+        
+        .thumbnail-wrapper .delete-btn:hover {
+            background: #dc3545;
+            transform: scale(1.1);
+        }
+        
+        .no-images-message {
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Loading placeholder for uploads */
+        .thumbnail-placeholder {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Upload Progress Bar */
+        .upload-progress {
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .progress-bar-container {
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 20px;
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            background: #667eea;
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        /* Full-size Image Modal */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-modal-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10002;
+        }
+        
+        .image-modal-close:hover {
+            color: #ccc;
+        }
+        
+        .image-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            user-select: none;
+        }
+        
+        .image-nav:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        
+        .image-nav.prev {
+            left: 20px;
+        }
+        
+        .image-nav.next {
+            right: 20px;
+        }
+        
+        .image-modal-filename {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -451,6 +710,28 @@
                 <form method="POST" action="" id="sample-form">
                     {% csrf_token %}
                     
+                    <!-- Image Section -->
+                    <div class="image-section">
+                        <div class="image-container">
+                            <div class="image-header">
+                                <label class="image-label">Sample Images</label>
+                                <button type="button" id="upload-btn" class="upload-btn" onclick="selectFiles()">Upload</button>
+                                <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                            </div>
+                            <div id="thumbnail-container" class="thumbnail-scroll-container">
+                                <!-- Thumbnails will be loaded here -->
+                                <div class="no-images-message">No images uploaded yet</div>
+                            </div>
+                            <div id="upload-progress" class="upload-progress">
+                                <div class="progress-text">Uploading...</div>
+                                <div class="progress-bar-container">
+                                    <div id="progress-bar" class="progress-bar"></div>
+                                </div>
+                                <div id="progress-percent" class="progress-text">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="action-group">
                         <label class="action-label" for="location">Storage Location</label>
                         <select id="location" name="location">
@@ -489,8 +770,23 @@
             <div class="spinner"></div>
         </div>
     </div>
+    
+    <!-- Full-size Image Modal -->
+    <div id="imageModal" class="image-modal">
+        <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+        <div class="image-modal-content">
+            <span class="image-nav prev" onclick="showPrevImage()">&#10094;</span>
+            <img id="modal-image" src="" alt="">
+            <span class="image-nav next" onclick="showNextImage()">&#10095;</span>
+        </div>
+        <div class="image-modal-filename" id="modal-filename"></div>
+    </div>
 
     <script>
+        // Global variables for image handling
+        let currentImages = [];
+        let currentImageIndex = 0;
+        
         document.addEventListener("DOMContentLoaded", function() {
             const auditToggle = document.getElementById('audit-toggle');
             const auditInput = document.getElementById('audit');
@@ -712,6 +1008,238 @@
                     resetRemoveButton();
                 }
             });
+            
+            // Load images on page load
+            loadImages();
+        });
+        
+        // Image handling functions
+        function loadImages() {
+            fetch('/get_sample_images/?sample_id=' + '{{ sample.unique_id }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayThumbnails(data.images);
+                    } else {
+                        console.error('Error fetching images:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading images:', error);
+                });
+        }
+        
+        function displayThumbnails(images) {
+            currentImages = images;
+            const container = document.getElementById('thumbnail-container');
+            
+            if (images.length === 0) {
+                container.innerHTML = '<div class="no-images-message">No images uploaded yet</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            images.forEach((image, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'thumbnail-wrapper';
+                
+                const img = document.createElement('img');
+                img.src = image.url;
+                img.alt = image.filename;
+                img.onclick = () => openImageModal(index);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteImage(image.id, wrapper);
+                };
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(deleteBtn);
+                container.appendChild(wrapper);
+            });
+        }
+        
+        function selectFiles() {
+            document.getElementById('file-input').click();
+        }
+        
+        // File input change handler
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        });
+        
+        function uploadFiles(files) {
+            const formData = new FormData();
+            formData.append('sample_id', '{{ sample.unique_id }}');
+            
+            let totalSize = 0;
+            for (let file of files) {
+                formData.append('files', file);
+                totalSize += file.size;
+            }
+            
+            const progressContainer = document.getElementById('upload-progress');
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercent = document.getElementById('progress-percent');
+            const uploadBtn = document.getElementById('upload-btn');
+            const container = document.getElementById('thumbnail-container');
+            
+            progressContainer.style.display = 'block';
+            uploadBtn.disabled = true;
+            
+            // Add loading placeholders
+            const existingContent = container.innerHTML;
+            if (container.querySelector('.no-images-message')) {
+                container.innerHTML = '';
+            }
+            for (let i = 0; i < files.length; i++) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'thumbnail-placeholder';
+                container.appendChild(placeholder);
+            }
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressPercent.textContent = percentComplete + '%';
+                }
+            });
+            
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        // Reload all images
+                        loadImages();
+                        progressContainer.style.display = 'none';
+                        progressBar.style.width = '0%';
+                        progressPercent.textContent = '0%';
+                    } else {
+                        alert('Upload failed: ' + (response.error || 'Unknown error'));
+                        // Remove placeholders and restore original content
+                        container.innerHTML = existingContent;
+                    }
+                } else {
+                    alert('Upload failed with status: ' + xhr.status);
+                    container.innerHTML = existingContent;
+                }
+                uploadBtn.disabled = false;
+                // Clear file input
+                document.getElementById('file-input').value = '';
+            });
+            
+            xhr.addEventListener('error', function() {
+                alert('Network error occurred during upload');
+                container.innerHTML = existingContent;
+                uploadBtn.disabled = false;
+                progressContainer.style.display = 'none';
+            });
+            
+            xhr.open('POST', '/upload_files/');
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.send(formData);
+        }
+        
+        function deleteImage(imageId, thumbnailElement) {
+            if (!confirm('Are you sure you want to delete this image?')) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image_id', imageId);
+            
+            fetch('/delete_sample_image/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    thumbnailElement.remove();
+                    // Update currentImages array
+                    currentImages = currentImages.filter(img => img.id !== imageId);
+                    // Check if container is empty
+                    const container = document.getElementById('thumbnail-container');
+                    if (container.children.length === 0) {
+                        container.innerHTML = '<div class="no-images-message">No images uploaded yet</div>';
+                    }
+                } else {
+                    alert('Failed to delete image: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error deleting image');
+                console.error('Error:', error);
+            });
+        }
+        
+        // Full-size image modal functions
+        function openImageModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modal-image');
+            const filenameDiv = document.getElementById('modal-filename');
+            const image = currentImages[index];
+            
+            // Use full-size URL if available, otherwise use thumbnail
+            modalImg.src = image.full_size_url || image.url;
+            filenameDiv.textContent = image.filename;
+            
+            modal.style.display = 'flex';
+            
+            // Update navigation buttons visibility
+            document.querySelector('.image-nav.prev').style.display = index > 0 ? 'block' : 'none';
+            document.querySelector('.image-nav.next').style.display = index < currentImages.length - 1 ? 'block' : 'none';
+        }
+        
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+        
+        function showPrevImage() {
+            if (currentImageIndex > 0) {
+                openImageModal(currentImageIndex - 1);
+            }
+        }
+        
+        function showNextImage() {
+            if (currentImageIndex < currentImages.length - 1) {
+                openImageModal(currentImageIndex + 1);
+            }
+        }
+        
+        // Keyboard navigation for image modal
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') {
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    showNextImage();
+                } else if (e.key === 'Escape') {
+                    closeImageModal();
+                }
+            }
+        });
+        
+        // Close modal when clicking outside the image
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
         });
     </script>
 </body>
