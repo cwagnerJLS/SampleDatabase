@@ -816,6 +816,95 @@ def batch_audit_samples(request):
     else:
         return method_not_allowed_response()
 
+def activity_log_view(request):
+    """Display activity logs with filtering and pagination"""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from .models import ActivityLog
+    from datetime import datetime, timedelta
+    
+    # Get filter parameters
+    user_filter = request.GET.get('user', '')
+    action_filter = request.GET.get('action', '')
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '')
+    date_filter = request.GET.get('date_filter', '')
+    
+    # Start with all logs
+    logs = ActivityLog.objects.all()
+    
+    # Apply filters
+    if user_filter:
+        logs = logs.filter(user=user_filter)
+    
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+    
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    
+    if search_query:
+        logs = logs.filter(
+            Q(details__icontains=search_query) |
+            Q(object_id__icontains=search_query) |
+            Q(error_message__icontains=search_query)
+        )
+    
+    # Date filtering
+    if date_filter:
+        today = datetime.now().date()
+        if date_filter == 'today':
+            logs = logs.filter(timestamp__date=today)
+        elif date_filter == 'week':
+            week_ago = today - timedelta(days=7)
+            logs = logs.filter(timestamp__date__gte=week_ago)
+        elif date_filter == 'month':
+            month_ago = today - timedelta(days=30)
+            logs = logs.filter(timestamp__date__gte=month_ago)
+    
+    # Get unique users and actions for filter dropdowns
+    all_users = ActivityLog.objects.values_list('user', flat=True).distinct()
+    all_actions = ActivityLog.objects.values_list('action', flat=True).distinct()
+    
+    # Pagination
+    paginator = Paginator(logs, 50)  # Show 50 logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Format logs for display
+    formatted_logs = []
+    for log in page_obj:
+        formatted_log = {
+            'id': log.id,
+            'user': log.user,
+            'action': log.get_action_display() if hasattr(log, 'get_action_display') else log.action,
+            'timestamp': log.timestamp,
+            'status': log.status,
+            'object_type': log.object_type,
+            'object_id': log.object_id,
+            'details': log.details,
+            'error_message': log.error_message,
+            'affected_count': log.affected_count,
+            'changes': log.changes,
+            'ip_address': log.ip_address,
+        }
+        formatted_logs.append(formatted_log)
+    
+    context = {
+        'logs': formatted_logs,
+        'page_obj': page_obj,
+        'all_users': sorted(all_users),
+        'all_actions': sorted(all_actions),
+        'user_filter': user_filter,
+        'action_filter': action_filter,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'date_filter': date_filter,
+        'total_count': logs.count(),
+    }
+    
+    return render(request, 'samples/activity_log.html', context)
+
 def get_sample_images(request):
     sample_id = request.GET.get('sample_id')
     try:

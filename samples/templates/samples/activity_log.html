@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Log - Sample Database</title>
+    {% load static %}
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            font-size: 14px;
+            line-height: 1.5;
+            display: inline-block;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+        
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-filter {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .quick-filter:hover,
+        .quick-filter.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .log-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .log-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .log-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .details-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .expandable {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .expandable:hover {
+            text-decoration: underline;
+        }
+        
+        .expanded-content {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 400px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .pagination a:hover {
+            background: #f8f9fa;
+        }
+        
+        .pagination .current {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .pagination .disabled {
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .no-logs {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .user-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .object-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .object-link:hover {
+            text-decoration: underline;
+        }
+        
+        .export-button {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .export-button:hover {
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .log-table {
+                font-size: 12px;
+            }
+            
+            .log-table th,
+            .log-table td {
+                padding: 8px;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .filter-group input,
+            .filter-group select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Activity Log</h1>
+            <div>
+                <a href="{% url 'create_sample' %}" class="back-button">← Back to Samples</a>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <form method="get" action="">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="user">User</label>
+                        <select name="user" id="user">
+                            <option value="">All Users</option>
+                            {% for user in all_users %}
+                                <option value="{{ user }}" {% if user == user_filter %}selected{% endif %}>{{ user }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="action">Action</label>
+                        <select name="action" id="action">
+                            <option value="">All Actions</option>
+                            <option value="SAMPLE_CREATE" {% if action_filter == "SAMPLE_CREATE" %}selected{% endif %}>Sample Created</option>
+                            <option value="SAMPLE_UPDATE" {% if action_filter == "SAMPLE_UPDATE" %}selected{% endif %}>Sample Updated</option>
+                            <option value="SAMPLE_DELETE" {% if action_filter == "SAMPLE_DELETE" %}selected{% endif %}>Sample Deleted</option>
+                            <option value="SAMPLE_REMOVE" {% if action_filter == "SAMPLE_REMOVE" %}selected{% endif %}>Sample Removed</option>
+                            <option value="SAMPLE_AUDIT" {% if action_filter == "SAMPLE_AUDIT" %}selected{% endif %}>Sample Audited</option>
+                            <option value="LOCATION_CHANGE" {% if action_filter == "LOCATION_CHANGE" %}selected{% endif %}>Location Changed</option>
+                            <option value="BULK_AUDIT" {% if action_filter == "BULK_AUDIT" %}selected{% endif %}>Bulk Audit</option>
+                            <option value="BULK_DELETE" {% if action_filter == "BULK_DELETE" %}selected{% endif %}>Bulk Delete</option>
+                            <option value="BULK_LOCATION" {% if action_filter == "BULK_LOCATION" %}selected{% endif %}>Bulk Location</option>
+                            <option value="BULK_REMOVE" {% if action_filter == "BULK_REMOVE" %}selected{% endif %}>Bulk Remove</option>
+                            <option value="IMAGE_UPLOAD" {% if action_filter == "IMAGE_UPLOAD" %}selected{% endif %}>Image Upload</option>
+                            <option value="IMAGE_DELETE" {% if action_filter == "IMAGE_DELETE" %}selected{% endif %}>Image Delete</option>
+                            <option value="EXPORT" {% if action_filter == "EXPORT" %}selected{% endif %}>Export</option>
+                            <option value="PRINT_LABEL" {% if action_filter == "PRINT_LABEL" %}selected{% endif %}>Label Printed</option>
+                            <option value="USER_LOGIN" {% if action_filter == "USER_LOGIN" %}selected{% endif %}>User Login</option>
+                            <option value="PAGE_VIEW" {% if action_filter == "PAGE_VIEW" %}selected{% endif %}>Page View</option>
+                            <option value="SEARCH" {% if action_filter == "SEARCH" %}selected{% endif %}>Search</option>
+                            <option value="ERROR" {% if action_filter == "ERROR" %}selected{% endif %}>Error</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="status">Status</label>
+                        <select name="status" id="status">
+                            <option value="">All Statuses</option>
+                            <option value="SUCCESS" {% if status_filter == "SUCCESS" %}selected{% endif %}>Success</option>
+                            <option value="FAILED" {% if status_filter == "FAILED" %}selected{% endif %}>Failed</option>
+                            <option value="PARTIAL" {% if status_filter == "PARTIAL" %}selected{% endif %}>Partial</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="search">Search</label>
+                        <input type="text" name="search" id="search" value="{{ search_query }}" placeholder="Search details...">
+                    </div>
+                    
+                    <div class="filter-buttons">
+                        <button type="submit" class="btn-primary">Filter</button>
+                        <a href="{% url 'activity_log' %}" class="btn-secondary" style="text-decoration: none;">Clear</a>
+                    </div>
+                </div>
+                
+                <div class="quick-filters">
+                    <a href="?date_filter=today" class="quick-filter {% if date_filter == 'today' %}active{% endif %}">Today</a>
+                    <a href="?date_filter=week" class="quick-filter {% if date_filter == 'week' %}active{% endif %}">Last 7 Days</a>
+                    <a href="?date_filter=month" class="quick-filter {% if date_filter == 'month' %}active{% endif %}">Last 30 Days</a>
+                    <a href="?status=FAILED" class="quick-filter {% if status_filter == 'FAILED' %}active{% endif %}">Errors Only</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Logs</div>
+                <div class="stat-value">{{ total_count }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Page</div>
+                <div class="stat-value">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
+            </div>
+        </div>
+        
+        {% if logs %}
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Object</th>
+                        <th>Details</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td class="timestamp">
+                                {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                            </td>
+                            <td>
+                                <span class="user-tag">{{ log.user }}</span>
+                            </td>
+                            <td>
+                                <span class="action-badge">{{ log.action }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ log.status|lower }}">{{ log.status }}</span>
+                            </td>
+                            <td>
+                                {% if log.object_id %}
+                                    {% if log.object_type == "Sample" %}
+                                        <a href="{% url 'manage_sample' log.object_id %}" class="object-link">{{ log.object_type }} #{{ log.object_id }}</a>
+                                    {% else %}
+                                        {{ log.object_type }} #{{ log.object_id }}
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="details-cell">
+                                {% if log.details %}
+                                    <span class="expandable" onclick="toggleExpand(this)">
+                                        {{ log.details|truncatechars:50 }}
+                                        <div class="expanded-content">
+                                            <strong>Details:</strong><br>
+                                            {{ log.details }}
+                                            {% if log.changes %}
+                                                <br><br><strong>Changes:</strong><br>
+                                                {{ log.changes }}
+                                            {% endif %}
+                                            {% if log.error_message %}
+                                                <br><br><strong>Error:</strong><br>
+                                                {{ log.error_message }}
+                                            {% endif %}
+                                        </div>
+                                    </span>
+                                {% elif log.error_message %}
+                                    <span class="expandable" onclick="toggleExpand(this)" style="color: red;">
+                                        Error: {{ log.error_message|truncatechars:40 }}
+                                        <div class="expanded-content">
+                                            {{ log.error_message }}
+                                        </div>
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ log.affected_count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            {% if page_obj.has_other_pages %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">« First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">‹ Previous</a>
+                    {% else %}
+                        <span class="disabled">« First</span>
+                        <span class="disabled">‹ Previous</span>
+                    {% endif %}
+                    
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">Next ›</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">Last »</a>
+                    {% else %}
+                        <span class="disabled">Next ›</span>
+                        <span class="disabled">Last »</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="no-logs">
+                <h2>No activity logs found</h2>
+                <p>Try adjusting your filters or check back later.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function toggleExpand(element) {
+            const expandedContent = element.querySelector('.expanded-content');
+            if (expandedContent.style.display === 'block') {
+                expandedContent.style.display = 'none';
+            } else {
+                // Hide all other expanded contents
+                document.querySelectorAll('.expanded-content').forEach(el => {
+                    el.style.display = 'none';
+                });
+                expandedContent.style.display = 'block';
+            }
+        }
+        
+        // Close expanded content when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.expandable')) {
+                document.querySelectorAll('.expanded-content').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -27,6 +27,7 @@ urlpatterns = [
     path('remove_from_inventory/', views.remove_from_inventory, name='remove_from_inventory'),
     path('export_documentation/', views.export_documentation_view, name='export_documentation'),
     path('batch_audit/', views.batch_audit_samples, name='batch_audit_samples'),
+    path('log/', views.activity_log_view, name='activity_log'),
 ]
 
 import os  # Make sure to import os
