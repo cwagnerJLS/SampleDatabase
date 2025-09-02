@@ -433,6 +433,13 @@
             padding: 10px 0;
             min-height: 120px;
             align-items: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .thumbnail-scroll-container.selecting {
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            padding: 10px;
         }
         
         .thumbnail-scroll-container::-webkit-scrollbar {
@@ -458,6 +465,41 @@
             flex-shrink: 0;
             width: 100px;
             height: 100px;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        /* Selection mode styles */
+        .thumbnail-wrapper.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(102, 126, 234, 0.8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        
+        .selecting .thumbnail-wrapper {
+            cursor: pointer;
+        }
+        
+        .selecting .thumbnail-wrapper:active {
+            transform: scale(0.95);
+        }
+        
+        /* Hide hover delete button in selection mode */
+        .selecting .delete-image-btn {
+            display: none !important;
         }
         
         .thumbnail-wrapper img {
@@ -466,6 +508,10 @@
             object-fit: cover;
             border-radius: 8px;
             cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            pointer-events: auto;
             transition: transform 0.2s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
@@ -507,6 +553,61 @@
             font-style: italic;
             text-align: center;
             padding: 20px;
+        }
+        
+        /* Selection controls */
+        .selection-controls {
+            display: none;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .selection-controls.active {
+            display: flex;
+        }
+        
+        .selection-info {
+            flex: 1;
+            font-size: 14px;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .selection-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .delete-selected-btn {
+            background: white;
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .delete-selected-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .cancel-selection-btn {
+            background: white;
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .cancel-selection-btn:hover {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .selection-btn:active {
+            transform: scale(0.98);
         }
         
         /* Loading placeholder for uploads */
@@ -713,10 +814,15 @@
                     <!-- Image Section -->
                     <div class="image-section">
                         <div class="image-container">
-                            <div class="image-header">
+                            <div class="image-header" id="normal-header">
                                 <label class="image-label">Sample Images</label>
                                 <button type="button" id="upload-btn" class="upload-btn" onclick="selectFiles()">Upload</button>
                                 <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                            </div>
+                            <div class="selection-controls" id="selection-controls">
+                                <span class="selection-info" id="selection-info">0 selected</span>
+                                <button type="button" class="selection-btn delete-selected-btn" onclick="deleteSelected()">Delete</button>
+                                <button type="button" class="selection-btn cancel-selection-btn" onclick="cancelSelection()">Cancel</button>
                             </div>
                             <div id="thumbnail-container" class="thumbnail-scroll-container">
                                 <!-- Thumbnails will be loaded here -->
@@ -786,6 +892,12 @@
         // Global variables for image handling
         let currentImages = [];
         let currentImageIndex = 0;
+        
+        // Selection mode variables
+        let isSelectionMode = false;
+        let selectedImages = new Set();
+        let longPressTimer = null;
+        let touchStartTime = 0;
         
         document.addEventListener("DOMContentLoaded", function() {
             const auditToggle = document.getElementById('audit-toggle');
@@ -1035,6 +1147,7 @@
             
             if (images.length === 0) {
                 container.innerHTML = '<div class="no-images-message">No images uploaded yet</div>';
+                cancelSelection(); // Exit selection mode if no images
                 return;
             }
             
@@ -1043,11 +1156,35 @@
             images.forEach((image, index) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'thumbnail-wrapper';
+                wrapper.dataset.imageId = image.id;
                 
                 const img = document.createElement('img');
                 img.src = image.url;
                 img.alt = image.filename;
-                img.onclick = () => openImageModal(index);
+                
+                // Add long press detection
+                wrapper.addEventListener('touchstart', (e) => handleTouchStart(e, wrapper, image.id));
+                wrapper.addEventListener('touchend', (e) => handleTouchEnd(e, wrapper, image.id));
+                wrapper.addEventListener('touchcancel', handleTouchCancel);
+                
+                // Prevent context menu on long press
+                wrapper.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                // Mouse events for desktop
+                wrapper.addEventListener('mousedown', (e) => handleMouseDown(e, wrapper, image.id));
+                wrapper.addEventListener('mouseup', handleMouseUp);
+                wrapper.addEventListener('mouseleave', handleMouseLeave);
+                
+                // Click handling depends on selection mode
+                wrapper.addEventListener('click', (e) => {
+                    if (isSelectionMode) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSelection(wrapper, image.id);
+                    } else if (!e.target.classList.contains('delete-btn')) {
+                        openImageModal(index);
+                    }
+                });
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
@@ -1185,6 +1322,179 @@
                 console.error('Error:', error);
             });
         }
+        
+        // Selection mode functions
+        function handleTouchStart(e, wrapper, imageId) {
+            touchStartTime = Date.now();
+            longPressTimer = setTimeout(() => {
+                if (!isSelectionMode) {
+                    enterSelectionMode();
+                    toggleSelection(wrapper, imageId);
+                    // Haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }
+            }, 500); // 500ms for long press
+        }
+        
+        function handleTouchEnd(e, wrapper, imageId) {
+            const touchDuration = Date.now() - touchStartTime;
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            
+            // If it was a long press, prevent the click from opening modal
+            if (touchDuration >= 500) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+        
+        function handleTouchCancel() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        function handleMouseDown(e, wrapper, imageId) {
+            // Only respond to left click
+            if (e.button !== 0) return;
+            
+            longPressTimer = setTimeout(() => {
+                if (!isSelectionMode) {
+                    enterSelectionMode();
+                    toggleSelection(wrapper, imageId);
+                }
+            }, 500);
+        }
+        
+        function handleMouseUp() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        function handleMouseLeave() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        function enterSelectionMode() {
+            isSelectionMode = true;
+            // Don't clear selected images - keep any that were just selected
+            
+            const container = document.getElementById('thumbnail-container');
+            container.classList.add('selecting');
+            
+            document.getElementById('normal-header').style.display = 'none';
+            document.getElementById('selection-controls').classList.add('active');
+            
+            updateSelectionInfo();
+        }
+        
+        function cancelSelection() {
+            isSelectionMode = false;
+            selectedImages.clear();
+            
+            const container = document.getElementById('thumbnail-container');
+            container.classList.remove('selecting');
+            
+            // Remove selected class from all thumbnails
+            document.querySelectorAll('.thumbnail-wrapper.selected').forEach(wrapper => {
+                wrapper.classList.remove('selected');
+            });
+            
+            document.getElementById('normal-header').style.display = 'flex';
+            document.getElementById('selection-controls').classList.remove('active');
+        }
+        
+        function toggleSelection(wrapper, imageId) {
+            if (selectedImages.has(imageId)) {
+                selectedImages.delete(imageId);
+                wrapper.classList.remove('selected');
+            } else {
+                selectedImages.add(imageId);
+                wrapper.classList.add('selected');
+            }
+            updateSelectionInfo();
+        }
+        
+        function updateSelectionInfo() {
+            const info = document.getElementById('selection-info');
+            const count = selectedImages.size;
+            info.textContent = count === 1 ? '1 selected' : `${count} selected`;
+            
+            // Update delete button text
+            const deleteBtn = document.querySelector('.delete-selected-btn');
+            if (deleteBtn) {
+                deleteBtn.textContent = count > 0 ? `Delete (${count})` : 'Delete';
+            }
+        }
+        
+        function deleteSelected() {
+            const count = selectedImages.size;
+            if (count === 0) return;
+            
+            const message = count === 1 
+                ? 'Are you sure you want to delete this image?' 
+                : `Are you sure you want to delete ${count} images?`;
+                
+            if (!confirm(message)) {
+                return;
+            }
+            
+            // Delete all selected images
+            const deletePromises = Array.from(selectedImages).map(imageId => {
+                const formData = new FormData();
+                formData.append('image_id', imageId);
+                
+                return fetch('/delete_sample_image/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+            });
+            
+            Promise.all(deletePromises)
+                .then(responses => Promise.all(responses.map(r => r.json())))
+                .then(results => {
+                    // Remove deleted thumbnails
+                    selectedImages.forEach(imageId => {
+                        const wrapper = document.querySelector(`[data-image-id="${imageId}"]`);
+                        if (wrapper) wrapper.remove();
+                        // Update currentImages array
+                        currentImages = currentImages.filter(img => img.id !== imageId);
+                    });
+                    
+                    // Check if any images remain
+                    const container = document.getElementById('thumbnail-container');
+                    if (container.children.length === 0) {
+                        container.innerHTML = '<div class="no-images-message">No images uploaded yet</div>';
+                    }
+                    
+                    // Exit selection mode
+                    cancelSelection();
+                })
+                .catch(error => {
+                    console.error('Error deleting images:', error);
+                    alert('Failed to delete some images');
+                });
+        }
+        
+        // Add keyboard shortcut to exit selection mode
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isSelectionMode) {
+                cancelSelection();
+            }
+        });
         
         // Full-size image modal functions
         function openImageModal(index) {
