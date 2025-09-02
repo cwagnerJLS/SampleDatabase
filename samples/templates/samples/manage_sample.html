@@ -455,8 +455,9 @@
                         <label class="action-label" for="location">Storage Location</label>
                         <select id="location" name="location">
                             <option value="Choose a Location" {% if not sample.storage_location or sample.storage_location == "Choose a Location" %}selected{% endif %}>Choose a Location</option>
-                            <option value="Test Lab Fridge" {% if sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Test Lab Fridge</option>
-                            <option value="Test Lab Freezer" {% if sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Test Lab Freezer</option>
+                            <option value="Cooler #2" {% if sample.storage_location == "Cooler #2" or sample.storage_location == "Test Lab Fridge" %}selected{% endif %}>Cooler #2</option>
+                            <option value="Freezer #5" {% if sample.storage_location == "Freezer #5" or sample.storage_location == "Test Lab Freezer" %}selected{% endif %}>Freezer #5</option>
+                            <option value="Freezer #9" {% if sample.storage_location == "Freezer #9" %}selected{% endif %}>Freezer #9</option>
                             <option value="Walk-in Fridge" {% if sample.storage_location == "Walk-in Fridge" %}selected{% endif %}>Walk-in Fridge</option>
                             <option value="Walk-in Freezer" {% if sample.storage_location == "Walk-in Freezer" %}selected{% endif %}>Walk-in Freezer</option>
                             <option value="Dry Food Storage" {% if sample.storage_location == "Dry Food Storage" %}selected{% endif %}>Dry Food Storage</option>
