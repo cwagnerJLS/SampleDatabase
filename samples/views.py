@@ -21,6 +21,10 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Sample, SampleImage, Opportunity
 from .label_utils import generate_label, generate_qr_code, mm_to_points
 from .services.opportunity_service import OpportunityService
+from .activity_logger import (
+    log_activity, log_sample_change, log_bulk_operation, 
+    log_export, log_error
+)
 from .sharepoint_config import (
     get_documentation_template_path,
     get_apps_database_path,
@@ -154,13 +158,23 @@ def create_sample(request):
                         description=description,
                         storage_location=location,
                         quantity=1,  # Each entry represents a single unit
-                        apps_eng=apps_eng
+                        apps_eng=apps_eng,
+                        created_by=getattr(request, 'current_user', 'Unknown User')
                     )
                     # Set initial location tracking if location is provided
                     if location:
                         sample.update_location_tracking()
                         sample.save()
                     created_samples.append(sample)
+                    
+                    # Log sample creation
+                    log_sample_change(
+                        request=request,
+                        sample=sample,
+                        action='SAMPLE_CREATE',
+                        details=f"Created sample {sample.unique_id} for {sample.customer} - {sample.description}"
+                    )
+                    
                 logger.debug(f"Created samples: {created_samples}")
 
                 # Update sample_ids field for the Opportunity using the service
@@ -350,9 +364,29 @@ def upload_files(request):
                 # Collect the URL and ID to return to the client
                 image_urls.append(sample_image.image.url)
                 image_ids.append(sample_image.id)  # Collect the image ID
+                
+                # Log image upload
+                log_activity(
+                    request=request,
+                    action='IMAGE_UPLOAD',
+                    object_type='Sample',
+                    object_id=sample_id,
+                    details=f"Uploaded image {filename} for sample {sample_id}"
+                )
 
             # After processing all images and saving them locally, enqueue a task to upload images to SharePoint
             upload_full_size_images_to_sharepoint.delay(image_ids)
+            
+            # Log bulk upload if multiple images
+            if len(files) > 1:
+                log_activity(
+                    request=request,
+                    action='IMAGE_UPLOAD',
+                    object_type='Sample',
+                    object_id=sample_id,
+                    details=f"Uploaded {len(files)} images for sample {sample_id}",
+                    affected_count=len(files)
+                )
 
         except Exception as e:
             logger.exception("Error processing files: %s", e)
@@ -398,7 +432,36 @@ def update_sample_location(request):
                     elif not audit:
                         sample.audit = False
                     
+                    # Track who modified the sample
+                    sample.modified_by = getattr(request, 'current_user', 'Unknown User')
+                    
                     sample.save()
+                    
+                    # Log location change
+                    if old_location != sample.storage_location:
+                        log_sample_change(
+                            request=request,
+                            sample=sample,
+                            action='LOCATION_CHANGE',
+                            old_values={'storage_location': old_location},
+                            new_values={'storage_location': sample.storage_location}
+                        )
+                    
+                    # Log audit if performed
+                    if audit and not sample.audit:
+                        log_sample_change(
+                            request=request,
+                            sample=sample,
+                            action='SAMPLE_AUDIT'
+                        )
+
+                # Log bulk operation
+                log_bulk_operation(
+                    request=request,
+                    action='BULK_LOCATION',
+                    sample_ids=ids,
+                    details=f"Updated location to {location} for {len(samples)} samples"
+                )
 
                 return success_response(message='Locations updated successfully for selected samples')
             else:
@@ -424,7 +487,28 @@ def update_sample_location(request):
                 elif not audit:
                     sample.audit = False
                 
+                # Track who modified the sample
+                sample.modified_by = getattr(request, 'current_user', 'Unknown User')
+                
                 sample.save()
+                
+                # Log location change
+                if old_location != sample.storage_location:
+                    log_sample_change(
+                        request=request,
+                        sample=sample,
+                        action='LOCATION_CHANGE',
+                        old_values={'storage_location': old_location},
+                        new_values={'storage_location': sample.storage_location}
+                    )
+                
+                # Log audit if performed
+                if audit and not sample.audit:
+                    log_sample_change(
+                        request=request,
+                        sample=sample,
+                        action='SAMPLE_AUDIT'
+                    )
 
                 return success_response(message='Location updated successfully for sample')
 
@@ -451,12 +535,32 @@ def remove_from_inventory(request):
             # Keep track of affected opportunities
             affected_opportunity_numbers = set()
 
+            removed_samples = []
             for sample in samples_to_remove:
                 opportunity_number = sample.opportunity_number
                 affected_opportunity_numbers.add(opportunity_number)
+                
+                # Log individual sample removal
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='SAMPLE_REMOVE',
+                    details=f"Removed sample {sample.unique_id} from inventory"
+                )
+                
+                removed_samples.append(sample.unique_id)
                 sample.delete(update_opportunity=False)
 
             logger.debug(f"Removed samples from inventory with IDs: {ids}")
+            
+            # Log bulk operation if multiple samples
+            if len(removed_samples) > 1:
+                log_bulk_operation(
+                    request=request,
+                    action='BULK_REMOVE',
+                    sample_ids=removed_samples,
+                    details=f"Removed {len(removed_samples)} samples from inventory"
+                )
 
 
             # After deleting the samples, check if any samples remain for each opportunity
@@ -497,6 +601,7 @@ def handle_print_request(request):
             if not ids_to_print:
                 return error_response('No sample IDs provided')
 
+            printed_samples = []
             for sample_id in ids_to_print:
                 try:
                     sample = Sample.objects.get(unique_id=sample_id)
@@ -521,9 +626,35 @@ def handle_print_request(request):
                 # Send the label PDF to the default printer
                 try:
                     subprocess.run(['lpr', output_path], check=True)
+                    printed_samples.append(sample_id)
+                    
+                    # Log individual label print
+                    log_activity(
+                        request=request,
+                        action='PRINT_LABEL',
+                        object_type='Sample',
+                        object_id=sample_id,
+                        details=f"Printed label for sample {sample_id}"
+                    )
                 except subprocess.CalledProcessError as e:
                     logger.error(f"Error printing label for sample {sample_id}: {e}")
+                    log_error(
+                        request=request,
+                        operation='Print Label',
+                        error_message=str(e),
+                        object_type='Sample',
+                        object_id=sample_id
+                    )
                     return server_error_response(f'Failed to print label for sample {sample_id}')
+
+            # Log bulk print operation if multiple labels
+            if len(printed_samples) > 1:
+                log_bulk_operation(
+                    request=request,
+                    action='PRINT_LABEL',
+                    sample_ids=printed_samples,
+                    details=f"Printed {len(printed_samples)} labels"
+                )
 
             return success_response()
         except json.JSONDecodeError:
@@ -565,6 +696,9 @@ def manage_sample(request, sample_id):
             elif not audit:
                 sample.audit = False
             
+            # Track who modified the sample
+            sample.modified_by = getattr(request, 'current_user', 'Unknown User')
+            
             sample.save()
             logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
 
@@ -588,6 +722,17 @@ def export_documentation_view(request):
         data = json.loads(request.body)
         opportunity_number = data.get('opportunity_number', None)
         if opportunity_number:
+            # Get sample count for this opportunity
+            sample_count = Sample.objects.filter(opportunity_number=opportunity_number).count()
+            
+            # Log export operation
+            log_export(
+                request=request,
+                export_type='Documentation',
+                details=f"Exported documentation for opportunity {opportunity_number}",
+                sample_count=sample_count
+            )
+            
             export_documentation.delay(opportunity_number)
             return success_response()
         else:
@@ -618,9 +763,17 @@ def batch_audit_samples(request):
                     
                     # Perform the audit
                     sample.perform_audit()
+                    sample.modified_by = getattr(request, 'current_user', 'Unknown User')
                     sample.save()
                     audited_count += 1
                     logger.debug(f"Audited sample {sample.unique_id}")
+                    
+                    # Log individual audit
+                    log_sample_change(
+                        request=request,
+                        sample=sample,
+                        action='SAMPLE_AUDIT'
+                    )
                     
                 except Exception as e:
                     logger.error(f"Error auditing sample {sample.unique_id}: {e}")
@@ -641,6 +794,16 @@ def batch_audit_samples(request):
                 'errors': errors,
                 'message': '. '.join(message_parts) if message_parts else 'No samples were audited'
             }
+            
+            # Log bulk audit operation
+            if audited_count > 0:
+                log_bulk_operation(
+                    request=request,
+                    action='BULK_AUDIT',
+                    sample_ids=[s.unique_id for s in samples if s.unique_id not in skipped_no_location],
+                    details=f"Batch audit performed: {audited_count} samples audited, {len(skipped_no_location)} skipped",
+                    status='SUCCESS' if not errors else 'PARTIAL'
+                )
             
             return success_response(data=response_data)
             
@@ -690,8 +853,19 @@ def delete_sample_image(request):
         # Capture the SharePoint path before deleting the local file
         full_size_name = image.full_size_image.name
         opportunity_number = image.sample.opportunity_number
+        sample_id = image.sample.unique_id
+        
         if full_size_name:
             delete_image_from_sharepoint.delay(full_size_name, opportunity_number)
+
+        # Log image deletion
+        log_activity(
+            request=request,
+            action='IMAGE_DELETE',
+            object_type='Sample',
+            object_id=sample_id,
+            details=f"Deleted image {full_size_name} from sample {sample_id}"
+        )
 
         # Delete the local file + DB record
         image.delete()
@@ -700,6 +874,13 @@ def delete_sample_image(request):
         return not_found_response('Image')
     except Exception as e:
         logger.error(f"Error deleting image {image_id}: {e}")
+        log_error(
+            request=request,
+            operation='Delete Image',
+            error_message=str(e),
+            object_type='Image',
+            object_id=image_id
+        )
         return server_error_response('An error occurred while deleting the image')
 
 def delete_samples(request):
@@ -709,10 +890,28 @@ def delete_samples(request):
             # Retrieve the samples to be deleted
             samples_to_delete = Sample.objects.filter(unique_id__in=ids)
 
+            deleted_samples = []
             for sample in samples_to_delete:
+                # Log individual sample deletion
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='SAMPLE_DELETE',
+                    details=f"Deleted sample {sample.unique_id} - {sample.customer}"
+                )
+                deleted_samples.append(sample.unique_id)
                 sample.delete()  # Calls the delete method on each instance
 
             logger.debug(f"Deleted samples with IDs: {ids}")
+            
+            # Log bulk delete operation if multiple samples
+            if len(deleted_samples) > 1:
+                log_bulk_operation(
+                    request=request,
+                    action='BULK_DELETE',
+                    sample_ids=deleted_samples,
+                    details=f"Deleted {len(deleted_samples)} samples"
+                )
 
             return success_response()
         except json.JSONDecodeError as e:
@@ -740,3 +939,34 @@ def handle_404(request, exception=None):
 
 def handle_500(request):
     return server_error_response('Server Error')
+
+
+def select_user(request):
+    """Display user selection page"""
+    return render(request, 'samples/select_user.html')
+
+
+def set_user(request):
+    """Set the user cookie based on selection"""
+    if request.method == 'POST':
+        user_name = request.POST.get('user_name')
+        
+        # Validate user name
+        valid_users = ['Corey Wagner', 'Mike Mooney', 'Colby Wentz', 'Noah Dekker']
+        if user_name in valid_users:
+            # Get redirect URL from session or default to home
+            redirect_url = request.session.pop('redirect_after_user_selection', '/')
+            
+            response = redirect(redirect_url)
+            # Set cookie for 1 year
+            max_age = 365 * 24 * 60 * 60  # 1 year in seconds
+            response.set_cookie(
+                'sample_db_user',
+                user_name,
+                max_age=max_age,
+                httponly=True,
+                samesite='Lax'
+            )
+            return response
+    
+    return redirect('select_user')

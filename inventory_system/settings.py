@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'samples.middleware.UserIdentificationMiddleware',
 ]
 
 ROOT_URLCONF = 'inventory_system.urls'
@@ -60,6 +61,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',  # Required for media files
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'samples.context_processors.current_user',
             ],
         }
     }

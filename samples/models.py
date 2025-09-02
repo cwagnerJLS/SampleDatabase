@@ -68,8 +68,9 @@ class Sample(models.Model):
         blank=True,
         null=True,
         choices=[
-            ('Test Lab Fridge', 'Test Lab Fridge'),
-            ('Test Lab Freezer', 'Test Lab Freezer'),
+            ('Cooler #2', 'Cooler #2'),
+            ('Freezer #5', 'Freezer #5'),
+            ('Freezer #9', 'Freezer #9'),
             ('Walk-in Fridge', 'Walk-in Fridge'),
             ('Walk-in Freezer', 'Walk-in Freezer'),
             ('Dry Food Storage', 'Dry Food Storage'),
@@ -85,6 +86,12 @@ class Sample(models.Model):
     location_assigned_date = models.DateTimeField(blank=True, null=True)
     audit_due_date = models.DateField(blank=True, null=True)
     last_audit_date = models.DateTimeField(blank=True, null=True)
+    
+    # User tracking fields
+    created_by = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    modified_by = models.CharField(max_length=100, blank=True, null=True)
+    modified_at = models.DateTimeField(auto_now=True, null=True)
 
     def calculate_audit_due_date(self, from_date=None):
         """Calculate audit due date based on storage location"""
@@ -96,9 +103,12 @@ class Sample(models.Model):
             
         # Define audit periods for each location type
         audit_periods = {
-            'Test Lab Fridge': timedelta(weeks=3),
+            'Cooler #2': timedelta(weeks=3),
+            'Test Lab Fridge': timedelta(weeks=3),  # Legacy support
             'Walk-in Fridge': timedelta(weeks=3),
-            'Test Lab Freezer': timedelta(weeks=8),
+            'Freezer #5': timedelta(weeks=8),
+            'Freezer #9': timedelta(weeks=8),
+            'Test Lab Freezer': timedelta(weeks=8),  # Legacy support
             'Walk-in Freezer': timedelta(weeks=8),
             'Dry Food Storage': timedelta(weeks=8),
             'Empty Case Storage': timedelta(weeks=8),
@@ -270,3 +280,90 @@ class SampleImage(models.Model):
 
         remove_if_empty(thumbnail_dir)
         remove_if_empty(full_size_dir)
+
+
+class ActivityLog(models.Model):
+    """Model to track all user activities in the system"""
+    
+    # Action type choices
+    ACTION_CHOICES = [
+        # Sample operations
+        ('SAMPLE_CREATE', 'Sample Created'),
+        ('SAMPLE_UPDATE', 'Sample Updated'),
+        ('SAMPLE_DELETE', 'Sample Deleted'),
+        ('SAMPLE_REMOVE', 'Sample Removed from Inventory'),
+        ('SAMPLE_AUDIT', 'Sample Audited'),
+        ('LOCATION_CHANGE', 'Location Changed'),
+        
+        # Bulk operations
+        ('BULK_AUDIT', 'Bulk Audit'),
+        ('BULK_DELETE', 'Bulk Delete'),
+        ('BULK_LOCATION', 'Bulk Location Update'),
+        ('BULK_REMOVE', 'Bulk Remove from Inventory'),
+        
+        # Document operations
+        ('IMAGE_UPLOAD', 'Image Uploaded'),
+        ('IMAGE_DELETE', 'Image Deleted'),
+        ('EXPORT', 'Data Exported'),
+        ('PRINT_LABEL', 'Label Printed'),
+        
+        # System events
+        ('USER_LOGIN', 'User Identified'),
+        ('PAGE_VIEW', 'Page Viewed'),
+        ('SEARCH', 'Search Performed'),
+        ('ERROR', 'Operation Failed'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('PARTIAL', 'Partial Success'),
+    ]
+    
+    # Core fields
+    user = models.CharField(max_length=100, db_index=True)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SUCCESS')
+    
+    # Request information
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, null=True)
+    
+    # Object reference (generic to handle different object types)
+    object_type = models.CharField(max_length=50, blank=True, null=True)
+    object_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Detailed information
+    changes = models.JSONField(blank=True, null=True)  # Store before/after values
+    details = models.TextField(blank=True, null=True)  # Human-readable description
+    error_message = models.TextField(blank=True, null=True)
+    
+    # Additional context
+    affected_count = models.IntegerField(default=1)  # For bulk operations
+    session_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['-timestamp', 'user']),
+            models.Index(fields=['action', '-timestamp']),
+            models.Index(fields=['object_type', 'object_id']),
+        ]
+        verbose_name = 'Activity Log'
+        verbose_name_plural = 'Activity Logs'
+    
+    def __str__(self):
+        return f"{self.timestamp.strftime('%Y-%m-%d %H:%M:%S')} | {self.user} | {self.get_action_display()}"
+    
+    def get_object_link(self):
+        """Generate a link to the affected object if possible"""
+        if self.object_type == 'Sample' and self.object_id:
+            return f"/manage_sample/{self.object_id}/"
+        return None
+    
+    @classmethod
+    def cleanup_old_logs(cls, days=90):
+        """Remove logs older than specified days"""
+        cutoff_date = timezone.now() - timedelta(days=days)
+        return cls.objects.filter(timestamp__lt=cutoff_date).delete()

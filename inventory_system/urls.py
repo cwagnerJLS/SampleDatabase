@@ -12,6 +12,8 @@ from samples.health import health_check
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health_check'),
+    path('select-user/', views.select_user, name='select_user'),
+    path('set-user/', views.set_user, name='set_user'),
     path('', views.view_samples, name='home'),
     path('create_sample/', views.create_sample, name='create_sample'),
     path('view_samples/', views.view_samples, name='view_samples'),
