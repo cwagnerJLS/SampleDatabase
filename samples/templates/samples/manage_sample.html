@@ -899,6 +899,9 @@
         let longPressTimer = null;
         let touchStartTime = 0;
         
+        // Global CSRF token to be accessible from all functions
+        let csrfToken = null;
+        
         document.addEventListener("DOMContentLoaded", function() {
             const auditToggle = document.getElementById('audit-toggle');
             const auditInput = document.getElementById('audit');
@@ -908,7 +911,7 @@
             const removeBtn = document.getElementById('remove-from-inventory');
             const confirmText = document.getElementById('confirm-text');
             const sampleId = '{{ sample.unique_id }}';
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             let removeClickCount = 0;
             let removeTimeout;
             
