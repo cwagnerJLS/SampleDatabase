@@ -437,25 +437,10 @@ def update_sample_location(request):
                     
                     sample.save()
                     
-                    # Log location change
-                    if old_location != sample.storage_location:
-                        log_sample_change(
-                            request=request,
-                            sample=sample,
-                            action='LOCATION_CHANGE',
-                            old_values={'storage_location': old_location},
-                            new_values={'storage_location': sample.storage_location}
-                        )
-                    
-                    # Log audit if performed
-                    if audit and not sample.audit:
-                        log_sample_change(
-                            request=request,
-                            sample=sample,
-                            action='SAMPLE_AUDIT'
-                        )
+                    # Don't log individual changes for bulk operations
+                    pass
 
-                # Log bulk operation
+                # Log bulk operation only
                 log_bulk_operation(
                     request=request,
                     action='BULK_LOCATION',
@@ -536,31 +521,38 @@ def remove_from_inventory(request):
             affected_opportunity_numbers = set()
 
             removed_samples = []
+            removed_sample_details = []
+            
             for sample in samples_to_remove:
                 opportunity_number = sample.opportunity_number
                 affected_opportunity_numbers.add(opportunity_number)
-                
-                # Log individual sample removal
-                log_sample_change(
-                    request=request,
-                    sample=sample,
-                    action='SAMPLE_REMOVE',
-                    details=f"Removed sample {sample.unique_id} from inventory"
-                )
-                
                 removed_samples.append(sample.unique_id)
-                sample.delete(update_opportunity=False)
-
-            logger.debug(f"Removed samples from inventory with IDs: {ids}")
-            
-            # Log bulk operation if multiple samples
+                removed_sample_details.append(f"{sample.unique_id} - {sample.customer}")
+                
+            # Log the operation based on number of samples
             if len(removed_samples) > 1:
+                # For bulk operations, only log the bulk action
                 log_bulk_operation(
                     request=request,
                     action='BULK_REMOVE',
                     sample_ids=removed_samples,
-                    details=f"Removed {len(removed_samples)} samples from inventory"
+                    details=f"Removed {len(removed_samples)} samples from inventory: {', '.join(removed_sample_details)}"
                 )
+            elif len(removed_samples) == 1:
+                # For single sample, log individual removal
+                sample = samples_to_remove.first()
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='SAMPLE_REMOVE',
+                    details=f"Removed sample {removed_sample_details[0]} from inventory"
+                )
+            
+            # Now delete the samples after logging
+            for sample in samples_to_remove:
+                sample.delete(update_opportunity=False)
+                
+            logger.debug(f"Removed samples from inventory with IDs: {ids}")
 
 
             # After deleting the samples, check if any samples remain for each opportunity
@@ -676,8 +668,9 @@ def manage_sample(request, sample_id):
             location = request.POST.get('location')
             audit = request.POST.get('audit') == 'true'  # Check if the toggle is active
 
-            # Track if location changed
+            # Track if location changed and previous audit state
             old_location = sample.storage_location
+            old_audit = sample.audit
             
             # Update sample fields
             if location:
@@ -701,6 +694,24 @@ def manage_sample(request, sample_id):
             
             sample.save()
             logger.debug(f"Updated sample {sample_id}: location={sample.storage_location}, audit={sample.audit}")
+            
+            # Log location change if it occurred
+            if old_location != sample.storage_location:
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='LOCATION_CHANGE',
+                    old_values={'storage_location': old_location},
+                    new_values={'storage_location': sample.storage_location}
+                )
+            
+            # Log audit if performed
+            if audit and not old_audit:
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='SAMPLE_AUDIT'
+                )
 
             # Check if it's an AJAX request
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', ''):
@@ -710,6 +721,14 @@ def manage_sample(request, sample_id):
             return redirect('manage_sample', sample_id=sample.unique_id)
         except Exception as e:
             logger.error(f"Error updating sample {sample_id}: {e}")
+            # Log the error
+            log_error(
+                request=request,
+                operation=f"Update sample {sample_id}",
+                error_message=str(e),
+                object_type='Sample',
+                object_id=sample_id
+            )
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', ''):
                 return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
             return server_error_response(str(e))
@@ -768,12 +787,7 @@ def batch_audit_samples(request):
                     audited_count += 1
                     logger.debug(f"Audited sample {sample.unique_id}")
                     
-                    # Log individual audit
-                    log_sample_change(
-                        request=request,
-                        sample=sample,
-                        action='SAMPLE_AUDIT'
-                    )
+                    # Don't log individual audits for bulk operations
                     
                 except Exception as e:
                     logger.error(f"Error auditing sample {sample.unique_id}: {e}")
@@ -980,27 +994,36 @@ def delete_samples(request):
             samples_to_delete = Sample.objects.filter(unique_id__in=ids)
 
             deleted_samples = []
-            for sample in samples_to_delete:
-                # Log individual sample deletion
-                log_sample_change(
-                    request=request,
-                    sample=sample,
-                    action='SAMPLE_DELETE',
-                    details=f"Deleted sample {sample.unique_id} - {sample.customer}"
-                )
-                deleted_samples.append(sample.unique_id)
-                sample.delete()  # Calls the delete method on each instance
-
-            logger.debug(f"Deleted samples with IDs: {ids}")
+            deleted_sample_details = []
             
-            # Log bulk delete operation if multiple samples
+            for sample in samples_to_delete:
+                deleted_samples.append(sample.unique_id)
+                deleted_sample_details.append(f"{sample.unique_id} - {sample.customer}")
+                
+            # Log the operation based on number of samples
             if len(deleted_samples) > 1:
+                # For bulk operations, only log the bulk action
                 log_bulk_operation(
                     request=request,
                     action='BULK_DELETE',
                     sample_ids=deleted_samples,
-                    details=f"Deleted {len(deleted_samples)} samples"
+                    details=f"Deleted {len(deleted_samples)} samples: {', '.join(deleted_sample_details)}"
                 )
+            elif len(deleted_samples) == 1:
+                # For single sample, log individual deletion
+                sample = samples_to_delete.first()
+                log_sample_change(
+                    request=request,
+                    sample=sample,
+                    action='SAMPLE_DELETE',
+                    details=f"Deleted sample {deleted_sample_details[0]}"
+                )
+            
+            # Now delete the samples after logging
+            for sample in samples_to_delete:
+                sample.delete()  # Calls the delete method on each instance
+                
+            logger.debug(f"Deleted samples with IDs: {ids}")
 
             return success_response()
         except json.JSONDecodeError as e:
