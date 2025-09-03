@@ -28,6 +28,11 @@ class UserIdentificationMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
         # Check if this path is exempt from user identification
+        # Special case for root path and view_samples - allow guests
+        if request.path == '/' or request.path == '/view_samples/':
+            request.current_user = 'Guest'
+            return None
+            
         for exempt_path in self.EXEMPT_PATHS:
             if request.path.startswith(exempt_path):
                 return None

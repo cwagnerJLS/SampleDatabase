@@ -238,8 +238,28 @@
         .add-sample-modal .modal-form-group.quantity-group {
             margin-top: 10px; /* Adjust this value to move the field further down or up */
         }
-        .selected-row {
-            background-color: #baf7ba; /* Light green color */
+        #samplesTable tr.selected-row td {
+            background-color: #d4f5d4 !important; /* Lighter green color matching create_sample.html */
+        }
+        
+        /* Sticky header container for cloned table headers */
+        .sticky-header-container {
+            position: sticky;
+            top: 0; /* At top of viewport since no button container */
+            z-index: 999;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: none; /* Hidden by default */
+        }
+        
+        .sticky-header-container table {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .sticky-header-container th {
+            position: relative;
         }
 
         /* Apply light blue background to the filtering row */
@@ -731,6 +751,13 @@
     </div>
 
 
+    <!-- Sticky cloned header container (hidden by default) -->
+    <div id="stickyHeaderContainer" class="sticky-header-container" style="display: none;">
+        <div id="clonedTableWrapper">
+            <!-- Cloned table will be inserted here by JavaScript -->
+        </div>
+    </div>
+    
     <!-- The Table for displaying samples -->
     <div class="table-responsive">
         <table id="samplesTable" border="1">
@@ -1208,15 +1235,16 @@
                             const expandButton = row.querySelector('.expand-button');
                             if (filtersApplied) {
                                 expandButton.textContent = '-'; // Expand group if filters are applied
-                                groupedRows.forEach(childRow => {
-                                    childRow.style.display = ''; // Show matching child rows
-                                });
+                                // Child rows are already properly shown/hidden in the loop above
                             } else {
                                 expandButton.textContent = '+';
                                 groupedRows.forEach(childRow => {
                                     childRow.style.display = 'none'; // Keep child rows hidden when no filters
                                 });
                             }
+                        } else {
+                            // Hide the group row if no children match the filter
+                            row.style.display = 'none';
                         }
 
                         continue; // Move to the next row
@@ -1557,6 +1585,250 @@
         function closeUploadModal() {
             document.getElementById('uploadModal').style.display = 'none';
             currentSampleId = null;
+        }
+        
+        // Add row highlighting when checkbox is clicked
+        document.addEventListener('change', function(event) {
+            const target = event.target;
+            if (target.type === 'checkbox' && target.name === 'select_checkbox') {
+                const row = target.closest('tr');
+                if (row) {
+                    if (target.checked) {
+                        row.classList.add('selected-row');
+                    } else {
+                        row.classList.remove('selected-row');
+                    }
+                }
+            }
+        });
+        
+        // Update select all functionality to include row highlighting
+        const originalSelectAllListener = selectAllSelectCheckbox.onchange || selectAllSelectCheckbox.addEventListener;
+        selectAllSelectCheckbox.addEventListener('change', function() {
+            const tbody = document.getElementById('samplesTable').querySelector('tbody');
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const checkbox = row.querySelector('input[name="select_checkbox"]');
+                    if (checkbox) {
+                        if (this.checked) {
+                            row.classList.add('selected-row');
+                        } else {
+                            row.classList.remove('selected-row');
+                        }
+                    }
+                });
+            }
+            
+            // Sync with cloned header checkbox
+            const clonedSelectAll = document.getElementById('select-all-select-cloned');
+            if (clonedSelectAll) {
+                clonedSelectAll.checked = this.checked;
+            }
+        });
+        
+        // Clone and sync table headers for sticky behavior
+        function initializeStickyHeaders() {
+            const originalTable = document.getElementById('samplesTable');
+            const stickyContainer = document.getElementById('stickyHeaderContainer');
+            const clonedWrapper = document.getElementById('clonedTableWrapper');
+            
+            if (!originalTable || !stickyContainer || !clonedWrapper) return;
+            
+            // Create a perfect clone of the table structure
+            const clonedTable = document.createElement('table');
+            clonedTable.id = 'clonedHeaderTable';
+            
+            // Copy all attributes except id
+            for (let attr of originalTable.attributes) {
+                if (attr.name !== 'id') {
+                    clonedTable.setAttribute(attr.name, attr.value);
+                }
+            }
+            
+            // Clone only the thead
+            const originalThead = originalTable.querySelector('thead');
+            if (!originalThead) return;
+            
+            const clonedThead = originalThead.cloneNode(true);
+            clonedTable.appendChild(clonedThead);
+            
+            // Clear any IDs in the cloned elements to avoid duplicates and bind events
+            clonedThead.querySelectorAll('[id]').forEach(element => {
+                const originalId = element.id;
+                element.id = element.id + '-cloned';
+                
+                // If it's a filter input, make it trigger the original input
+                if (element.classList.contains('filter-input')) {
+                    element.addEventListener('keyup', function(e) {
+                        const originalInput = document.getElementById(originalId);
+                        if (originalInput) {
+                            originalInput.value = e.target.value;
+                            originalInput.dispatchEvent(new Event('keyup'));
+                        }
+                    });
+                }
+            });
+            
+            // Handle the select-all checkbox in the cloned header
+            const clonedSelectAll = clonedThead.querySelector('#select-all-select-cloned');
+            if (clonedSelectAll) {
+                clonedSelectAll.addEventListener('change', function(e) {
+                    const originalSelectAll = document.getElementById('select-all-select');
+                    if (originalSelectAll) {
+                        originalSelectAll.checked = e.target.checked;
+                        originalSelectAll.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+            
+            // Add cloned table to wrapper
+            clonedWrapper.innerHTML = '';
+            clonedWrapper.appendChild(clonedTable);
+            
+            // Function to sync column widths and styles perfectly
+            function syncColumnWidths() {
+                // Get all cells from both header rows
+                const originalCells = originalTable.querySelectorAll('thead tr:first-child th');
+                const clonedCells = clonedTable.querySelectorAll('thead tr:first-child th');
+                
+                // First, copy the table's computed styles
+                const tableStyle = window.getComputedStyle(originalTable);
+                clonedTable.style.width = '100%'; // Make table responsive
+                clonedTable.style.tableLayout = tableStyle.tableLayout;
+                clonedTable.style.borderCollapse = tableStyle.borderCollapse;
+                clonedTable.style.borderSpacing = tableStyle.borderSpacing;
+                
+                // Get the table width for percentage calculations
+                const tableWidth = originalTable.offsetWidth;
+                
+                // Then copy each cell's width as percentage and relevant styles
+                originalCells.forEach((cell, index) => {
+                    if (clonedCells[index]) {
+                        const cellStyle = window.getComputedStyle(cell);
+                        const cellWidth = cell.offsetWidth;
+                        const widthPercent = (cellWidth / tableWidth) * 100;
+                        
+                        // Use percentage width for responsiveness
+                        clonedCells[index].style.width = widthPercent + '%';
+                        clonedCells[index].style.minWidth = 'auto';
+                        clonedCells[index].style.maxWidth = 'none';
+                        
+                        // Copy padding and border styles to maintain appearance
+                        clonedCells[index].style.padding = cellStyle.padding;
+                        clonedCells[index].style.border = cellStyle.border;
+                        clonedCells[index].style.backgroundColor = cellStyle.backgroundColor;
+                        clonedCells[index].style.color = cellStyle.color;
+                        clonedCells[index].style.fontWeight = cellStyle.fontWeight;
+                        clonedCells[index].style.textAlign = cellStyle.textAlign;
+                    }
+                });
+                
+                // Do the same for the second row (filter row) if it exists
+                const originalFilterCells = originalTable.querySelectorAll('thead tr:nth-child(2) th');
+                const clonedFilterCells = clonedTable.querySelectorAll('thead tr:nth-child(2) th');
+                
+                originalFilterCells.forEach((cell, index) => {
+                    if (clonedFilterCells[index]) {
+                        const cellStyle = window.getComputedStyle(cell);
+                        const cellWidth = cell.offsetWidth;
+                        const widthPercent = (cellWidth / tableWidth) * 100;
+                        
+                        clonedFilterCells[index].style.width = widthPercent + '%';
+                        clonedFilterCells[index].style.minWidth = 'auto';
+                        clonedFilterCells[index].style.maxWidth = 'none';
+                        clonedFilterCells[index].style.padding = cellStyle.padding;
+                        clonedFilterCells[index].style.border = cellStyle.border;
+                        clonedFilterCells[index].style.backgroundColor = cellStyle.backgroundColor;
+                    }
+                });
+                
+                // Sync horizontal scroll position
+                const tableContainer = originalTable.parentElement;
+                if (tableContainer && tableContainer.scrollLeft) {
+                    stickyContainer.scrollLeft = tableContainer.scrollLeft;
+                }
+            }
+            
+            // Handle scroll to show/hide sticky header
+            function handleStickyHeaderScroll() {
+                const thead = originalTable.querySelector('thead');
+                const theadRect = thead.getBoundingClientRect();
+                
+                // Show sticky header when original header scrolls out of view
+                if (theadRect.top <= 0) {
+                    if (stickyContainer.style.display !== 'block') {
+                        stickyContainer.style.display = 'block';
+                        syncColumnWidths(); // Resync widths when showing
+                    }
+                } else {
+                    stickyContainer.style.display = 'none';
+                }
+            }
+            
+            // Function to sync checkbox states between original and cloned headers
+            function syncCheckboxStates() {
+                const originalSelectAll = document.getElementById('select-all-select');
+                const clonedSelectAll = document.getElementById('select-all-select-cloned');
+                if (originalSelectAll && clonedSelectAll) {
+                    clonedSelectAll.checked = originalSelectAll.checked;
+                }
+            }
+            
+            // Initialize with a small delay to ensure table is rendered
+            setTimeout(function() {
+                // Do an initial sync even though container is hidden
+                // This helps establish the proper widths
+                const originalDisplay = stickyContainer.style.display;
+                stickyContainer.style.display = 'block';
+                syncColumnWidths();
+                syncCheckboxStates();
+                stickyContainer.style.display = originalDisplay;
+            }, 100);
+            
+            // Add scroll listener
+            window.addEventListener('scroll', handleStickyHeaderScroll);
+            
+            // Sync horizontal scroll between original and sticky tables
+            const originalContainer = originalTable.parentElement;
+            if (originalContainer) {
+                originalContainer.addEventListener('scroll', function() {
+                    if (stickyContainer.style.display !== 'none') {
+                        stickyContainer.scrollLeft = this.scrollLeft;
+                    }
+                });
+                
+                stickyContainer.addEventListener('scroll', function() {
+                    originalContainer.scrollLeft = this.scrollLeft;
+                });
+            }
+            
+            // Resync widths on window resize
+            window.addEventListener('resize', function() {
+                if (stickyContainer.style.display !== 'none') {
+                    syncColumnWidths();
+                }
+            });
+            
+            // Also sync when table data changes
+            const observer = new MutationObserver(function(mutations) {
+                if (stickyContainer.style.display !== 'none') {
+                    syncColumnWidths();
+                }
+            });
+            
+            observer.observe(originalTable, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
+            });
+        }
+        
+        // Initialize sticky headers when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeStickyHeaders);
+        } else {
+            initializeStickyHeaders();
         }
     </script>
 </body>
