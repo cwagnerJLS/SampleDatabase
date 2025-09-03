@@ -514,7 +514,13 @@
                             <td>
                                 {% if log.object_id %}
                                     {% if log.object_type == "Sample" %}
-                                        <a href="{% url 'manage_sample' log.object_id %}" class="object-link">{{ log.object_type }} #{{ log.object_id }}</a>
+                                        {% if '[' in log.object_id %}
+                                            {# Batch operation with multiple IDs #}
+                                            {{ log.object_type }}s: {{ log.object_id }}
+                                        {% else %}
+                                            {# Single sample ID #}
+                                            <a href="{% url 'manage_sample' log.object_id %}" class="object-link">{{ log.object_type }} #{{ log.object_id }}</a>
+                                        {% endif %}
                                     {% else %}
                                         {{ log.object_type }} #{{ log.object_id }}
                                     {% endif %}
