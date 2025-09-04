@@ -491,9 +491,10 @@
                         <th>User</th>
                         <th>Action</th>
                         <th>Status</th>
+                        <th>Customer</th>
+                        <th>Opportunity</th>
                         <th>Object</th>
                         <th>Details</th>
-                        <th>Count</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -510,6 +511,20 @@
                             </td>
                             <td>
                                 <span class="status-badge status-{{ log.status|lower }}">{{ log.status }}</span>
+                            </td>
+                            <td>
+                                {% if log.customer %}
+                                    {{ log.customer }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.opportunity %}
+                                    <a href="#" onclick="goToCreateSample('{{ log.opportunity }}'); return false;" class="object-link">{{ log.opportunity }}</a>
+                                {% else %}
+                                    -
+                                {% endif %}
                             </td>
                             <td>
                                 {% if log.object_id %}
@@ -556,7 +571,6 @@
                                     -
                                 {% endif %}
                             </td>
-                            <td>{{ log.affected_count }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -616,5 +630,14 @@
             }
         });
     </script>
+<script>
+    function goToCreateSample(opportunity) {
+        // Store the opportunity number in sessionStorage
+        sessionStorage.setItem('filterOpportunity', opportunity);
+        // Navigate to the create_sample page
+        window.location.href = "{% url 'create_sample' %}";
+    }
+</script>
+
 </body>
 </html>

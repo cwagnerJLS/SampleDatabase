@@ -371,7 +371,9 @@ def upload_files(request):
                     action='IMAGE_UPLOAD',
                     object_type='Sample',
                     object_id=sample_id,
-                    details=f"Uploaded image {filename} for sample {sample_id}"
+                    details=f"Uploaded image {filename} for sample {sample_id}",
+                    customer=sample.customer,
+                    opportunity=sample.opportunity_number
                 )
 
             # After processing all images and saving them locally, enqueue a task to upload images to SharePoint
@@ -385,7 +387,9 @@ def upload_files(request):
                     object_type='Sample',
                     object_id=sample_id,
                     details=f"Uploaded {len(files)} images for sample {sample_id}",
-                    affected_count=len(files)
+                    affected_count=len(files),
+                    customer=sample.customer,
+                    opportunity=sample.opportunity_number
                 )
 
         except Exception as e:
@@ -626,7 +630,9 @@ def handle_print_request(request):
                         action='PRINT_LABEL',
                         object_type='Sample',
                         object_id=sample_id,
-                        details=f"Printed label for sample {sample_id}"
+                        details=f"Printed label for sample {sample_id}",
+                        customer=sample.customer,
+                        opportunity=sample.opportunity_number
                     )
                 except subprocess.CalledProcessError as e:
                     logger.error(f"Error printing label for sample {sample_id}: {e}")
@@ -861,7 +867,9 @@ def activity_log_view(request):
         logs = logs.filter(
             Q(details__icontains=search_query) |
             Q(object_id__icontains=search_query) |
-            Q(error_message__icontains=search_query)
+            Q(error_message__icontains=search_query) |
+            Q(customer__icontains=search_query) |
+            Q(opportunity__icontains=search_query)
         )
     
     # Date filtering
@@ -896,6 +904,8 @@ def activity_log_view(request):
             'status': log.status,
             'object_type': log.object_type,
             'object_id': log.object_id,
+            'customer': log.customer,
+            'opportunity': log.opportunity,
             'details': log.details,
             'error_message': log.error_message,
             'affected_count': log.affected_count,
@@ -967,7 +977,9 @@ def delete_sample_image(request):
             action='IMAGE_DELETE',
             object_type='Sample',
             object_id=sample_id,
-            details=f"Deleted image {full_size_name} from sample {sample_id}"
+            details=f"Deleted image {full_size_name} from sample {sample_id}",
+            customer=image.sample.customer,
+            opportunity=image.sample.opportunity_number
         )
 
         # Delete the local file + DB record

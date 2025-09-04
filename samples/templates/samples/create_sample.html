@@ -1149,6 +1149,20 @@
                 matcher: matchCustom
             });
 
+            // Check sessionStorage for opportunity filter (from activity log)
+            const opportunityToFilter = sessionStorage.getItem('filterOpportunity');
+            if (opportunityToFilter) {
+                // Remove it immediately so refresh won't reapply the filter
+                sessionStorage.removeItem('filterOpportunity');
+                // Wait a bit for the table to be populated
+                setTimeout(function() {
+                    // Set the opportunity filter input value
+                    document.getElementById('opportunityFilter').value = opportunityToFilter;
+                    // Trigger the filter function
+                    filterTable();
+                }, 500);
+            }
+
             // Custom matcher function for multi-keyword search
             function matchCustom(params, data) {
                 if ($.trim(params.term) === '') {

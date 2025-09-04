@@ -339,6 +339,10 @@ class ActivityLog(models.Model):
     object_type = models.CharField(max_length=50, blank=True, null=True)
     object_id = models.CharField(max_length=100, blank=True, null=True)
     
+    # Sample-related information
+    customer = models.CharField(max_length=200, blank=True, null=True, db_index=True)
+    opportunity = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+    
     # Detailed information
     changes = models.JSONField(blank=True, null=True)  # Store before/after values
     details = models.TextField(blank=True, null=True)  # Human-readable description

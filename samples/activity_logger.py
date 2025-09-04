@@ -29,7 +29,9 @@ def log_activity(
     details: Optional[str] = None,
     status: str = 'SUCCESS',
     error_message: Optional[str] = None,
-    affected_count: int = 1
+    affected_count: int = 1,
+    customer: Optional[str] = None,
+    opportunity: Optional[str] = None
 ) -> ActivityLog:
     """
     Central function to log any user activity
@@ -44,6 +46,8 @@ def log_activity(
         status: SUCCESS, FAILED, or PARTIAL
         error_message: Error message if status is FAILED
         affected_count: Number of objects affected (for bulk operations)
+        customer: Customer name associated with the activity
+        opportunity: Opportunity number associated with the activity
     
     Returns:
         Created ActivityLog instance
@@ -64,7 +68,9 @@ def log_activity(
             details=details,
             error_message=error_message,
             affected_count=affected_count,
-            session_id=request.session.session_key if hasattr(request, 'session') else None
+            session_id=request.session.session_key if hasattr(request, 'session') else None,
+            customer=customer,
+            opportunity=opportunity
         )
         
         logger.debug(f"Activity logged: {user} - {action} - {object_type}:{object_id}")
@@ -126,7 +132,9 @@ def log_sample_change(
         object_type='Sample',
         object_id=sample.unique_id,
         changes=changes,
-        details=details
+        details=details,
+        customer=sample.customer,
+        opportunity=sample.opportunity_number
     )
 
 
@@ -152,6 +160,27 @@ def log_bulk_operation(
     Returns:
         Created ActivityLog instance
     """
+    # Try to get customer and opportunity from the first sample
+    customer = None
+    opportunity = None
+    if sample_ids:
+        try:
+            first_sample = Sample.objects.filter(unique_id=sample_ids[0]).first()
+            if first_sample:
+                customer = first_sample.customer
+                opportunity = first_sample.opportunity_number
+                # Check if all samples have same customer/opportunity
+                samples = Sample.objects.filter(unique_id__in=sample_ids[:10])  # Check first 10
+                customers = set(s.customer for s in samples if s.customer)
+                opportunities = set(s.opportunity_number for s in samples if s.opportunity_number)
+                # If multiple customers/opportunities, indicate in the fields
+                if len(customers) > 1:
+                    customer = f"Multiple ({len(customers)})"
+                if len(opportunities) > 1:
+                    opportunity = f"Multiple ({len(opportunities)})"
+        except Exception:
+            pass  # Don't let this break the logging
+    
     return log_activity(
         request=request,
         action=action,
@@ -160,7 +189,9 @@ def log_bulk_operation(
         details=details,
         status=status,
         error_message=error_message,
-        affected_count=len(sample_ids)
+        affected_count=len(sample_ids),
+        customer=customer,
+        opportunity=opportunity
     )
 
 
