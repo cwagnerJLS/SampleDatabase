@@ -9,10 +9,12 @@ venv/
 __pycache__/
 *.pyc
 *.pyo
+*$py.class
 
 # === Django specific ===
 db.sqlite3
 *.log
+logs/*.log
 media/
 backups/
 staticfiles/        # output of collectstatic (keep source 'static/' if you have one)
