@@ -263,12 +263,22 @@ def create_sample(request):
         # Convert DataFrame to JSON serializable format
         excel_data = df.to_dict(orient='records')
 
-        # Load saved samples
-        samples = list(Sample.objects.all().values())
-
-        # Convert date_received to string format for JSON serialization
-        for sample in samples:
-            sample['date_received'] = format_date_for_display(sample.get('date_received'))
+        # Load saved samples with audit status
+        samples_queryset = Sample.objects.all()
+        samples = []
+        
+        for sample_obj in samples_queryset:
+            sample_data = {
+                'unique_id': sample_obj.unique_id,
+                'opportunity_number': sample_obj.opportunity_number,
+                'customer': sample_obj.customer,
+                'rsm': sample_obj.rsm,
+                'date_received': format_date_for_display(sample_obj.date_received),
+                'description': sample_obj.description,
+                'storage_location': sample_obj.storage_location,
+                'days_until_audit': sample_obj.days_until_audit()  # Will be None if no audit due date
+            }
+            samples.append(sample_data)
 
         logger.debug(f"Samples List: {samples}")
 

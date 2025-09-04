@@ -229,6 +229,25 @@
         #samplesTable thead tr:nth-child(2) th {
             background-color: #EAF2F8; /* Lighter blue background */
         }
+        
+        /* Audit status color highlighting for entire rows */
+        #samplesTable tr.audit-overdue td {
+            background-color: #ffcccc !important; /* Light red for overdue */
+        }
+        
+        #samplesTable tr.audit-warning td {
+            background-color: #fff3cd !important; /* Light yellow for due soon */
+        }
+        
+        /* When selected, show darker shades */
+        #samplesTable tr.audit-overdue.selected-row td {
+            background-color: #ff9999 !important; /* Darker red when selected */
+        }
+        
+        #samplesTable tr.audit-warning.selected-row td {
+            background-color: #ffe08a !important; /* Darker yellow when selected */
+        }
+        
         :root {
             --company-color: #002B5C; /* Pantone 289C */
         }
@@ -745,6 +764,7 @@
         
         // Template function for sample table row
         function createSampleRowHTML(sample) {
+            // Note: Audit class is now applied to the TR element, not here
             return `
                 <td class="col-select">
                     <input type="checkbox" name="select_checkbox" value="${sample.unique_id}">
@@ -767,6 +787,18 @@
                     <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
                 </td>
             `;
+        }
+        
+        // Helper function to get audit status class
+        function getAuditStatusClass(sample) {
+            if (sample.days_until_audit !== null && sample.days_until_audit !== undefined) {
+                if (sample.days_until_audit < 0) {
+                    return 'audit-overdue';
+                } else if (sample.days_until_audit <= 7) {
+                    return 'audit-warning';
+                }
+            }
+            return '';
         }
         
         // Template function for group header row
@@ -1702,6 +1734,10 @@
                         if (data.status === 'success') {
                             data.created_samples.forEach(sample => {
                                 const newRow = document.createElement('tr');
+                                const auditClass = getAuditStatusClass(sample);
+                                if (auditClass) {
+                                    newRow.classList.add(auditClass);
+                                }
                                 newRow.innerHTML = createSampleRowHTML(sample);
                                 document.querySelector('#samplesTable tbody').appendChild(newRow);
                             });
@@ -2039,6 +2075,10 @@
                     // If only one entry, display it as usual
                     const sample = group[0];
                     const newRow = document.createElement('tr');
+                    const auditClass = getAuditStatusClass(sample);
+                    if (auditClass) {
+                        newRow.classList.add(auditClass);
+                    }
                     newRow.innerHTML = createSampleRowHTML(sample);
                     fragment.appendChild(newRow);
                 } else {
@@ -2054,6 +2094,10 @@
                     group.forEach(sample => {
                         const sampleRow = document.createElement('tr');
                         sampleRow.classList.add('grouped-row', `group-${sanitizedOppNum}`);
+                        const auditClass = getAuditStatusClass(sample);
+                        if (auditClass) {
+                            sampleRow.classList.add(auditClass);
+                        }
                         sampleRow.style.display = 'none'; // Initially hidden
                         sampleRow.innerHTML = createSampleRowHTML(sample);
                         fragment.appendChild(sampleRow);
