@@ -309,6 +309,49 @@ def send_documentation_completed_email(opportunity_number):
         logger.error(f"Failed to send 'documentation completed' email: {e}")
 
 @shared_task
+def send_documentation_updated_email(opportunity_number, files_exported, export_count):
+    from .email_utils import send_email, get_opportunity_email_context
+    
+    context = get_opportunity_email_context(opportunity_number)
+    if not context:
+        logger.warning(f"Cannot send documentation updated email for {opportunity_number} - no context available")
+        return
+    
+    # Format the last export date if available
+    last_export_str = 'N/A'
+    if context['opportunity'].last_export_date:
+        last_export_str = context['opportunity'].last_export_date.strftime('%B %d, %Y at %I:%M %p')
+    
+    subject = f"{opportunity_number} ({context['customer']}) Documentation RE-EXPORTED"
+    body = f"""
+    <html><body>
+        <p>Hello {context['greeting_name']},</p>
+        <p>The sample documentation for opportunity {opportunity_number} ({context['customer']}) 
+        has been <strong>updated and re-exported</strong> to SharePoint.</p>
+        
+        <p><strong>Export Details:</strong></p>
+        <ul>
+            <li>This is export #{export_count} for this opportunity</li>
+            <li>{files_exported} files exported</li>
+            <li>Previous export: {last_export_str}</li>
+        </ul>
+        
+        <p>You can access the updated documentation <a href="{context['opportunity'].sample_info_url}">here</a>.</p>
+        
+        <p><em>Note: This is an update to previously exported documentation. 
+        New or modified sample images have been synchronized.</em></p>
+        
+        <p>-Test Lab</p>
+    </body></html>
+    """
+    
+    try:
+        send_email(subject, body, context['rsm_email'], cc_emails=context['cc_list'])
+        logger.info(f"Documentation-updated email sent to {context['rsm_email']} for {opportunity_number} (export #{export_count})")
+    except Exception as e:
+        logger.error(f"Failed to send 'documentation updated' email: {e}")
+
+@shared_task
 def send_missing_sample_info_folder_email(opportunity_number):
     from .email_utils import send_email, get_opportunity_email_context
     
@@ -603,7 +646,31 @@ def export_documentation(opportunity_number):
                 logger.info(f"Request accepted for '{file_name}', continuing...")
 
         logger.info(f"Completed export_documentation for {opportunity_number}.")
-        send_documentation_completed_email.delay(opportunity_number)
+        
+        # Track export and determine email type
+        from django.utils import timezone
+        from django.db.models import F
+        
+        is_first_export = opp.export_count == 0
+        files_exported = len(files_to_copy)
+        
+        # Update export tracking
+        opp.export_count = F('export_count') + 1
+        opp.last_export_date = timezone.now()
+        if is_first_export:
+            opp.first_export_date = timezone.now()
+        opp.save(update_fields=['export_count', 'last_export_date', 'first_export_date'])
+        
+        # Reload to get the updated export_count value
+        opp.refresh_from_db()
+        
+        # Send appropriate email
+        if is_first_export:
+            logger.info(f"This is the first export for opportunity {opportunity_number}")
+            send_documentation_completed_email.delay(opportunity_number)
+        else:
+            logger.info(f"This is export #{opp.export_count} for opportunity {opportunity_number}")
+            send_documentation_updated_email.delay(opportunity_number, files_exported, opp.export_count)
 
     except Opportunity.DoesNotExist:
         logger.error(f"No Opportunity found with opportunity_number {opportunity_number}")
