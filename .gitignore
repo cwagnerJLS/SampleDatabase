@@ -36,6 +36,8 @@ Apps_Database.xlsx
 
 # === Runtime/PID files ===
 *.pid
+celery_*.pid
+gunicorn.pid
 
 # === Claude Code instructions ===
 CLAUDE.md
