@@ -112,18 +112,11 @@
         <form method="POST" action="{% url 'set_user' %}">
             {% csrf_token %}
             <div class="user-grid">
-                <button type="submit" name="user_name" value="Corey Wagner" class="user-button">
-                    Corey Wagner
+                {% for user in valid_users %}
+                <button type="submit" name="user_name" value="{{ user }}" class="user-button">
+                    {{ user }}
                 </button>
-                <button type="submit" name="user_name" value="Mike Mooney" class="user-button">
-                    Mike Mooney
-                </button>
-                <button type="submit" name="user_name" value="Colby Wentz" class="user-button">
-                    Colby Wentz
-                </button>
-                <button type="submit" name="user_name" value="Noah Dekker" class="user-button">
-                    Noah Dekker
-                </button>
+                {% endfor %}
             </div>
         </form>
         

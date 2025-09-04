@@ -14,13 +14,13 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=)&i%gn%h#-5r_+@(r8e-!#il^c)szc&maalmnb34=7*lxenq%'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-development-only')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 TEST_MODE = False  # Set to True or False as needed
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.6.91']
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')]
 
 # Ensure Django does not append slashes automatically
 APPEND_SLASH = True
@@ -113,3 +113,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Store task results in Redi
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# User Configuration
+VALID_USERS = [user.strip() for user in os.getenv('VALID_USERS', 'Corey Wagner,Mike Mooney,Colby Wentz,Noah Dekker').split(',')]
+ADMIN_USERS = [user.strip() for user in os.getenv('ADMIN_USERS', 'Corey Wagner').split(',')]

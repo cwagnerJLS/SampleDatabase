@@ -42,7 +42,8 @@ try:
     AZURE_AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"
     AZURE_USERNAME = get_required_env_var("AZURE_USERNAME")
 
-    # SharePoint Library IDs
+    # SharePoint Configuration
+    SHAREPOINT_REMOTE_NAME = os.environ.get("SHAREPOINT_REMOTE_NAME", "TestLabSamples")
     TEST_ENGINEERING_LIBRARY_ID = get_required_env_var("TEST_ENGINEERING_LIBRARY_ID")
     SALES_ENGINEERING_LIBRARY_ID = get_required_env_var("SALES_ENGINEERING_LIBRARY_ID")
 

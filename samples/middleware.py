@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
+from django.conf import settings
 
 
 class UserIdentificationMiddleware(MiddlewareMixin):
@@ -10,12 +11,6 @@ class UserIdentificationMiddleware(MiddlewareMixin):
     """
     
     COOKIE_NAME = 'sample_db_user'
-    VALID_USERS = [
-        'Corey Wagner',
-        'Mike Mooney', 
-        'Colby Wentz',
-        'Noah Dekker'
-    ]
     
     EXEMPT_PATHS = [
         '/select-user/',
@@ -31,6 +26,7 @@ class UserIdentificationMiddleware(MiddlewareMixin):
         # Special case for root path and view_samples - allow guests
         if request.path == '/' or request.path == '/view_samples/':
             request.current_user = 'Guest'
+            request.is_admin = False
             return None
             
         for exempt_path in self.EXEMPT_PATHS:
@@ -41,9 +37,11 @@ class UserIdentificationMiddleware(MiddlewareMixin):
         user_name = request.COOKIES.get(self.COOKIE_NAME)
         
         # Validate the user
-        if user_name and user_name in self.VALID_USERS:
+        if user_name and user_name in settings.VALID_USERS:
             # Attach user to request object for easy access
             request.current_user = user_name
+            # Check if user is admin
+            request.is_admin = user_name in settings.ADMIN_USERS
             return None
         
         # No valid user cookie, redirect to selection page
@@ -55,4 +53,5 @@ class UserIdentificationMiddleware(MiddlewareMixin):
         
         # For non-GET requests without valid user, set as anonymous
         request.current_user = 'Unknown User'
+        request.is_admin = False
         return None

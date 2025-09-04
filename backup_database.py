@@ -2,6 +2,7 @@ import subprocess
 import datetime
 import os
 import logging
+from samples.sharepoint_config import SHAREPOINT_REMOTE_NAME
 
 
 def sync_to_sharepoint(backup_folder):
@@ -10,7 +11,7 @@ def sync_to_sharepoint(backup_folder):
         result = subprocess.run([
             '/usr/bin/rclone', 'sync',
             backup_folder,
-            'TestLabSamples:_Backups',
+            f'{SHAREPOINT_REMOTE_NAME}:_Backups',
             '--delete-during'  # Remove files from SharePoint that aren't in local folder
         ], 
         check=True, 

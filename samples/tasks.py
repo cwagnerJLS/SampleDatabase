@@ -10,6 +10,7 @@ import shutil
 import os
 from django.conf import settings
 from .sharepoint_config import (
+    SHAREPOINT_REMOTE_NAME,
     TEST_ENGINEERING_LIBRARY_ID,
     SALES_ENGINEERING_LIBRARY_ID,
     GRAPH_API_URL,
@@ -62,7 +63,7 @@ def create_documentation_on_sharepoint_task(opportunity_number):
 def delete_image_from_sharepoint(full_size_image_name, opportunity_number):
     logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
     if full_size_image_name:
-        sharepoint_image_path = f"TestLabSamples:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
+        sharepoint_image_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
         if delete_from_sharepoint(sharepoint_image_path):
             logger.info(f"Successfully deleted image from SharePoint: {sharepoint_image_path}")
         else:
@@ -439,7 +440,7 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 
             # Define source and destination paths
             source_path = sample_image.full_size_image.path
-            destination_path = f"TestLabSamples:{sample.opportunity_number}/Samples/{os.path.basename(sample_image.full_size_image.name)}"
+            destination_path = f"{SHAREPOINT_REMOTE_NAME}:{sample.opportunity_number}/Samples/{os.path.basename(sample_image.full_size_image.name)}"
 
             # Log the paths
             logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
@@ -461,7 +462,7 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
     logger.info(f"Starting task to delete documentation from SharePoint for opportunity {opportunity_number}")
 
     # Construct the path to the opportunity directory on SharePoint
-    remote_folder_path = f"TestLabSamples:{opportunity_number}"
+    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
 
     # Specify the full path to rclone
     # Rclone operations are now handled by RcloneManager
@@ -487,8 +488,8 @@ def move_documentation_to_archive_task(opportunity_number):
 
     # Specify the full path to rclone executable
     # Rclone operations are now handled by RcloneManager
-    remote_folder_path = f"TestLabSamples:{opportunity_number}"
-    archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
+    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
+    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{opportunity_number}"
 
     # Move the folder using rclone
     try:
@@ -510,8 +511,8 @@ def restore_documentation_from_archive_task(opportunity_number):
     logger.info(f"Starting restore_documentation_from_archive_task for opportunity {opportunity_number}")
 
     # Rclone operations are now handled by RcloneManager
-    archive_folder_path = f"TestLabSamples:_Archive/{opportunity_number}"
-    main_folder_path = f"TestLabSamples:{opportunity_number}"
+    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{opportunity_number}"
+    main_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
 
     # Move the folder back using rclone
     try:

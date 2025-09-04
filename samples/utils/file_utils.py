@@ -2,7 +2,7 @@ import os
 from django.conf import settings
 import pandas as pd
 import logging
-from ..sharepoint_config import get_documentation_template_path
+from ..sharepoint_config import get_documentation_template_path, SHAREPOINT_REMOTE_NAME
 from .rclone_utils import get_rclone_manager
 
 logger = logging.getLogger(__name__)
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def create_documentation_on_sharepoint(opportunity_number):
     """Copy documentation template to SharePoint for the opportunity."""
     # Construct the path to the documentation file on SharePoint
-    remote_file_path = f"TestLabSamples:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
+    remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
     
     # Use centralized template file path
     template_file_path = get_documentation_template_path()

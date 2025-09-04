@@ -1067,7 +1067,10 @@ def handle_500(request):
 
 def select_user(request):
     """Display user selection page"""
-    return render(request, 'samples/select_user.html')
+    context = {
+        'valid_users': settings.VALID_USERS
+    }
+    return render(request, 'samples/select_user.html', context)
 
 
 def set_user(request):
@@ -1075,9 +1078,8 @@ def set_user(request):
     if request.method == 'POST':
         user_name = request.POST.get('user_name')
         
-        # Validate user name
-        valid_users = ['Corey Wagner', 'Mike Mooney', 'Colby Wentz', 'Noah Dekker']
-        if user_name in valid_users:
+        # Validate user name against settings
+        if user_name in settings.VALID_USERS:
             # Get redirect URL from session or default to home
             redirect_url = request.session.pop('redirect_after_user_selection', '/')
             
