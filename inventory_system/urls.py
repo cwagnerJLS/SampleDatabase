@@ -18,6 +18,7 @@ urlpatterns = [
     path('create_sample/', views.create_sample, name='create_sample'),
     path('view_samples/', views.view_samples, name='view_samples'),
     path('update_sample_location/', views.update_sample_location, name='update_sample_location'),
+    path('validate_delete_samples/', views.validate_delete_samples, name='validate_delete_samples'),
     path('delete_samples/', views.delete_samples, name='delete_samples'),
     path('handle_print_request/', views.handle_print_request, name='handle_print_request'),
     path('manage_sample/<int:sample_id>/', views.manage_sample, name='manage_sample'),

@@ -998,6 +998,103 @@ def delete_sample_image(request):
         )
         return server_error_response('An error occurred while deleting the image')
 
+def validate_delete_samples(request):
+    """
+    Validate whether samples can be deleted.
+    Returns information about which samples have documentation that must be removed first.
+    """
+    if request.method == 'POST':
+        try:
+            import json
+            from samples.models import SampleImage
+            from samples.EditExcelSharepoint import get_existing_ids_with_rows, get_sharepoint_token
+            
+            ids = json.loads(request.POST.get('ids', '[]'))
+            validation_results = {
+                'can_delete': [],
+                'cannot_delete': [],
+                'total_checked': len(ids)
+            }
+            
+            for sample_id in ids:
+                try:
+                    sample = Sample.objects.get(unique_id=sample_id)
+                    issues = []
+                    
+                    # Check for images
+                    image_count = SampleImage.objects.filter(sample=sample).count()
+                    if image_count > 0:
+                        issues.append(f"Has {image_count} image{'s' if image_count > 1 else ''} uploaded")
+                    
+                    # Check Excel documentation
+                    try:
+                        # Get SharePoint token
+                        access_token = get_sharepoint_token()
+                        if access_token:
+                            # Get existing IDs from Excel
+                            existing_ids_with_rows = get_existing_ids_with_rows(
+                                sample.opportunity_number,
+                                access_token
+                            )
+                            
+                            # Check if this sample ID exists in Excel
+                            if existing_ids_with_rows and str(sample_id) in existing_ids_with_rows:
+                                row_info = existing_ids_with_rows[str(sample_id)]
+                                issues.append(f"Documented in Excel (row {row_info.get('row', 'unknown')})")
+                    except Exception as e:
+                        logger.warning(f"Could not check Excel documentation for sample {sample_id}: {e}")
+                        # Don't block deletion if we can't check Excel, but log it
+                    
+                    if issues:
+                        validation_results['cannot_delete'].append({
+                            'id': sample_id,
+                            'customer': sample.customer,
+                            'opportunity': sample.opportunity_number,
+                            'description': sample.description,
+                            'issues': issues
+                        })
+                    else:
+                        validation_results['can_delete'].append({
+                            'id': sample_id,
+                            'customer': sample.customer,
+                            'opportunity': sample.opportunity_number,
+                            'description': sample.description
+                        })
+                        
+                except Sample.DoesNotExist:
+                    # If sample doesn't exist, it's already deleted
+                    validation_results['can_delete'].append({
+                        'id': sample_id,
+                        'customer': 'Unknown',
+                        'opportunity': 'Unknown',
+                        'description': 'Sample not found',
+                        'warning': 'Sample does not exist'
+                    })
+                except Exception as e:
+                    logger.error(f"Error validating sample {sample_id}: {e}")
+                    validation_results['cannot_delete'].append({
+                        'id': sample_id,
+                        'customer': 'Unknown',
+                        'opportunity': 'Unknown', 
+                        'description': 'Error during validation',
+                        'issues': [f"Validation error: {str(e)}"]
+                    })
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': validation_results
+            })
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON data in validate_delete_samples: {e}")
+            return error_response('Invalid JSON data')
+        except Exception as e:
+            logger.error(f"Error validating samples for deletion: {e}")
+            return server_error_response('An unexpected error occurred during validation')
+    else:
+        return method_not_allowed_response()
+
+
 def delete_samples(request):
     if request.method == 'POST':
         try:

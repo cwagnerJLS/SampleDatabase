@@ -1010,6 +1010,33 @@
         </div>
     </div>
 
+    <!-- Delete Validation Modal -->
+    <div id="deleteValidationModal" class="modal">
+        <div class="modal-dialog" style="max-width: 600px; position: relative; margin: 5% auto; width: 80%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Cannot Delete - Documentation Exists</h2>
+                    <span class="close modal-close" data-modal="deleteValidationModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; color: #856404;">⚠️ Important Information</h3>
+                        <p style="margin-bottom: 10px;"><strong>Delete Button:</strong> For removing unused IDs that were created by mistake (no documentation or images).</p>
+                        <p style="margin-bottom: 0;"><strong>Remove from Inventory:</strong> For samples that have been documented and need to be removed from active inventory while maintaining history.</p>
+                    </div>
+                    
+                    <div id="validationResults">
+                        <!-- Results will be inserted here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="proceedWithRemoveFromInventory()" style="background-color: #28a745;">Use Remove from Inventory</button>
+                    <button type="button" class="modal-close" data-modal="deleteValidationModal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- The Upload/View Modal -->
     <div id="uploadModal" class="modal upload-modal">
         <div class="modal-dialog">
@@ -1377,7 +1404,7 @@
                 });
             });
 
-            // Delete selected entries
+            // Delete selected entries with validation
             document.getElementById('delete-all-button').addEventListener('click', function() {
                 const selectedCheckboxes = document.querySelectorAll('input[name="select_checkbox"]:checked');
                 const idsToDelete = getSelectedSampleIds();
@@ -1387,38 +1414,164 @@
                     return;
                 }
 
-                if (confirm('Are you sure you want to delete the selected entries?')) {
-                    const formData = createFormDataWithCSRF({ ids: idsToDelete });
-
-                    // Get affected groups for cleanup
-                    const affectedGroups = getAffectedGroups(selectedCheckboxes);
-
-                    fetch("{% url 'delete_samples' %}", {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRFToken': csrftoken
-                        },
-                        credentials: 'same-origin'  // Include cookies
-                    }).then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            selectedCheckboxes.forEach(checkbox => {
-                                const row = checkbox.closest('tr');
-                                row.parentNode.removeChild(row); // Remove the row from the table
-                            });
-
-                            // Clean up any empty groups
-                            cleanupEmptyGroups(affectedGroups);
-
-                            selectAllSelectCheckbox.checked = false; // Clear the "Select All" checkbox
-                            console.log('Entries deleted successfully.');
+                // First, validate if samples can be deleted
+                const formData = createFormDataWithCSRF({ ids: idsToDelete });
+                
+                fetch("{% url 'validate_delete_samples' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(validationData => {
+                    if (validationData.status === 'success') {
+                        const results = validationData.data;
+                        
+                        // If there are samples that cannot be deleted
+                        if (results.cannot_delete.length > 0) {
+                            showDeleteValidationModal(results);
+                        } else if (results.can_delete.length > 0) {
+                            // All samples can be deleted, show confirmation
+                            const message = results.can_delete.length === 1 
+                                ? 'Are you sure you want to delete this unused sample ID?' 
+                                : `Are you sure you want to delete these ${results.can_delete.length} unused sample IDs?`;
+                                
+                            if (confirm(message + '\n\nNote: This action is permanent and should only be used for IDs that were created by mistake.')) {
+                                performDelete(idsToDelete, selectedCheckboxes);
+                            }
                         } else {
-                            console.error('Error deleting entries:', data.error);
+                            alert('No samples to delete.');
                         }
-                    });
-                }
+                    } else {
+                        console.error('Validation error:', validationData.error);
+                        alert('Error validating samples for deletion. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('An error occurred while validating samples.');
+                });
             });
+            
+            // Function to perform actual deletion
+            function performDelete(idsToDelete, selectedCheckboxes) {
+                const formData = createFormDataWithCSRF({ ids: idsToDelete });
+                const affectedGroups = getAffectedGroups(selectedCheckboxes);
+
+                fetch("{% url 'delete_samples' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        selectedCheckboxes.forEach(checkbox => {
+                            const row = checkbox.closest('tr');
+                            row.parentNode.removeChild(row);
+                        });
+
+                        cleanupEmptyGroups(affectedGroups);
+                        selectAllSelectCheckbox.checked = false;
+                        console.log('Entries deleted successfully.');
+                    } else {
+                        console.error('Error deleting entries:', data.error);
+                        alert('Error deleting entries: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('An error occurred while deleting samples.');
+                });
+            }
+            
+            // Function to show validation modal
+            function showDeleteValidationModal(results) {
+                const modal = document.getElementById('deleteValidationModal');
+                const resultsDiv = document.getElementById('validationResults');
+                
+                // Store the results globally for use in other functions
+                window.deleteValidationResults = results;
+                
+                // Build the HTML for the results
+                let html = '';
+                
+                if (results.cannot_delete.length > 0) {
+                    html += '<h3 style="color: #dc3545;">❌ Cannot Delete (' + results.cannot_delete.length + ' samples)</h3>';
+                    html += '<p>The following samples have documentation and must use "Remove from Inventory" instead:</p>';
+                    html += '<div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; background-color: #f8f9fa;">';
+                    
+                    results.cannot_delete.forEach(sample => {
+                        html += '<div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #dee2e6;">';
+                        html += '<strong>ID ' + sample.id + '</strong> - ' + sample.customer + ' (Opp: ' + sample.opportunity + ')<br>';
+                        html += '<span style="color: #dc3545; font-size: 14px;">⚠️ ' + sample.issues.join(', ') + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                
+                if (results.can_delete.length > 0) {
+                    html += '<h3 style="color: #28a745; margin-top: 20px;">✓ Can Delete (' + results.can_delete.length + ' samples)</h3>';
+                    html += '<p>The following samples have no documentation and can be safely deleted:</p>';
+                    html += '<div style="max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; background-color: #f8f9fa;">';
+                    
+                    results.can_delete.forEach(sample => {
+                        html += '<div style="margin-bottom: 5px;">';
+                        html += '<strong>ID ' + sample.id + '</strong> - ' + sample.customer + ' (Opp: ' + sample.opportunity + ')';
+                        if (sample.warning) {
+                            html += ' <span style="color: #ffc107; font-size: 12px;">(' + sample.warning + ')</span>';
+                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                    
+                    // Add delete button for can_delete items if there are any
+                    html += '<div style="margin-top: 15px;">';
+                    html += '<button type="button" onclick="deleteOnlyDeletable()" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer;">Delete Unused IDs Only</button>';
+                    html += '</div>';
+                }
+                
+                resultsDiv.innerHTML = html;
+                modal.style.display = 'block';
+            }
+            
+            // Function to delete only the samples that can be deleted
+            window.deleteOnlyDeletable = function() {
+                if (!window.deleteValidationResults) return;
+                
+                const canDeleteIds = window.deleteValidationResults.can_delete.map(s => s.id);
+                if (canDeleteIds.length === 0) return;
+                
+                const message = canDeleteIds.length === 1 
+                    ? 'Delete this unused sample ID?' 
+                    : `Delete these ${canDeleteIds.length} unused sample IDs?`;
+                    
+                if (confirm(message)) {
+                    // Close the modal
+                    document.getElementById('deleteValidationModal').style.display = 'none';
+                    
+                    // Find the checkboxes for these IDs
+                    const checkboxesToDelete = Array.from(document.querySelectorAll('input[name="select_checkbox"]:checked'))
+                        .filter(cb => canDeleteIds.includes(cb.value));
+                    
+                    performDelete(canDeleteIds, checkboxesToDelete);
+                }
+            };
+            
+            // Function to switch to remove from inventory
+            window.proceedWithRemoveFromInventory = function() {
+                // Close the validation modal
+                document.getElementById('deleteValidationModal').style.display = 'none';
+                
+                // Trigger the remove from inventory function
+                removeFromInventory();
+            };
 
             // Select All functionality - just check/uncheck boxes and let the change event handle highlighting
             if (selectAllSelectCheckbox) {
@@ -1951,6 +2104,8 @@
                         closeAddSampleModal();
                     } else if (modalId === 'uploadModal') {
                         closeUploadModal();
+                    } else if (modalId === 'deleteValidationModal') {
+                        document.getElementById('deleteValidationModal').style.display = 'none';
                     }
                 }
                 // Handle picture upload/view buttons
