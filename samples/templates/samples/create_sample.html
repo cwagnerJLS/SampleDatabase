@@ -784,7 +784,7 @@
                     <button type="button" class="picture-btn" data-sample-id="${sample.unique_id}">Upload/View</button>
                 </td>
                 <td class="col-documentation">
-                    <a href="${CONFIG.SHAREPOINT_BASE_URL}${sample.opportunity_number}" target="_blank">Documentation</a>
+                    <a href="${CONFIG.SHAREPOINT_BASE_URL}${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Documentation</a>
                 </td>
             `;
         }
@@ -1291,17 +1291,17 @@
                 .then(data => {
                     if (data.status === 'success') {
                         // Display detailed results
-                        let alertMessage = data.data.message;
+                        let alertMessage = data.message;
                         
                         // If some samples were skipped due to no location, provide details
-                        if (data.data.skipped_no_location && data.data.skipped_no_location.length > 0) {
-                            alertMessage += '\n\nSkipped samples (no location): ' + data.data.skipped_no_location.join(', ');
+                        if (data.skipped_no_location && data.skipped_no_location.length > 0) {
+                            alertMessage += '\n\nSkipped samples (no location): ' + data.skipped_no_location.join(', ');
                         }
                         
                         alert(alertMessage);
                         
                         // Optionally uncheck the audited samples
-                        if (data.data.audited_count > 0) {
+                        if (data.audited_count > 0) {
                             selectedCheckboxes.forEach(checkbox => {
                                 checkbox.checked = false;
                                 const row = checkbox.closest('tr');
@@ -1315,7 +1315,7 @@
                             }
                         }
                         
-                        console.log('Audit completed:', data.data);
+                        console.log('Audit completed:', data);
                     } else {
                         console.error('Audit error:', data.error);
                         alert('Audit error: ' + data.error);
