@@ -57,9 +57,15 @@ def view_samples(request):
     # Convert samples to list of dicts, then JSON-encode.
     samples_list = list(Sample.objects.all().values())
 
-    # Format date fields for display
+    # Format date fields for display and add SharePoint folder names
+    from samples.utils.folder_utils import get_sharepoint_folder_name_simple
     for entry in samples_list:
         entry['date_received'] = format_date_for_display(entry.get('date_received'))
+        # Add SharePoint folder name for each sample
+        entry['sharepoint_folder'] = get_sharepoint_folder_name_simple(
+            entry.get('description', ''),
+            entry.get('opportunity_number', '')
+        )
 
     return render(request, 'samples/view_sample.html', {
         'samples': json.dumps(samples_list, cls=DjangoJSONEncoder),
@@ -125,6 +131,9 @@ def create_sample(request):
             if created or updated:
                 opportunity.new = True
                 opportunity.update = True
+                # Set the SharePoint folder name
+                from samples.utils.folder_utils import get_sharepoint_folder_name
+                opportunity.sharepoint_folder_name = get_sharepoint_folder_name(opportunity)
                 opportunity.save()
 
             # Now, after the Opportunity is saved and up-to-date, call the task chain
@@ -268,6 +277,13 @@ def create_sample(request):
         samples = []
         
         for sample_obj in samples_queryset:
+            # Get the SharePoint folder name for this sample's opportunity
+            from samples.utils.folder_utils import get_sharepoint_folder_name_simple
+            sharepoint_folder = get_sharepoint_folder_name_simple(
+                sample_obj.description, 
+                sample_obj.opportunity_number
+            )
+            
             sample_data = {
                 'unique_id': sample_obj.unique_id,
                 'opportunity_number': sample_obj.opportunity_number,
@@ -276,7 +292,8 @@ def create_sample(request):
                 'date_received': format_date_for_display(sample_obj.date_received),
                 'description': sample_obj.description,
                 'storage_location': sample_obj.storage_location,
-                'days_until_audit': sample_obj.days_until_audit()  # Will be None if no audit due date
+                'days_until_audit': sample_obj.days_until_audit(),  # Will be None if no audit due date
+                'sharepoint_folder': sharepoint_folder  # Add folder name for SharePoint links
             }
             samples.append(sample_data)
 

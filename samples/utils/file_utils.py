@@ -9,8 +9,18 @@ logger = logging.getLogger(__name__)
 
 def create_documentation_on_sharepoint(opportunity_number):
     """Copy documentation template to SharePoint for the opportunity."""
+    # Get the opportunity to find the folder name
+    from samples.models import Opportunity
+    from samples.utils.folder_utils import get_sharepoint_folder_name
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = opportunity_number
+    
     # Construct the path to the documentation file on SharePoint
-    remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}/Samples/Documentation_{opportunity_number}.xlsm"
+    remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}/Samples/Documentation_{opportunity_number}.xlsm"
     
     # Use centralized template file path
     template_file_path = get_documentation_template_path()

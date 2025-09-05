@@ -5,6 +5,7 @@ import logging
 from .CreateOppFolderSharepoint import create_sharepoint_folder
 from .utils.file_utils import create_documentation_on_sharepoint
 from .utils.date_utils import format_date_for_display
+from .utils.folder_utils import get_sharepoint_folder_name, get_sharepoint_folder_name_simple
 from .utils.rclone_utils import get_rclone_manager, delete_from_sharepoint, copy_to_sharepoint, purge_sharepoint_folder
 import shutil
 import os
@@ -63,7 +64,17 @@ def create_documentation_on_sharepoint_task(opportunity_number):
 def delete_image_from_sharepoint(full_size_image_name, opportunity_number):
     logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
     if full_size_image_name:
-        sharepoint_image_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}/Samples/{os.path.basename(full_size_image_name)}"
+        # Get the opportunity to find the folder name
+        from .models import Opportunity
+        try:
+            opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+            folder_name = get_sharepoint_folder_name(opportunity)
+        except Opportunity.DoesNotExist:
+            # Fallback to opportunity number if not found
+            logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+            folder_name = opportunity_number
+        
+        sharepoint_image_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}/Samples/{os.path.basename(full_size_image_name)}"
         if delete_from_sharepoint(sharepoint_image_path):
             logger.info(f"Successfully deleted image from SharePoint: {sharepoint_image_path}")
         else:
@@ -440,7 +451,17 @@ def upload_full_size_images_to_sharepoint(sample_image_ids):
 
             # Define source and destination paths
             source_path = sample_image.full_size_image.path
-            destination_path = f"{SHAREPOINT_REMOTE_NAME}:{sample.opportunity_number}/Samples/{os.path.basename(sample_image.full_size_image.name)}"
+            # Get the opportunity to find the folder name
+            from .models import Opportunity
+            try:
+                opportunity = Opportunity.objects.get(opportunity_number=sample.opportunity_number)
+                folder_name = get_sharepoint_folder_name(opportunity)
+            except Opportunity.DoesNotExist:
+                # Fallback to opportunity number if not found
+                logger.warning(f"Opportunity {sample.opportunity_number} not found, using opportunity number as folder name")
+                folder_name = sample.opportunity_number
+            
+            destination_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}/Samples/{os.path.basename(sample_image.full_size_image.name)}"
 
             # Log the paths
             logger.info(f"Uploading image {sample_image_id} from {source_path} to {destination_path}")
@@ -462,7 +483,15 @@ def delete_documentation_from_sharepoint_task(opportunity_number):
     logger.info(f"Starting task to delete documentation from SharePoint for opportunity {opportunity_number}")
 
     # Construct the path to the opportunity directory on SharePoint
-    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
+    from .models import Opportunity
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = opportunity_number
+    
+    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}"
 
     # Specify the full path to rclone
     # Rclone operations are now handled by RcloneManager
@@ -488,8 +517,17 @@ def move_documentation_to_archive_task(opportunity_number):
 
     # Specify the full path to rclone executable
     # Rclone operations are now handled by RcloneManager
-    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
-    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{opportunity_number}"
+    from .models import Opportunity
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = opportunity_number
+    
+    remote_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}"
+    # Keep opportunity number in archive path for consistency
+    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{folder_name}"
 
     # Move the folder using rclone
     try:
@@ -511,8 +549,16 @@ def restore_documentation_from_archive_task(opportunity_number):
     logger.info(f"Starting restore_documentation_from_archive_task for opportunity {opportunity_number}")
 
     # Rclone operations are now handled by RcloneManager
-    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{opportunity_number}"
-    main_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{opportunity_number}"
+    from .models import Opportunity
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = opportunity_number
+    
+    archive_folder_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{folder_name}"
+    main_folder_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}"
 
     # Move the folder back using rclone
     try:
@@ -571,10 +617,11 @@ def export_documentation(opportunity_number):
             return
         # Headers are now handled internally by GraphAPIClient
 
-        # 1) Find the folder for this opportunity
-        opp_folder_id = FolderAPIClient.find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, opportunity_number, access_token)
+        # 1) Find the folder for this opportunity (using the new folder name)
+        folder_name = get_sharepoint_folder_name(opp)
+        opp_folder_id = FolderAPIClient.find_folder_by_name(TEST_ENGINEERING_LIBRARY_ID, None, folder_name, access_token)
         if not opp_folder_id:
-            logger.warning(f"Opportunity folder '{opportunity_number}' not found in Test Engineering library.")
+            logger.warning(f"Opportunity folder '{folder_name}' not found in Test Engineering library.")
             return
 
         # 2) Find the 'Samples' subfolder inside that opportunity folder

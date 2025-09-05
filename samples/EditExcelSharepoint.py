@@ -165,7 +165,7 @@ def get_access_token():
 def find_excel_file(access_token, library_id, opportunity_number):
     """
     Find the Excel file for a specific opportunity number in the Test Engineering library.
-    The folder name matches the 4-digit opportunity number, and the file is named
+    The folder uses the description as name, and the file is named
     'Documentation_<OpportunityNumber>.xlsm'.
 
     Args:
@@ -177,7 +177,17 @@ def find_excel_file(access_token, library_id, opportunity_number):
         str or None: The item ID of the Excel file if found, else None.
     """
     logger.debug(f"Finding Excel file for opportunity_number: {opportunity_number}")
-    folder_path = f"{opportunity_number}/Samples"
+    # Get the opportunity to find the folder name
+    from samples.models import Opportunity
+    from samples.utils.folder_utils import get_sharepoint_folder_name
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = opportunity_number
+    
+    folder_path = f"{folder_name}/Samples"
     endpoint = f"{GRAPH_API_URL}/drives/{library_id}/root:/{folder_path}:/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)

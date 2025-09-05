@@ -1083,7 +1083,7 @@
                                         <button type="button" onclick="handlePictureUploadView('${sample.unique_id}')">View</button>
                                     </td>
                                     <td class="col-documentation">
-                                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                                        <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Documentation</a>
                                     </td>
                                     </td>
                                 `;
@@ -1330,7 +1330,7 @@
                             <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">View</button>
                         </td>
                         <td class="col-documentation">
-                            <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                            <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Documentation</a>
                         </td>
                     `;
                     tableBody.appendChild(newRow);
@@ -1375,7 +1375,7 @@
                                 <button type="button" onclick="handlePictureUploadView(${JSON.stringify(sample.unique_id)})">View</button>
                             </td>
                             <td class="col-documentation">
-                                <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${sample.opportunity_number}" target="_blank">Documentation</a>
+                                <a href="https://jlsautomation.sharepoint.com/sites/TestEngineering/Test%20Engineering/${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Documentation</a>
                             </td>
                         `;
                         tableBody.appendChild(sampleRow);

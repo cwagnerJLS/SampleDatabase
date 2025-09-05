@@ -23,7 +23,7 @@ if not settings.configured:
 # Internal SharePoint field names for your custom columns
 FIELD_CUSTOMER = "Customer"
 FIELD_RSM = "RSM"
-FIELD_DESCRIPTION = "_ExtendedDescription"  # 'Description' column is '_ExtendedDescription' internally
+FIELD_DESCRIPTION = "_ExtendedDescription"  # Now stores the opportunity number
 def create_subfolder(access_token, parent_folder_id, subfolder_name):
     """
     Creates a subfolder within the specified parent folder.
@@ -86,15 +86,16 @@ def create_folder(access_token, folder_name):
         logger.error(error_message)
         raise Exception(error_message)
 
-def update_folder_fields(access_token, folder_id, customer, rsm, description):
+def update_folder_fields(access_token, folder_id, customer, rsm, opportunity_number, description):
     """
     Updates the custom fields (Customer, RSM, _ExtendedDescription) of the folder's listItem.
+    The Description field now stores the opportunity number since the folder name contains the description.
     """
     url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{folder_id}/listItem/fields"
     data = {
         FIELD_CUSTOMER: customer,
         FIELD_RSM: rsm,
-        FIELD_DESCRIPTION: description
+        FIELD_DESCRIPTION: opportunity_number  # Store opportunity number in the Description field
     }
     result = GraphAPIClient.patch(url, access_token, json_data=data, raise_on_error=False)
     if result:
@@ -105,30 +106,38 @@ def update_folder_fields(access_token, folder_id, customer, rsm, description):
 
 def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     """
-    Ensures a folder named opportunity_number exists in the SharePoint library.
-    If it doesn't, creates it and sets fields. Then creates a 'Samples' subfolder within it.
+    Creates a folder named after the description (with opportunity number appended) in the SharePoint library.
+    If it doesn't exist, creates it and sets fields. Then creates subfolders within it.
     """
     try:
+        # Import folder utilities
+        from samples.utils.folder_utils import get_sharepoint_folder_name_simple
+        
         access_token = get_access_token()
+        
+        # Generate folder name from description
+        folder_name = get_sharepoint_folder_name_simple(description, opportunity_number)
+        logger.info(f"Creating/checking SharePoint folder: '{folder_name}' for opportunity {opportunity_number}")
+        
         # 1) Check if the folder exists
-        existing_folder_id = search_folder(access_token, opportunity_number)
+        existing_folder_id = search_folder(access_token, folder_name)
         if existing_folder_id:
-            logger.info(f"Folder '{opportunity_number}' already exists on SharePoint.")
+            logger.info(f"Folder '{folder_name}' already exists on SharePoint.")
             parent_folder_id = existing_folder_id
         else:
-            # 2) Create the opportunity folder
-            parent_folder_id = create_folder(access_token, opportunity_number)
+            # 2) Create the opportunity folder with the new name
+            parent_folder_id = create_folder(access_token, folder_name)
             if parent_folder_id:
-                # 3) Update the custom fields
-                update_folder_fields(access_token, parent_folder_id, customer, rsm, description)
+                # 3) Update the custom fields (now includes opportunity number)
+                update_folder_fields(access_token, parent_folder_id, customer, rsm, opportunity_number, description)
             else:
-                logger.error(f"Failed to create opportunity folder '{opportunity_number}'.")
-                raise Exception(f"Failed to create opportunity folder '{opportunity_number}'.")
+                logger.error(f"Failed to create opportunity folder '{folder_name}'.")
+                raise Exception(f"Failed to create opportunity folder '{folder_name}'.")
 
         create_subfolder(access_token, parent_folder_id, 'Samples')
         create_subfolder(access_token, parent_folder_id, 'Pics and Vids')
         create_subfolder(access_token, parent_folder_id, 'Modeling')
 
     except Exception as e:
-        logger.error(f"SharePoint folder creation failed for {opportunity_number}: {e}")
+        logger.error(f"SharePoint folder creation failed for opportunity {opportunity_number}: {e}")
         raise

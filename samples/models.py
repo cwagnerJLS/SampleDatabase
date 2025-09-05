@@ -28,6 +28,9 @@ class Opportunity(models.Model):
     sample_info_url = models.URLField(blank=True, null=True)
     sample_info_id = models.CharField(max_length=255, blank=True, null=True)
     
+    # SharePoint folder name (using description instead of opportunity number)
+    sharepoint_folder_name = models.CharField(max_length=400, blank=True, null=True)
+    
     # Export tracking fields
     export_count = models.IntegerField(default=0)
     last_export_date = models.DateTimeField(blank=True, null=True)
