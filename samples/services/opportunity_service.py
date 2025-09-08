@@ -21,17 +21,17 @@ class OpportunityService:
             sample_ids: List of sample IDs to add
             mark_for_update: Whether to set the update flag
         """
-        # Get existing sample IDs
-        existing_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+        # Get existing sample IDs and strip whitespace
+        existing_ids = [id.strip() for id in opportunity.sample_ids.split(',') if id.strip()] if opportunity.sample_ids else []
         
         # Add new IDs, avoiding duplicates
         for sample_id in sample_ids:
-            str_id = str(sample_id)
-            if str_id not in existing_ids:
+            str_id = str(sample_id).strip()
+            if str_id and str_id not in existing_ids:
                 existing_ids.append(str_id)
         
         # Update the opportunity
-        opportunity.sample_ids = ','.join(existing_ids)
+        opportunity.sample_ids = ','.join(existing_ids) if existing_ids else ''
         if mark_for_update:
             opportunity.update = True
         opportunity.save()
@@ -48,16 +48,20 @@ class OpportunityService:
             sample_id: The sample ID to remove
             mark_for_update: Whether to set the update flag
         """
-        # Get existing sample IDs
-        sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
+        # Get existing sample IDs and strip whitespace
+        sample_ids = [id.strip() for id in opportunity.sample_ids.split(',') if id.strip()] if opportunity.sample_ids else []
         
         # Remove the specified ID
-        str_id = str(sample_id)
+        str_id = str(sample_id).strip()
         if str_id in sample_ids:
             sample_ids.remove(str_id)
             
-        # Update the opportunity
-        opportunity.sample_ids = ','.join(sample_ids)
+        # Update the opportunity - ensure empty string when no IDs remain
+        if sample_ids:
+            opportunity.sample_ids = ','.join(sample_ids)
+        else:
+            opportunity.sample_ids = ''
+            
         if mark_for_update:
             opportunity.update = True
         opportunity.save()
@@ -140,5 +144,12 @@ class OpportunityService:
         Returns:
             bool: True if opportunity should be archived
         """
-        sample_ids = opportunity.sample_ids.split(',') if opportunity.sample_ids else []
-        return len(sample_ids) == 0 or (len(sample_ids) == 1 and sample_ids[0] == '')
+        # Strip whitespace and filter out empty strings
+        sample_ids = [id.strip() for id in opportunity.sample_ids.split(',') if id.strip()] if opportunity.sample_ids else []
+        
+        # Also verify against actual database records as a safety check
+        from samples.models import Sample
+        actual_sample_count = Sample.objects.filter(opportunity_number=opportunity.opportunity_number).count()
+        
+        # Archive if no sample IDs in the field AND no actual samples in database
+        return len(sample_ids) == 0 and actual_sample_count == 0
