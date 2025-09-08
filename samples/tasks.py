@@ -787,3 +787,112 @@ def find_sample_info_folder_url(customer_name, opportunity_number):
                 logger.error(f"Opportunity {opportunity_number} does not exist.")
     except Exception as e:
         logger.error(f"Error finding sample info folder for opportunity {opportunity_number}: {e}")
+
+@shared_task
+def find_sample_info_folder_comprehensive(customer_name, opportunity_number, search_all_letters=False):
+    """
+    Enhanced version of find_sample_info_folder_url that can search across all alphabet folders.
+    
+    Args:
+        customer_name: Customer name for the opportunity
+        opportunity_number: Opportunity number to search for
+        search_all_letters: If True, search all alphabet folders. If False, only search expected letter.
+    
+    Returns:
+        dict with status ('found', 'not_found') and details
+    """
+    logger.info(f"Starting comprehensive search for opportunity {opportunity_number} (search_all={search_all_letters})")
+    LIBRARY_ID = SALES_ENGINEERING_LIBRARY_ID
+    
+    from .CreateOppFolderSharepoint import get_access_token
+    from .models import Opportunity
+    
+    try:
+        access_token = get_access_token()
+        if not access_token:
+            logger.error("Failed to acquire access token.")
+            return {'status': 'error', 'message': 'No access token'}
+        
+        # Determine which letters to search
+        if search_all_letters:
+            # Search all alphabet folders plus # for special characters
+            letters_to_search = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['#']
+            # Move expected letter to front for efficiency
+            expected_letter = customer_name[0].upper() if customer_name else "#"
+            if expected_letter in letters_to_search:
+                letters_to_search.remove(expected_letter)
+                letters_to_search.insert(0, expected_letter)
+        else:
+            # Only search the expected letter
+            letters_to_search = [customer_name[0].upper() if customer_name else "#"]
+        
+        logger.info(f"Searching in folders: {letters_to_search}")
+        
+        # Search through specified letter folders
+        for letter_folder_name in letters_to_search:
+            logger.debug(f"Checking letter folder: {letter_folder_name}")
+            
+            letter_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, None, letter_folder_name, access_token)
+            if not letter_folder_id:
+                logger.debug(f"Letter folder '{letter_folder_name}' not found, skipping")
+                continue
+            
+            # Search for opportunity folder containing the opportunity number
+            opp_folder_id = FolderAPIClient.find_folder_containing(LIBRARY_ID, letter_folder_id, opportunity_number, access_token)
+            if not opp_folder_id:
+                logger.debug(f"Opportunity folder containing '{opportunity_number}' not found in {letter_folder_name}")
+                continue
+            
+            # Found the opportunity folder!
+            expected_letter = customer_name[0].upper() if customer_name else "#"
+            if letter_folder_name != expected_letter:
+                logger.warning(f"Found opportunity {opportunity_number} under '{letter_folder_name}' instead of expected '{expected_letter}'")
+            else:
+                logger.info(f"Found opportunity {opportunity_number} in expected location under '{letter_folder_name}'")
+            
+            # Navigate to Sample Info folder (predictable location)
+            info_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, opp_folder_id, SHAREPOINT_FOLDERS['info'], access_token)
+            if not info_folder_id:
+                logger.warning(f"'1 Info' folder not found in opportunity folder")
+                continue
+            
+            sample_info_folder_id = FolderAPIClient.find_folder_by_name(LIBRARY_ID, info_folder_id, SHAREPOINT_FOLDERS['sample_info'], access_token)
+            if not sample_info_folder_id:
+                logger.warning(f"'Sample Info' folder not found in '1 Info' folder")
+                continue
+            
+            # Get folder details
+            folder_data = FolderAPIClient.get_folder_details(LIBRARY_ID, sample_info_folder_id, access_token)
+            if not folder_data:
+                logger.warning("Failed to get folder details")
+                continue
+            
+            web_url = folder_data.get("webUrl", "")
+            if web_url:
+                logger.info(f"Successfully found 'Sample Info' folder at: {web_url}")
+                
+                # Update the opportunity record
+                try:
+                    opp = Opportunity.objects.get(opportunity_number=opportunity_number)
+                    opp.sample_info_url = web_url
+                    opp.sample_info_id = sample_info_folder_id
+                    opp.save()
+                    
+                    return {
+                        'status': 'found',
+                        'letter_folder': letter_folder_name,
+                        'expected_letter': expected_letter,
+                        'sample_info_id': sample_info_folder_id,
+                        'sample_info_url': web_url
+                    }
+                except Opportunity.DoesNotExist:
+                    logger.error(f"Opportunity {opportunity_number} does not exist in database")
+                    return {'status': 'error', 'message': 'Opportunity not in database'}
+        
+        # Not found in any searched locations
+        logger.warning(f"Could not find opportunity {opportunity_number} in any searched locations")
+        return {'status': 'not_found', 'searched_letters': letters_to_search}
+        
+    except Exception as e:
+        logger.error(f"Error in comprehensive search for opportunity {opportunity_number}: {e}")
+        return {'status': 'error', 'message': str(e)}

@@ -287,7 +287,7 @@ class Command(BaseCommand):
                     # 1. Check source folder (Test Engineering)
                     # Get the folder name for this opportunity
                     from samples.utils.folder_utils import get_sharepoint_folder_name
-                    folder_name = get_sharepoint_folder_name(opp) if opp else opp_number
+                    folder_name = get_sharepoint_folder_name(opportunity) if opportunity else opp_number
                     
                     source_folder_id = FolderAPIClient.find_folder_by_name(
                         TEST_ENGINEERING_LIBRARY_ID, 
