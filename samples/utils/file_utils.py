@@ -9,18 +9,36 @@ logger = logging.getLogger(__name__)
 
 def create_documentation_on_sharepoint(opportunity_number):
     """Copy documentation template to SharePoint for the opportunity."""
+    logger.info(f"[DEBUG] ENTERING create_documentation_on_sharepoint for opportunity {opportunity_number}")
+    
     # Get the opportunity to find the folder name
-    from samples.models import Opportunity
+    from samples.models import Opportunity, Sample
     from samples.utils.folder_utils import get_sharepoint_folder_name
     try:
         opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
         folder_name = get_sharepoint_folder_name(opportunity)
+        logger.info(f"[DEBUG] Found opportunity {opportunity_number}, folder_name: {folder_name}")
     except Opportunity.DoesNotExist:
-        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        logger.warning(f"[DEBUG] Opportunity {opportunity_number} not found, using opportunity number as folder name")
         folder_name = opportunity_number
+        opportunity = None
+    
+    # Check if this opportunity has any current samples (to determine if it's in archive)
+    has_samples = False
+    if opportunity:
+        has_samples = Sample.objects.filter(opportunity_number=opportunity_number).exists()
+        logger.info(f"[DEBUG] Opportunity {opportunity_number} has_samples: {has_samples}")
     
     # Construct the path to the documentation file on SharePoint
-    remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}/Samples/Documentation_{opportunity_number}.xlsm"
+    # If no samples, the folder is in _Archive
+    if not has_samples:
+        remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{folder_name}/Samples/Documentation_{opportunity_number}.xlsm"
+        logger.info(f"[DEBUG] Creating documentation in ARCHIVE folder for opportunity {opportunity_number}")
+        logger.info(f"[DEBUG] Remote path: {remote_file_path}")
+    else:
+        remote_file_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}/Samples/Documentation_{opportunity_number}.xlsm"
+        logger.info(f"[DEBUG] Creating documentation in MAIN folder for opportunity {opportunity_number}")
+        logger.info(f"[DEBUG] Remote path: {remote_file_path}")
     
     # Use centralized template file path
     template_file_path = get_documentation_template_path()

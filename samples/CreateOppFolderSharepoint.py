@@ -141,3 +141,65 @@ def create_sharepoint_folder(opportunity_number, customer, rsm, description):
     except Exception as e:
         logger.error(f"SharePoint folder creation failed for opportunity {opportunity_number}: {e}")
         raise
+
+
+def create_sharepoint_folder_in_archive(opportunity_number, customer, rsm, description):
+    """
+    Creates a folder directly in the _Archive folder for opportunities with 0 samples.
+    This maintains the principle that only opportunities with current samples exist in the main library.
+    """
+    try:
+        # Import folder utilities
+        from samples.utils.folder_utils import get_sharepoint_folder_name_simple
+        
+        access_token = get_access_token()
+        
+        # Generate folder name from description
+        folder_name = get_sharepoint_folder_name_simple(description, opportunity_number)
+        logger.info(f"Creating/checking SharePoint folder in archive: '{folder_name}' for opportunity {opportunity_number}")
+        
+        # First, ensure _Archive folder exists
+        archive_folder_id = search_folder(access_token, '_Archive')
+        if not archive_folder_id:
+            # Create _Archive folder if it doesn't exist
+            archive_folder_id = create_folder(access_token, '_Archive')
+            if not archive_folder_id:
+                logger.error("Failed to create or find _Archive folder.")
+                raise Exception("Failed to create or find _Archive folder.")
+        
+        # Check if the folder already exists in archive by searching within the archive folder
+        search_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{archive_folder_id}/children?$filter=name eq '{folder_name}'"
+        result = GraphAPIClient.get(search_url, access_token, raise_on_error=False)
+        
+        if result and result.get('value'):
+            # Folder already exists in archive
+            logger.info(f"Folder '{folder_name}' already exists in _Archive.")
+            parent_folder_id = result['value'][0]['id']
+        else:
+            # Create the opportunity folder in _Archive
+            create_url = f"{GRAPH_API_URL}/drives/{LIBRARY_ID}/items/{archive_folder_id}/children"
+            folder_data = {
+                "name": folder_name,
+                "folder": {},
+                "@microsoft.graph.conflictBehavior": "fail"
+            }
+            
+            result = GraphAPIClient.post(create_url, access_token, json_data=folder_data, raise_on_error=False)
+            if result and 'id' in result:
+                parent_folder_id = result['id']
+                logger.info(f"Successfully created folder '{folder_name}' in _Archive with ID: {parent_folder_id}")
+                
+                # Update the custom fields
+                update_folder_fields(access_token, parent_folder_id, customer, rsm, opportunity_number, description)
+            else:
+                logger.error(f"Failed to create opportunity folder '{folder_name}' in _Archive.")
+                raise Exception(f"Failed to create opportunity folder '{folder_name}' in _Archive.")
+        
+        # Create subfolders
+        create_subfolder(access_token, parent_folder_id, 'Samples')
+        create_subfolder(access_token, parent_folder_id, 'Pics and Vids')
+        create_subfolder(access_token, parent_folder_id, 'Modeling')
+        
+    except Exception as e:
+        logger.error(f"SharePoint folder creation in archive failed for opportunity {opportunity_number}: {e}")
+        raise

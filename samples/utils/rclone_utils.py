@@ -166,6 +166,31 @@ class RcloneManager:
             logger.error(f"Failed to sync {source_path} to {destination_path}: {e}")
             return False
     
+    def folder_exists(self, remote_path: str) -> bool:
+        """
+        Check if a folder exists on the remote storage.
+        
+        Args:
+            remote_path: Remote path to check (e.g., "TestLabSamples:folder_name")
+        
+        Returns:
+            True if folder exists, False otherwise
+        """
+        try:
+            # Use lsf to list the folder - if it exists, command succeeds
+            args = ['lsf', remote_path, '--max-depth', '0']
+            returncode, stdout, stderr = self._execute_command(args, check=False)
+            
+            if returncode == 0:
+                logger.debug(f"Folder exists: {remote_path}")
+                return True
+            else:
+                logger.debug(f"Folder does not exist: {remote_path}")
+                return False
+        except Exception as e:
+            logger.error(f"Error checking if folder exists {remote_path}: {e}")
+            return False
+    
     def list_files(self, remote_path: str) -> List[str]:
         """
         List files in a remote directory.

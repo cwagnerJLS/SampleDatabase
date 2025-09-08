@@ -1,8 +1,43 @@
 import re
 import logging
-from typing import Optional
+from typing import Optional, Tuple
+from .rclone_utils import get_rclone_manager
+from ..sharepoint_config import SHAREPOINT_REMOTE_NAME
 
 logger = logging.getLogger(__name__)
+
+def check_sharepoint_folder_status(opportunity_number: str) -> Tuple[bool, bool, str]:
+    """
+    Check if a SharePoint folder exists for an opportunity in main library or archive.
+    
+    Args:
+        opportunity_number: The opportunity number to check
+    
+    Returns:
+        tuple: (exists_in_main, exists_in_archive, folder_name)
+    """
+    from samples.models import Opportunity
+    
+    try:
+        opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
+        folder_name = get_sharepoint_folder_name(opportunity)
+    except Opportunity.DoesNotExist:
+        logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
+        folder_name = str(opportunity_number)
+    
+    rclone = get_rclone_manager()
+    
+    # Check main library
+    main_path = f"{SHAREPOINT_REMOTE_NAME}:{folder_name}"
+    exists_in_main = rclone.folder_exists(main_path)
+    
+    # Check archive
+    archive_path = f"{SHAREPOINT_REMOTE_NAME}:_Archive/{folder_name}"
+    exists_in_archive = rclone.folder_exists(archive_path)
+    
+    logger.info(f"Folder status for {opportunity_number}: Main={exists_in_main}, Archive={exists_in_archive}")
+    
+    return exists_in_main, exists_in_archive, folder_name
 
 def sanitize_folder_name(name: str) -> str:
     """
@@ -76,11 +111,8 @@ def get_sharepoint_folder_name(opportunity) -> str:
                          f"resulted in empty folder name after sanitization. Using opportunity number.")
             return str(opportunity.opportunity_number)
         
-        # For now, we'll append opportunity number to ensure uniqueness
-        # This can be removed later if we want to handle duplicates differently
-        # Format: "Description (OppNum)" to make it clear in Explorer
-        folder_name = f"{folder_name} ({opportunity.opportunity_number})"
-        
+        # Return the sanitized description without appending opportunity number
+        # since the description already starts with the opportunity number
         return folder_name
     else:
         # No description available, use opportunity number
@@ -105,8 +137,9 @@ def get_sharepoint_folder_name_simple(description: str, opportunity_number: str)
     if description:
         folder_name = sanitize_folder_name(description)
         if folder_name:
-            # Append opportunity number for uniqueness
-            return f"{folder_name} ({opportunity_number})"
+            # Return the sanitized description without appending opportunity number
+            # since the description already starts with the opportunity number
+            return folder_name
     
     # Fallback to opportunity number
     return str(opportunity_number)
@@ -116,7 +149,10 @@ def extract_opportunity_number_from_folder(folder_name: str) -> Optional[str]:
     """
     Extract the opportunity number from a folder name.
     
-    Handles both old format (just number) and new format (Description (Number))
+    Handles multiple formats:
+    - Just number: "7000"
+    - Number at start: "7000 - Company - Location"
+    - Number in parentheses at end: "Description (7000)" (legacy format)
     
     Args:
         folder_name: The SharePoint folder name
@@ -128,7 +164,12 @@ def extract_opportunity_number_from_folder(folder_name: str) -> Optional[str]:
     if folder_name.isdigit():
         return folder_name
     
-    # Try to extract from new format: "Description (OppNum)"
+    # Try to extract from format with number at the beginning: "7000 - Description"
+    match = re.match(r'^(\d+)\s*-', folder_name)
+    if match:
+        return match.group(1)
+    
+    # Try to extract from legacy format with parentheses: "Description (7000)"
     match = re.search(r'\((\d+)\)$', folder_name)
     if match:
         return match.group(1)

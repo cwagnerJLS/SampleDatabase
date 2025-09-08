@@ -167,6 +167,7 @@ def find_excel_file(access_token, library_id, opportunity_number):
     Find the Excel file for a specific opportunity number in the Test Engineering library.
     The folder uses the description as name, and the file is named
     'Documentation_<OpportunityNumber>.xlsm'.
+    Checks in the main library if samples exist, otherwise checks in _Archive.
 
     Args:
         access_token (str): Access token from Microsoft Graph.
@@ -178,7 +179,7 @@ def find_excel_file(access_token, library_id, opportunity_number):
     """
     logger.debug(f"Finding Excel file for opportunity_number: {opportunity_number}")
     # Get the opportunity to find the folder name
-    from samples.models import Opportunity
+    from samples.models import Opportunity, Sample
     from samples.utils.folder_utils import get_sharepoint_folder_name
     try:
         opportunity = Opportunity.objects.get(opportunity_number=opportunity_number)
@@ -187,7 +188,18 @@ def find_excel_file(access_token, library_id, opportunity_number):
         logger.warning(f"Opportunity {opportunity_number} not found, using opportunity number as folder name")
         folder_name = opportunity_number
     
-    folder_path = f"{folder_name}/Samples"
+    # Check if this opportunity has any current samples in inventory
+    has_samples = Sample.objects.filter(opportunity_number=opportunity_number).exists()
+    logger.info(f"[DEBUG] Opportunity {opportunity_number} has_samples: {has_samples}")
+    
+    # If no current samples, look in _Archive folder, otherwise look in main library
+    if not has_samples:
+        folder_path = f"_Archive/{folder_name}/Samples"
+        logger.info(f"[DEBUG] Looking for Excel file in ARCHIVE: {folder_path}")
+    else:
+        folder_path = f"{folder_name}/Samples"
+        logger.info(f"[DEBUG] Looking for Excel file in MAIN library: {folder_path}")
+    
     endpoint = f"{GRAPH_API_URL}/drives/{library_id}/root:/{folder_path}:/children"
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(endpoint, headers=headers)

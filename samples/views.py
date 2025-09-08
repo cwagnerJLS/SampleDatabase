@@ -44,6 +44,7 @@ from .tasks import (
     restore_documentation_from_archive_task,
     send_sample_received_email,
     create_sharepoint_folder_task,
+    create_sharepoint_folder_in_archive_task,
     create_documentation_on_sharepoint_task,
     upload_full_size_images_to_sharepoint,
     find_sample_info_folder_url,
@@ -73,9 +74,11 @@ def view_samples(request):
 
 def create_sample(request):
     logger.debug("Entered create_sample view")
+    logger.info(f"Request method: {request.method}, User: {getattr(request, 'current_user', 'Unknown')}")
 
     if request.method == 'POST':
         logger.debug("Processing POST request")
+        logger.info(f"POST data: {request.POST}")
         try:
             if 'clear_db' in request.POST:
                 logger.debug("Clearing database")
@@ -136,24 +139,65 @@ def create_sample(request):
                 opportunity.sharepoint_folder_name = get_sharepoint_folder_name(opportunity)
                 opportunity.save()
 
-            # Now, after the Opportunity is saved and up-to-date, call the task chain
-            if created:
-                chain(
-                    create_sharepoint_folder_task.s(
+            # Now, after the Opportunity is saved and up-to-date, call the tasks
+            # Check if SharePoint folder exists to determine the correct action
+            logger.info(f"Processing opportunity {opportunity_number}: quantity={quantity}, created={created}")
+            
+            # Import the check function
+            from samples.utils.folder_utils import check_sharepoint_folder_status
+            
+            # Check folder existence on SharePoint
+            exists_in_main, exists_in_archive, folder_name = check_sharepoint_folder_status(opportunity_number)
+            logger.info(f"SharePoint folder check for {opportunity_number}: Main={exists_in_main}, Archive={exists_in_archive}")
+            
+            if quantity == 0:
+                logger.info(f"[DEBUG] Quantity is 0 for opportunity {opportunity_number}, using archive flow")
+                # For quantity=0, we want folder in archive
+                if not exists_in_archive and not exists_in_main:
+                    # No folder exists anywhere - create in archive
+                    logger.info(f"[DEBUG] No folder exists for {opportunity_number}, creating in archive")
+                    result = create_sharepoint_folder_in_archive_task.delay(
                         opportunity_number=opportunity_number,
                         customer=opportunity.customer,
                         rsm=opportunity.rsm,
                         description=opportunity.description
-                    ),
-                    create_documentation_on_sharepoint_task.si(opportunity_number),
-                    update_documentation_excels.si(opportunity_number)
-                ).delay()
-
+                    )
+                    logger.info(f"[DEBUG] Archive creation task initiated for {opportunity_number} with ID: {result.id}")
+                elif exists_in_main and not exists_in_archive:
+                    # Folder exists in main but should be in archive - move it
+                    logger.info(f"[DEBUG] Folder exists in main for {opportunity_number}, should move to archive")
+                    # TODO: Implement move_to_archive_task if needed
+                    update_documentation_excels.delay(opportunity_number)
+                else:
+                    # Folder already in archive or in both places - just update Excel
+                    logger.info(f"Opportunity {opportunity_number} folder already exists, updating Excel only")
+                    update_documentation_excels.delay(opportunity_number)
             else:
-                chain(
-                    restore_documentation_from_archive_task.si(opportunity_number),
-                    update_documentation_excels.si(opportunity_number)
-                ).delay()
+                # Normal flow for opportunities with samples (quantity > 0)
+                if not exists_in_main and not exists_in_archive:
+                    # No folder exists anywhere - create new in main
+                    logger.info(f"[DEBUG] No folder exists for {opportunity_number}, creating in main library")
+                    chain(
+                        create_sharepoint_folder_task.s(
+                            opportunity_number=opportunity_number,
+                            customer=opportunity.customer,
+                            rsm=opportunity.rsm,
+                            description=opportunity.description
+                        ),
+                        create_documentation_on_sharepoint_task.si(opportunity_number),
+                        update_documentation_excels.si(opportunity_number)
+                    ).delay()
+                elif exists_in_archive and not exists_in_main:
+                    # Folder in archive - restore it
+                    logger.info(f"[DEBUG] Folder in archive for {opportunity_number}, restoring to main")
+                    chain(
+                        restore_documentation_from_archive_task.si(opportunity_number),
+                        update_documentation_excels.si(opportunity_number)
+                    ).delay()
+                else:
+                    # Folder already in main - just update Excel
+                    logger.info(f"[DEBUG] Folder already in main for {opportunity_number}, updating Excel only")
+                    update_documentation_excels.delay(opportunity_number)
 
             created_samples = []
 
@@ -191,9 +235,7 @@ def create_sample(request):
                 OpportunityService.add_sample_ids(opportunity, sample_ids_to_add)
             else:
                 logger.debug("Quantity is zero; no samples created.")
-                # Clear sample_ids for the Opportunity
-                opportunity.sample_ids = ''
-                opportunity.save()
+                # Don't clear sample_ids - preserve historical data
 
             # Calculate the total quantity
             if created_samples:
@@ -1177,6 +1219,7 @@ def delete_samples(request):
 def handle_405(request, exception=None):
     return method_not_allowed_response()
 def handle_400(request, exception=None):
+    logger.error(f"400 error triggered - Path: {request.path}, Method: {request.method}, Exception: {exception}")
     return error_response('Bad Request')
 
 def handle_403(request, exception=None):

@@ -54,12 +54,16 @@ def create_sharepoint_folder_task(opportunity_number, customer, rsm, description
 
 @shared_task
 def create_documentation_on_sharepoint_task(opportunity_number):
-    logger.info(f"Starting create_documentation_on_sharepoint_task for opportunity {opportunity_number}")
+    logger.info(f"[DEBUG] ENTERING create_documentation_on_sharepoint_task for opportunity {opportunity_number}")
+    logger.info(f"[DEBUG] Task ID: {create_documentation_on_sharepoint_task.request.id if hasattr(create_documentation_on_sharepoint_task, 'request') else 'N/A'}")
     try:
+        logger.info(f"[DEBUG] About to call create_documentation_on_sharepoint function for {opportunity_number}")
         create_documentation_on_sharepoint(opportunity_number)
-        logger.info(f"Successfully copied documentation template to SharePoint for opportunity {opportunity_number}")
+        logger.info(f"[DEBUG] Successfully copied documentation template to SharePoint for opportunity {opportunity_number}")
     except Exception as e:
-        logger.error(f"Error copying documentation template to SharePoint for opportunity {opportunity_number}: {e}")
+        logger.error(f"[DEBUG] ERROR in create_documentation_on_sharepoint_task for opportunity {opportunity_number}: {e}")
+        logger.exception(e)
+        raise
 @shared_task
 def delete_image_from_sharepoint(full_size_image_name, opportunity_number):
     logger.info(f"Starting task to delete image from SharePoint: {full_size_image_name}")
@@ -574,6 +578,52 @@ def restore_documentation_from_archive_task(opportunity_number):
     except Exception as e:
         logger.error(f"An unexpected error occurred in restore_documentation_from_archive_task: {e}")
         logger.exception(e)
+
+@shared_task
+def create_sharepoint_folder_in_archive_task(opportunity_number, customer, rsm, description):
+    """
+    Creates a folder directly in the _Archive folder for opportunities with 0 samples.
+    This maintains the principle that only opportunities with current samples exist in the main library.
+    Then triggers the documentation creation and Excel update tasks.
+    """
+    logger.info(f"Starting create_sharepoint_folder_in_archive_task for opportunity {opportunity_number}")
+    try:
+        # Import models locally
+        from .models import Opportunity
+        from .CreateOppFolderSharepoint import create_sharepoint_folder_in_archive
+        
+        # Step 1: Create the folder in archive
+        create_sharepoint_folder_in_archive(
+            opportunity_number=opportunity_number,
+            customer=customer,
+            rsm=rsm,
+            description=description
+        )
+        logger.info(f"Successfully created SharePoint folder in archive for opportunity {opportunity_number}")
+        
+        # Step 2 & 3: Chain documentation creation and Excel update tasks
+        # Use a chain to ensure the Excel file is created BEFORE trying to update it
+        logger.info(f"[DEBUG] Creating task chain for documentation and Excel update for opportunity {opportunity_number}")
+        try:
+            from celery import chain
+            
+            # Create a chain: first create the Excel file, then update it
+            task_chain = chain(
+                create_documentation_on_sharepoint_task.si(opportunity_number),
+                update_documentation_excels.si(opportunity_number)
+            )
+            
+            # Execute the chain
+            chain_result = task_chain.delay()
+            logger.info(f"[DEBUG] Task chain queued with ID: {chain_result.id} for opportunity {opportunity_number}")
+            logger.info(f"[DEBUG] Documentation will be created first, then Excel will be updated")
+        except Exception as chain_error:
+            logger.error(f"[DEBUG] Failed to queue task chain: {chain_error}")
+            raise
+        
+    except Exception as e:
+        logger.error(f"Error creating SharePoint folder in archive for opportunity {opportunity_number}: {e}")
+        raise  # Re-raise to ensure error handling works properly
 
 @shared_task
 def set_opportunity_update_false(opportunity_number):
