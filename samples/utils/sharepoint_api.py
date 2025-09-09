@@ -313,12 +313,12 @@ class FolderAPIClient:
         max_depth: int = 3
     ) -> Optional[str]:
         """
-        Search for a folder containing a substring in its name.
+        Search for a folder that STARTS with the specified substring (opportunity number).
         
         Args:
             drive_id: SharePoint drive/library ID
             start_folder_id: Folder ID to start search from
-            substring: Substring to search for in folder names
+            substring: Opportunity number that folder name must START with
             access_token: Bearer token for authentication
             max_depth: Maximum folder depth to search
         
@@ -326,7 +326,10 @@ class FolderAPIClient:
             Folder ID if found, None otherwise
         """
         from samples.sharepoint_config import GRAPH_API_URL
+        import re
         
+        # Note: SharePoint search will return any folder containing the substring anywhere
+        # We'll filter the results to only match folders starting with the opportunity number
         search_url = f"{GRAPH_API_URL}/drives/{drive_id}/items/{start_folder_id}/search(q='{substring}')"
         result = GraphAPIClient.get(search_url, access_token, raise_on_error=False)
         
@@ -336,9 +339,29 @@ class FolderAPIClient:
         
         items = result.get('value', [])
         
-        # Filter results by depth and folder type
+        # CRITICAL: Only consider folders where the opportunity number is at the START
+        # Valid patterns:
+        #   "7157 - Kevin's Natural Foods..."  (starts with opportunity number)
+        #   "7157_Customer_Name..."            (starts with opportunity number)
+        # Invalid patterns:
+        #   "8044_Line 7157..."                (opportunity number not at start)
+        #   "Customer 7157 Project..."         (opportunity number not at start)
+        
         for item in items:
             if 'folder' not in item:
+                continue
+                
+            folder_name = item.get('name', '').strip()
+            
+            # Check if folder name starts with the opportunity number
+            # Allow for immediate separator after number (space, dash, underscore)
+            pattern = rf'^{re.escape(substring)}[\s\-_]'
+            
+            if not (folder_name.startswith(substring + ' ') or 
+                    folder_name.startswith(substring + '-') or 
+                    folder_name.startswith(substring + '_') or
+                    folder_name == substring):  # Exact match (unlikely but possible)
+                logger.debug(f"Skipping folder '{folder_name}' - opportunity number '{substring}' not at start")
                 continue
                 
             # Check depth by counting path separators
@@ -350,8 +373,10 @@ class FolderAPIClient:
                 depth = 0
                 
             if depth <= max_depth:
+                logger.info(f"Found opportunity folder: '{folder_name}' starting with '{substring}'")
                 return item['id']
         
+        logger.debug(f"No folder found starting with opportunity number '{substring}'")
         return None
     
     @staticmethod
