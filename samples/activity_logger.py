@@ -199,16 +199,22 @@ def log_export(
     request,
     export_type: str,
     details: str,
-    sample_count: int = 0
+    sample_count: int = 0,
+    customer: Optional[str] = None,
+    opportunity: Optional[str] = None,
+    object_id: Optional[str] = None
 ) -> ActivityLog:
     """
     Log data export operations
     
     Args:
         request: Django request object
-        export_type: Type of export (CSV, Excel, etc.)
+        export_type: Type of export (CSV, Excel, Documentation, etc.)
         details: Export details
         sample_count: Number of samples exported
+        customer: Customer name associated with the export
+        opportunity: Opportunity number associated with the export
+        object_id: ID of the object being exported (e.g., opportunity number)
     
     Returns:
         Created ActivityLog instance
@@ -217,8 +223,11 @@ def log_export(
         request=request,
         action='EXPORT',
         object_type='Export',
+        object_id=object_id,
         details=f"{export_type}: {details}",
-        affected_count=sample_count
+        affected_count=sample_count,
+        customer=customer,
+        opportunity=opportunity
     )
 
 

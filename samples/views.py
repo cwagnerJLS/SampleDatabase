@@ -816,15 +816,24 @@ def export_documentation_view(request):
         data = json.loads(request.body)
         opportunity_number = data.get('opportunity_number', None)
         if opportunity_number:
-            # Get sample count for this opportunity
-            sample_count = Sample.objects.filter(opportunity_number=opportunity_number).count()
+            # Get samples for this opportunity to extract customer info
+            samples = Sample.objects.filter(opportunity_number=opportunity_number)
+            sample_count = samples.count()
             
-            # Log export operation
+            # Get customer name from the first sample (they should all have the same customer)
+            customer = None
+            if samples.exists():
+                customer = samples.first().customer
+            
+            # Log export operation with customer and opportunity info
             log_export(
                 request=request,
                 export_type='Documentation',
                 details=f"Exported documentation for opportunity {opportunity_number}",
-                sample_count=sample_count
+                sample_count=sample_count,
+                customer=customer,
+                opportunity=opportunity_number,
+                object_id=opportunity_number
             )
             
             export_documentation.delay(opportunity_number)
