@@ -583,8 +583,30 @@
             box-sizing: border-box;
         }
         .col-select {
-            width: 60px; /* Increased width to prevent wrapping */
+            width: 80px; /* Increased width to accommodate button */
             white-space: nowrap; /* Prevent content from wrapping */
+        }
+        
+        .header-btn {
+            padding: 6px 12px;
+            background-color: transparent;
+            color: inherit;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .header-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-btn:active {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-color: rgba(0, 0, 0, 0.4);
         }
         .col-id { width: 40px; text-align: center; }
         .col-date {
@@ -980,7 +1002,7 @@
         <table id="samplesTable" border="1">
         <thead>
             <tr>
-                <th class="col-select">Select</th>
+                <th class="col-select"><button type="button" id="select-header-button" class="header-btn">Expand</button></th>
                 <th class="col-opportunity">Opp Number</th>
                 <th class="col-customer">Customer</th>
                 <th class="col-rsm">RSM</th>
@@ -1435,6 +1457,12 @@
                     row.style.display = 'none';
                 });
             });
+            
+            // Ensure Expand/Collapse button is in sync on page load
+            const selectHeaderBtn = document.getElementById('select-header-button');
+            if (selectHeaderBtn) {
+                selectHeaderBtn.textContent = 'Expand';
+            }
 
             // Delete selected entries with validation
             document.getElementById('delete-all-button').addEventListener('click', function() {
@@ -1617,6 +1645,41 @@
                             checkbox.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     }, this);
+                });
+            }
+            
+            // Select header button functionality - expand all groups
+            const selectHeaderButton = document.getElementById('select-header-button');
+            if (selectHeaderButton) {
+                selectHeaderButton.addEventListener('click', function() {
+                    const expandButtons = document.querySelectorAll('.expand-button');
+                    const allExpanded = Array.from(expandButtons).every(button => button.textContent === '-');
+                    
+                    expandButtons.forEach(button => {
+                        const sanitizedOppNum = button.getAttribute('data-opp-num');
+                        const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                        
+                        if (allExpanded) {
+                            // Collapse all
+                            button.textContent = '+';
+                            groupedRows.forEach(row => {
+                                row.style.display = 'none';
+                            });
+                        } else {
+                            // Expand all
+                            button.textContent = '-';
+                            groupedRows.forEach(row => {
+                                row.style.display = '';
+                            });
+                        }
+                    });
+                    
+                    // Update ALL header buttons to reflect action
+                    const newText = allExpanded ? 'Expand' : 'Collapse';
+                    const allHeaderBtns = document.querySelectorAll('button.header-btn');
+                    allHeaderBtns.forEach(btn => {
+                        btn.textContent = newText;
+                    });
                 });
             }
 
@@ -1881,6 +1944,13 @@
                     groupedRows.forEach(row => {
                         row.style.display = 'none';
                     });
+                });
+                
+                // Reset the Expand/Collapse button text in both original and cloned headers
+                // Update ALL header buttons immediately
+                const allHeaderButtons = document.querySelectorAll('button.header-btn');
+                allHeaderButtons.forEach(btn => {
+                    btn.textContent = 'Expand';
                 });
             };
 
@@ -2660,6 +2730,42 @@
             setTimeout(function() {
                 syncColumnWidths();
                 syncInputs();
+                
+                // Add click event to the cloned Expand/Collapse button
+                const clonedHeaderBtn = document.querySelector('#clonedHeaderTable button.header-btn');
+                if (clonedHeaderBtn) {
+                    clonedHeaderBtn.addEventListener('click', function() {
+                        // Trigger the expand/collapse functionality
+                        const expandButtons = document.querySelectorAll('.expand-button');
+                        const allExpanded = Array.from(expandButtons).every(button => button.textContent === '-');
+                        
+                        expandButtons.forEach(button => {
+                            const sanitizedOppNum = button.getAttribute('data-opp-num');
+                            const groupedRows = document.querySelectorAll(`.group-${sanitizedOppNum}`);
+                            
+                            if (allExpanded) {
+                                // Collapse all
+                                button.textContent = '+';
+                                groupedRows.forEach(row => {
+                                    row.style.display = 'none';
+                                });
+                            } else {
+                                // Expand all
+                                button.textContent = '-';
+                                groupedRows.forEach(row => {
+                                    row.style.display = '';
+                                });
+                            }
+                        });
+                        
+                        // Update ALL header buttons to reflect action
+                        const newText = allExpanded ? 'Expand' : 'Collapse';
+                        const allHeaderBtns = document.querySelectorAll('button.header-btn');
+                        allHeaderBtns.forEach(btn => {
+                            btn.textContent = newText;
+                        });
+                    });
+                }
             }, 100);
             
             // Add scroll listener
