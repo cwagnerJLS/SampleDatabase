@@ -264,6 +264,13 @@ def create_sample(request):
 
             # Removed separate call to update_documentation_excels
 
+            # Get the SharePoint folder name and sample_info_url for the created samples
+            from samples.utils.folder_utils import get_sharepoint_folder_name_simple
+            sharepoint_folder = get_sharepoint_folder_name_simple(
+                opportunity.description, 
+                opportunity.opportunity_number
+            )
+            
             return success_response(data={
                 'created_samples': [
                     {
@@ -273,7 +280,9 @@ def create_sample(request):
                         'rsm': sample.rsm,
                         'opportunity_number': sample.opportunity_number,
                         'description': sample.description,
-                        'location': sample.storage_location
+                        'location': sample.storage_location,
+                        'sharepoint_folder': sharepoint_folder,
+                        'sample_info_url': opportunity.sample_info_url
                     } for sample in created_samples
                 ]
             })
@@ -316,6 +325,12 @@ def create_sample(request):
 
         # Load saved samples with audit status
         samples_queryset = Sample.objects.all()
+        
+        # Get all opportunities in one query for efficiency
+        opportunity_dict = {}
+        for opp in Opportunity.objects.all():
+            opportunity_dict[opp.opportunity_number] = opp
+        
         samples = []
         
         for sample_obj in samples_queryset:
@@ -326,6 +341,12 @@ def create_sample(request):
                 sample_obj.opportunity_number
             )
             
+            # Get sample_info_url from related Opportunity if it exists
+            sample_info_url = None
+            opportunity = opportunity_dict.get(sample_obj.opportunity_number)
+            if opportunity:
+                sample_info_url = opportunity.sample_info_url
+            
             sample_data = {
                 'unique_id': sample_obj.unique_id,
                 'opportunity_number': sample_obj.opportunity_number,
@@ -335,7 +356,8 @@ def create_sample(request):
                 'description': sample_obj.description,
                 'storage_location': sample_obj.storage_location,
                 'days_until_audit': sample_obj.days_until_audit(),  # Will be None if no audit due date
-                'sharepoint_folder': sharepoint_folder  # Add folder name for SharePoint links
+                'sharepoint_folder': sharepoint_folder,  # Add folder name for SharePoint links
+                'sample_info_url': sample_info_url  # Add sample_info_url for Apps link
             }
             samples.append(sample_data)
 

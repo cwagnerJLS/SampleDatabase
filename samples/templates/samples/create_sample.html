@@ -82,6 +82,42 @@
         .doc-buttons .upload-button:hover {
             background-color: #001F40;
         }
+        
+        /* Documentation links styling */
+        .doc-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            flex-wrap: nowrap;
+        }
+        
+        .doc-links a {
+            color: #0066cc;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        
+        .doc-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .doc-divider {
+            color: #ccc;
+            font-weight: normal;
+        }
+        
+        @media (max-width: 600px) {
+            .doc-links {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .doc-divider {
+                display: none;
+            }
+        }
 
         /* Navigation Buttons */
         .modal-body .prev-button,
@@ -806,7 +842,13 @@
                     <button type="button" class="picture-btn" data-sample-id="${sample.unique_id}">Upload/View</button>
                 </td>
                 <td class="col-documentation">
-                    <a href="${CONFIG.SHAREPOINT_BASE_URL}${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Documentation</a>
+                    <div class="doc-links">
+                        <a href="${CONFIG.SHAREPOINT_BASE_URL}${encodeURIComponent(sample.sharepoint_folder)}" target="_blank">Test Lab</a>
+                        ${sample.sample_info_url ? 
+                            `<span class="doc-divider">|</span>
+                             <a href="${sample.sample_info_url}" target="_blank">Apps</a>` : 
+                            ''}
+                    </div>
                 </td>
             `;
         }
